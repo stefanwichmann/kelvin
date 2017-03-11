@@ -1,1 +1,1 @@
-# kelvin
+# Kelvin - Your friendly hue bot
