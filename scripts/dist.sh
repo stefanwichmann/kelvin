@@ -24,6 +24,9 @@ buildTarget() {
   DIST_PATH=$GOPATH/dist
   OUTPUT_PATH=$DIST_PATH/"$BINARY_NAME-$TARGET-$GIT_TAG"
   OUTPUT_BINARY=$OUTPUT_PATH/$BINARY_NAME
+  ARCHIVE_PATH=$DIST_PATH/archives
+  ARCHIVE_NAME=$ARCHIVE_PATH/"$BINARY_NAME-$TARGET-$GIT_TAG"
+  mkdir -p $ARCHIVE_PATH
 
   # Start go build
   echo ===== Building $TARGET =====
@@ -33,24 +36,27 @@ buildTarget() {
 
   # make binary executable
   $(chmod +x $OUTPUT_BINARY)
-  
+
   # include license and readme
   $(cp README.md $OUTPUT_PATH/README.txt)
   $(cp LICENSE $OUTPUT_PATH/LICENSE.txt)
 
   # build archive
   if [[ $OS == "windows" ]]; then
-    $(zip -r $OUTPUT_PATH.zip $OUTPUT_PATH)
+    $(zip -r $ARCHIVE_NAME.zip $OUTPUT_PATH)
   else
-    $(tar cfvz $OUTPUT_PATH.tar.gz $OUTPUT_PATH)
+    $(tar cfvz $ARCHIVE_NAME.tar.gz $OUTPUT_PATH)
   fi
   echo ===== $TARGET build successfull =====
 }
 
 # MAIN
 echo Start
+buildTarget linux amd64
+buildTarget linux 386
+buildTarget linux arm
 buildTarget freebsd amd64
-#buildTarget darwin amd64
+buildTarget darwin amd64
 buildTarget windows amd64
-#buildTarget linux amd64
+buildTarget windows 386
 echo Done
