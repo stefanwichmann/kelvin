@@ -26,10 +26,27 @@ buildTarget() {
   OUTPUT_BINARY=$OUTPUT_PATH/$BINARY_NAME
   ARCHIVE_PATH=$DIST_PATH/archives
   ARCHIVE_NAME=$ARCHIVE_PATH/"$BINARY_NAME-$TARGET-$GIT_TAG"
+  if [[ $OS == "windows" ]]; then
+    ARCHIVE_NAME="$ARCHIVE_NAME.zip"
+  else
+    ARCHIVE_NAME="$ARCHIVE_NAME.tar.gz"
+  fi
+  mkdir -p $OUTPUT_PATH
   mkdir -p $ARCHIVE_PATH
 
   # Start go build
-  echo ===== Building $TARGET =====
+  echo ===== Starting build =====
+  echo Target:          $BINARY_NAME $GIT_TAG $TARGET
+  echo Output path:     $OUTPUT_PATH
+  echo Output binary:   $OUTPUT_BINARY
+  echo Output archive:  $ARCHIVE_NAME
+  echo tar version:     $(tar --version)
+  echo zip version:     $(zip --version)
+
+  # test permissions
+  touch $OUTPUT_BINARY
+  touch $ARCHIVE_NAME
+
   export GOOS=$OS
   export GOARCH=$ARCH
   go build -ldflags "-X main.applicationVersion=${GIT_TAG}" -v -o $OUTPUT_BINARY
@@ -43,9 +60,9 @@ buildTarget() {
 
   # build archive
   if [[ $OS == "windows" ]]; then
-    $(zip -r $ARCHIVE_NAME.zip $OUTPUT_PATH)
+    $(zip -r $ARCHIVE_NAME $OUTPUT_PATH)
   else
-    $(tar cfvz $ARCHIVE_NAME.tar.gz $OUTPUT_PATH)
+    $(tar cfvz $ARCHIVE_NAME $OUTPUT_PATH)
   fi
   echo ===== $TARGET build successfull =====
 }

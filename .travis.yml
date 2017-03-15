@@ -11,8 +11,8 @@ before_deploy:
   - ./scripts/dist.sh
 
 ################# RELEASING ####################
-## git tag -a vX.X.X -m "release information" ##
-## git push --tags origin branch              ##
+## git tag -s -m "release information" vX.X.X ##
+## git push --tags                            ##
 ################################################
 deploy:
   provider: releases
