@@ -14,7 +14,7 @@ buildTarget() {
   fi
 
   # Read latest git tag
-  if $(git describe --abbrev=0 --tags); then
+  if git describe --abbrev=0 --tags; then
     GIT_TAG=$(git describe --abbrev=0 --tags)
   else
     GIT_TAG="unknown"
