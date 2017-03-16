@@ -60,9 +60,9 @@ buildTarget() {
 
   # build archive
   if [[ $OS == "windows" ]]; then
-    $(zip -r $ARCHIVE_NAME $OUTPUT_PATH)
+    zip -r $ARCHIVE_NAME $OUTPUT_PATH
   else
-    $(tar cfvz $ARCHIVE_NAME $OUTPUT_PATH)
+    tar cfvz $ARCHIVE_NAME $OUTPUT_PATH
   fi
   echo ===== $TARGET build successfull =====
 }
