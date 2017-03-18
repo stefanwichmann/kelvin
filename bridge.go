@@ -25,63 +25,43 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dillonhafer/go.hue"
-	"strconv"
-	"time"
 	"log"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type HueBridge struct {
-	bridgeLocator hue.BridgeLocator
-	bridge        hue.Bridge
-	bridgeIP      string
-	username      string
+	bridge   hue.Bridge
+	bridgeIP string
+	username string
 }
 
 const hueBridgeAppName = "kelvin"
 
 func InitializeBridge(ip string, username string) (HueBridge, error) {
 	var bridge HueBridge
-	if ip != "" {
+	if ip != "" && username != "" {
+		// known bridge configuration
 		log.Println("⌘ Initializing bridge from configuration")
 		bridge.bridgeIP = ip
-		if username != "" {
-			log.Println("⌘ Username found in configuration")
-			bridge.username = username
+		bridge.username = username
 
-			// connect to know bridge with known username
-			log.Printf("⌘ Connecting to bridge on IP %s ...\n", bridge.bridgeIP)
-			err := bridge.Connect()
-			if err != nil {
-				return bridge, err
-			}
-			log.Println("⌘ Connection to bridge established")
-		} else {
-			// connect to known brigde without user
-			log.Printf("⌘ Registering new user at Hue Bridge")
-			err := bridge.Register()
-			if err != nil {
-				return bridge, err
-			}
-			log.Println("⌘ Registered new user at bridge.")
-		}
-	} else {
-		// no known bridge
-		log.Println("⌘ No bridge found in configuration. Searching for new one...")
-		err := bridge.Discover()
+		err := bridge.Connect()
 		if err != nil {
 			return bridge, err
 		}
-		log.Println("⌘ Found bridge. Registering new user")
-		err = bridge.Register()
-		if err != nil {
-			return bridge, err
-		}
-		err = bridge.Connect()
-		if err != nil {
-			return bridge, err
-		}
+		log.Println("⌘ Connection to bridge established")
+		return bridge, nil
 	}
+
+	// no known bridge or username
+	log.Println("⌘ No bridge configuration found. Starting local discovery...")
+	err := bridge.Discover()
+	if err != nil {
+		return bridge, err
+	}
+
 	return bridge, nil
 }
 
@@ -131,25 +111,26 @@ func (self *HueBridge) Discover() error {
 	if err != nil {
 		return err
 	}
+	locator := locators[0] // use the first locator
 
-	self.bridgeLocator = locators[0] // use the first locator
-	return nil
-}
-
-func (self *HueBridge) Register() error {
-	fmt.Printf("PLEASE PUSH THE BUTTON ON THE BRIDGE .")
+	log.Println("⌘ Found bridge. Starting user registration.")
+	fmt.Printf("PLEASE PUSH THE BLUE BUTTON ON YOUR HUE BRIDGE.")
 	for index := 0; index < 30; index++ {
 		time.Sleep(5 * time.Second)
 		fmt.Printf(".")
-		// remember to push the button on your hue first
-		bridge, err := self.bridgeLocator.CreateUser(hueBridgeAppName)
+		// try user creation, will fail if the button wasn't pressed.
+		bridge, err := locator.CreateUser(hueBridgeAppName)
 		if err != nil {
 			return err
 		}
 
 		if bridge.Username != "" {
 			// registration successfull
+			fmt.Printf(" Success!\n")
+
+			self.bridge = *bridge
 			self.username = bridge.Username
+			self.bridgeIP = bridge.IpAddr
 			return nil
 		}
 	}
@@ -161,7 +142,7 @@ func (self *HueBridge) Connect() error {
 		return errors.New("No bridge IP configured.")
 	}
 
-	if self.bridgeIP == "" {
+	if self.username == "" {
 		return errors.New("No username on bridge configured.")
 	}
 	self.bridge = *hue.NewBridge(self.bridgeIP, self.username)
