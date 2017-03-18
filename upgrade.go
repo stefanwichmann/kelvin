@@ -47,10 +47,8 @@ func CheckForUpdate(currentVersion string) {
 		}
 
 		if !avail {
-			log.Printf("No new version available.\n")
 			time.Sleep(updateCheckIntervalInMinutes * time.Minute)
 		} else {
-			log.Printf("Update available: %v\n", url)
 			err = updateBinary(url)
 			if err != nil {
 				log.Printf("Error updating binary: %v.\n", err)
@@ -92,6 +90,7 @@ func updateAvailable(currentVersion *version.Version, url string) (bool, error, 
 	}
 
 	if version.GreaterThan(currentVersion) {
+		log.Printf("Found new release version %s.", version)
 		return true, nil, assetUrl
 	}
 

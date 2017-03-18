@@ -26,7 +26,6 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"runtime"
@@ -51,12 +50,15 @@ func downloadLatestReleaseInfo(url string) (releaseName string, assetUrl string,
 		return "", "", err
 	}
 
-	log.Printf("Github data: %v\n", data)
 	releaseInfo := data.(map[string]interface{})
-	if releaseInfo["name"] == nil {
+	var name string
+	if releaseInfo["name"] != nil {
+		name = releaseInfo["name"].(string)
+	} else if releaseInfo["tag_name"] != nil {
+		name = releaseInfo["tag_name"].(string)
+	} else {
 		return "", "", errors.New("No releases available")
 	}
-	name := releaseInfo["name"].(string)
 
 	releaseAssets := releaseInfo["assets"].([]interface{})
 	for _, asset := range releaseAssets {
@@ -74,7 +76,7 @@ func downloadLatestReleaseInfo(url string) (releaseName string, assetUrl string,
 func assetMatchesPlattform(asset map[string]interface{}) (bool, string) {
 	// match content type
 	contentType := asset["content_type"].(string)
-	if !strings.Contains(contentType, "application/octet-stream") {
+	if !strings.Contains(contentType, "application/gzip") {
 		return false, ""
 	}
 
