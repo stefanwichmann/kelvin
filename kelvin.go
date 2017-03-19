@@ -22,12 +22,16 @@
 package main
 
 import "log"
+import "os/signal"
+import "syscall"
+import "os"
 
 var applicationVersion = "development"
 
 func main() {
 	log.Printf("🚀 Kelvin %v starting up...\n", applicationVersion)
 	go CheckForUpdate(applicationVersion)
+	go handleSIGHUP()
 
 	// load config or create new on
 	configuration, err := InitializeConfiguration()
@@ -102,4 +106,12 @@ func main() {
 			go interval.updateCyclic(lightStateChannel)
 		}
 	}
+}
+
+func handleSIGHUP() {
+	sighup := make(chan os.Signal, 1)
+	signal.Notify(sighup, syscall.SIGHUP)
+	<-sighup // wait for signal
+	log.Printf("Received signal SIGHUP. Restarting...\n")
+	Restart()
 }
