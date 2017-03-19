@@ -76,6 +76,7 @@ func main() {
 	for _, hueLight := range hueLights {
 		hueLight := hueLight
 		// Ignore devices that don't support dimming and colors
+		// TODO Move to bridge.go
 		if !hueLight.dimmable && !hueLight.supportsXYColor && !hueLight.supportsColorTemperature {
 			log.Printf("⌘ Device %v doesn't support any functionality we use. Exlude it from unnessesary polling.\n", hueLight.name)
 			continue

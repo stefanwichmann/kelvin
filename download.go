@@ -32,7 +32,7 @@ import (
 	"strings"
 )
 
-func downloadLatestReleaseInfo(url string) (releaseName string, assetUrl string, err error) {
+func downloadLatestReleaseInfo(url string) (releaseName string, assetURL string, err error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", "", err

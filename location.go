@@ -28,8 +28,11 @@ import "log"
 import "github.com/btittelbach/astrotime"
 import "time"
 
+// Geolocation represents a position on earth for which we can
+// calculate sunrise and sunset times.
+// If no location is configured Kelvin will try a geo IP lookup.
 type Geolocation struct {
-	Ip          string  `json:"ip"`
+	IP          string  `json:"ip"`
 	CountryCode string  `json:"country_code"`
 	CountryName string  `json:"country_name"`
 	RegionCode  string  `json:"region_code"`
@@ -44,11 +47,12 @@ type Geolocation struct {
 
 const geolocationURL = "https://freegeoip.net/json/"
 
+// InitializeLocation creates and return a geolocation for the current system.
 func InitializeLocation(latitude float64, longitude float64) (Geolocation, error) {
 	var location Geolocation
 	if latitude == 0 || longitude == 0 {
 		log.Println("🌍 Location not configured. Detecting by IP")
-		err := location.UpdateByIP()
+		err := location.updateByIP()
 		if err != nil {
 			return location, err
 		}
@@ -60,7 +64,7 @@ func InitializeLocation(latitude float64, longitude float64) (Geolocation, error
 	return location, nil
 }
 
-func (self *Geolocation) UpdateByIP() error {
+func (location *Geolocation) updateByIP() error {
 	resp, err := http.Get(geolocationURL)
 	if err != nil {
 		return err
@@ -79,23 +83,27 @@ func (self *Geolocation) UpdateByIP() error {
 	}
 
 	log.Printf("🌍 Detected location: %s, %s (%v, %v).\n", data.City, data.CountryName, data.Latitude, data.Longitude)
-	self.Latitude = data.Latitude
-	self.Longitude = data.Longitude
+	location.Latitude = data.Latitude
+	location.Longitude = data.Longitude
 	return nil
 }
 
-func (self *Geolocation) CalculateSunset(date time.Time) time.Time {
+// CalculateSunset calculates the sunset for the given day based on
+// the configured position on earth.
+func (location *Geolocation) CalculateSunset(date time.Time) time.Time {
 	// calculate start of day
 	yr, mth, day := date.Date()
 	startOfDay := time.Date(yr, mth, day, 0, 0, 0, 0, date.Location())
 
-	return astrotime.NextSunset(startOfDay, self.Latitude, self.Longitude)
+	return astrotime.NextSunset(startOfDay, location.Latitude, location.Longitude)
 }
 
-func (self *Geolocation) CalculateSunrise(date time.Time) time.Time {
+// CalculateSunrise calculates the sunrise for the given day based on
+// the configured position on earth.
+func (location *Geolocation) CalculateSunrise(date time.Time) time.Time {
 	// calculate start of day
 	yr, mth, day := date.Date()
 	startOfDay := time.Date(yr, mth, day, 0, 0, 0, 0, date.Location())
 
-	return astrotime.NextSunrise(startOfDay, self.Latitude, self.Longitude)
+	return astrotime.NextSunrise(startOfDay, location.Latitude, location.Longitude)
 }

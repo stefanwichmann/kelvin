@@ -33,6 +33,8 @@ var lightsSupportingDimming = []string{"Dimmable Light", "Color Temperature Ligh
 var lightsSupportingColorTemperature = []string{"Color Temperature Light", "Extended Color Light"}
 var lightsSupportingXYColor = []string{"Color Light", "Extended Color Light"}
 
+// Light represents a single physical hue light in your system.
+// It is used to read and write it's state.
 type Light struct {
 	id                       int
 	name                     string
@@ -52,144 +54,144 @@ type Light struct {
 const lightUpdateIntervalInSeconds = 1
 const lightTransitionIntervalInSeconds = 1
 
-func (self *Light) updateCyclic(channel <-chan LightState) {
-	log.Printf("💡 Starting cyclic update for %v\n", self.name)
+func (light *Light) updateCyclic(channel <-chan LightState) {
+	log.Printf("💡 Starting cyclic update for %v\n", light.name)
 	time.Sleep(2 * time.Second)
 	for {
 		select {
 		case newLightState, ok := <-channel:
 			if !ok {
-				log.Printf("💡 Channel closed for light %v\n", self.name)
+				log.Printf("💡 Channel closed for light %v\n", light.name)
 				return
 			}
-			self.targetLightState = newLightState
-			self.update()
-			self.clearChannel(channel)
+			light.targetLightState = newLightState
+			light.update()
+			light.clearChannel(channel)
 		default:
-			self.update()
+			light.update()
 			time.Sleep(lightUpdateIntervalInSeconds * time.Second)
 		}
 	}
 }
 
-func (self *Light) initialize() error {
-	attr, err := self.hueLight.GetLightAttributes()
+func (light *Light) initialize() error {
+	attr, err := light.hueLight.GetLightAttributes()
 	if err != nil {
 		return err
 	}
 
 	// initialize non changing values
-	self.name = attr.Name
-	self.dimmable = contains(lightsSupportingDimming, attr.Type)
-	self.supportsColorTemperature = contains(lightsSupportingColorTemperature, attr.Type)
-	self.supportsXYColor = contains(lightsSupportingXYColor, attr.Type)
+	light.name = attr.Name
+	light.dimmable = contains(lightsSupportingDimming, attr.Type)
+	light.supportsColorTemperature = contains(lightsSupportingColorTemperature, attr.Type)
+	light.supportsXYColor = contains(lightsSupportingXYColor, attr.Type)
 
 	// initialize changing values
-	self.on = attr.State.On
-	self.reachable = attr.State.Reachable
-	self.currentLightState = lightStateFromHueValues(attr.State.Ct, attr.State.Xy, attr.State.Bri)
+	light.on = attr.State.On
+	light.reachable = attr.State.Reachable
+	light.currentLightState = lightStateFromHueValues(attr.State.Ct, attr.State.Xy, attr.State.Bri)
 
 	return nil
 }
 
-func (self *Light) updateCurrentLightState() error {
-	attr, err := self.hueLight.GetLightAttributes()
+func (light *Light) updateCurrentLightState() error {
+	attr, err := light.hueLight.GetLightAttributes()
 	if err != nil {
 		return err
 	}
-	self.reachable = attr.State.Reachable
-	self.on = attr.State.On
-	self.currentLightState = lightStateFromHueValues(attr.State.Ct, attr.State.Xy, attr.State.Bri)
+	light.reachable = attr.State.Reachable
+	light.on = attr.State.On
+	light.currentLightState = lightStateFromHueValues(attr.State.Ct, attr.State.Xy, attr.State.Bri)
 	return nil
 }
 
-func (self *Light) update() error {
+func (light *Light) update() error {
 	// refresh current state
-	self.updateCurrentLightState()
+	light.updateCurrentLightState()
 
 	// Light reachable or on?
-	if !self.reachable || !self.on {
-		if self.tracking {
-			log.Printf("💡 Light %s is no longer reachable or turned on. Clearing state.\n", self.name)
-			self.tracking = false
-			self.manually = false
-			return nil
-		} else {
-			// ignore light because we are not tracking it.
+	if !light.reachable || !light.on {
+		if light.tracking {
+			log.Printf("💡 Light %s is no longer reachable or turned on. Clearing state.\n", light.name)
+			light.tracking = false
+			light.manually = false
 			return nil
 		}
+
+		// ignore light because we are not tracking it.
+		return nil
 	}
 
 	// did the light just appear?
-	if !self.tracking {
-		log.Printf("💡 Light %s just appeared. Initializing state to %vK at %v%s\n", self.name, self.targetLightState.colorTemperature, self.targetLightState.brightness, "%")
+	if !light.tracking {
+		log.Printf("💡 Light %s just appeared. Initializing state to %vK at %v%s\n", light.name, light.targetLightState.colorTemperature, light.targetLightState.brightness, "%")
 
 		// For initialization we set the state again and again for 10 seconds because during startup the zigbee communication is unstable
 		for index := 0; index < 9; index++ {
-			self.setLightState(self.targetLightState)
+			light.setLightState(light.targetLightState)
 		}
 		// safe the state of the last iteration
-		setLightState, err := self.setLightState(self.targetLightState)
+		setLightState, err := light.setLightState(light.targetLightState)
 		if err != nil {
 			return err
 		}
-		self.savedLightState = setLightState
-		self.targetLightState = setLightState
-		self.tracking = true
+		light.savedLightState = setLightState
+		light.targetLightState = setLightState
+		light.tracking = true
 		return nil
 	}
 
 	// light in manual state
-	if self.manually {
+	if light.manually {
 		return nil
 	}
 
 	// did the user manually change the light state?
-	if !self.currentLightState.equals(self.savedLightState) {
-		log.Printf("💡 Light %s was manually changed - current: %+v - saved: %+v\n", self.name, self.currentLightState, self.savedLightState)
-		self.manually = true
+	if !light.currentLightState.equals(light.savedLightState) {
+		log.Printf("💡 Light %s was manually changed - current: %+v - saved: %+v\n", light.name, light.currentLightState, light.savedLightState)
+		light.manually = true
 		return nil
 	}
 
 	// Update needed?
-	if self.currentLightState.equals(self.targetLightState) {
+	if light.currentLightState.equals(light.targetLightState) {
 		return nil
 	}
 
 	// Light is reachable, on and in automatic state. Update to new color!
-	log.Printf("💡 Updating light %s to %vK at %v%s\n", self.name, self.targetLightState.colorTemperature, self.targetLightState.brightness, "%")
+	log.Printf("💡 Updating light %s to %vK at %v%s\n", light.name, light.targetLightState.colorTemperature, light.targetLightState.brightness, "%")
 
-	setLightState, err := self.setLightState(self.targetLightState)
+	setLightState, err := light.setLightState(light.targetLightState)
 	if err != nil {
 		return err
 	}
 
 	// Debug: compare values
-	if !setLightState.equals(self.targetLightState) {
-		log.Printf("Target and Set state differ: %v, %v\n", self.targetLightState, setLightState)
+	if !setLightState.equals(light.targetLightState) {
+		log.Printf("Target and Set state differ: %v, %v\n", light.targetLightState, setLightState)
 	}
 
-	self.savedLightState = setLightState
-	self.targetLightState = setLightState
+	light.savedLightState = setLightState
+	light.targetLightState = setLightState
 	return nil
 }
 
-func (self *Light) setLightState(state LightState) (LightState, error) {
+func (light *Light) setLightState(state LightState) (LightState, error) {
 	// Don't send repeated "On" as this slows the bridge down (see https://developers.meethue.com/faq-page #Performance)
 	var newLightState hue.SetLightState
 	colorTemperature, color, brightness := state.convertValuesToHue()
-	if self.supportsXYColor {
+	if light.supportsXYColor {
 		newLightState.Xy = []float32{color[0], color[1]}
 		newLightState.Ct = strconv.Itoa(colorTemperature)
-	} else if self.supportsColorTemperature {
+	} else if light.supportsColorTemperature {
 		newLightState.Ct = strconv.Itoa(colorTemperature)
 	}
-	if self.dimmable {
+	if light.dimmable {
 		newLightState.Bri = strconv.Itoa(brightness)
 	}
 	newLightState.TransitionTime = strconv.Itoa(lightTransitionIntervalInSeconds * 10) // conversion to 100ms-value
 
-	results, err := self.hueLight.SetState(newLightState)
+	results, err := light.hueLight.SetState(newLightState)
 	if err != nil {
 		return LightState{0, []float32{0, 0}, 0}, err
 	}
@@ -218,7 +220,7 @@ func (self *Light) setLightState(state LightState) (LightState, error) {
 	return setLightState, nil
 }
 
-func (self *Light) clearChannel(c <-chan LightState) {
+func (light *Light) clearChannel(c <-chan LightState) {
 	for {
 		select {
 		case state, ok := <-c:

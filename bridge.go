@@ -31,6 +31,9 @@ import (
 	"time"
 )
 
+// HueBridge represents the Philips Hue bridge in
+// your system.
+// It is used to communicate with all devices.
 type HueBridge struct {
 	bridge   hue.Bridge
 	bridgeIP string
@@ -39,6 +42,9 @@ type HueBridge struct {
 
 const hueBridgeAppName = "kelvin"
 
+// InitializeBridge creates and returns an initialized HueBridge.
+// If you have a valid configuration this will be used. Otherwise a local
+// discovery will be started, followed by a user registration on your bridge.
 func InitializeBridge(ip string, username string) (HueBridge, error) {
 	var bridge HueBridge
 	if ip != "" && username != "" {
@@ -47,7 +53,7 @@ func InitializeBridge(ip string, username string) (HueBridge, error) {
 		bridge.bridgeIP = ip
 		bridge.username = username
 
-		err := bridge.Connect()
+		err := bridge.connect()
 		if err != nil {
 			return bridge, err
 		}
@@ -57,7 +63,7 @@ func InitializeBridge(ip string, username string) (HueBridge, error) {
 
 	// no known bridge or username
 	log.Println("⌘ No bridge configuration found. Starting local discovery...")
-	err := bridge.Discover()
+	err := bridge.discover()
 	if err != nil {
 		return bridge, err
 	}
@@ -65,9 +71,10 @@ func InitializeBridge(ip string, username string) (HueBridge, error) {
 	return bridge, nil
 }
 
-func (self *HueBridge) Lights() ([]Light, error) {
+// Lights return all known lights on your bridge.
+func (bridge *HueBridge) Lights() ([]Light, error) {
 	var lights []Light
-	hueLights, err := self.bridge.GetAllLights()
+	hueLights, err := bridge.bridge.GetAllLights()
 	if err != nil {
 		return lights, err
 	}
@@ -86,8 +93,8 @@ func (self *HueBridge) Lights() ([]Light, error) {
 	return lights, nil
 }
 
-func (self *HueBridge) printDevices() error {
-	lights, err := self.Lights()
+func (bridge *HueBridge) printDevices() error {
+	lights, err := bridge.Lights()
 	if err != nil {
 		return err
 	}
@@ -106,7 +113,7 @@ func (self *HueBridge) printDevices() error {
 	return nil
 }
 
-func (self *HueBridge) Discover() error {
+func (bridge *HueBridge) discover() error {
 	locators, err := hue.DiscoverBridges(false)
 	if err != nil {
 		return err
@@ -119,36 +126,36 @@ func (self *HueBridge) Discover() error {
 		time.Sleep(5 * time.Second)
 		fmt.Printf(".")
 		// try user creation, will fail if the button wasn't pressed.
-		bridge, err := locator.CreateUser(hueBridgeAppName)
+		newBridge, err := locator.CreateUser(hueBridgeAppName)
 		if err != nil {
 			return err
 		}
 
-		if bridge.Username != "" {
+		if newBridge.Username != "" {
 			// registration successful
 			fmt.Printf(" Success!\n")
 
-			self.bridge = *bridge
-			self.username = bridge.Username
-			self.bridgeIP = bridge.IpAddr
+			bridge.bridge = *newBridge
+			bridge.username = newBridge.Username
+			bridge.bridgeIP = newBridge.IpAddr
 			return nil
 		}
 	}
-	return errors.New("Registration at bridge timed out!")
+	return errors.New("Registration at bridge timed out")
 }
 
-func (self *HueBridge) Connect() error {
-	if self.bridgeIP == "" {
-		return errors.New("No bridge IP configured.")
+func (bridge *HueBridge) connect() error {
+	if bridge.bridgeIP == "" {
+		return errors.New("No bridge IP configured")
 	}
 
-	if self.username == "" {
-		return errors.New("No username on bridge configured.")
+	if bridge.username == "" {
+		return errors.New("No username on bridge configured")
 	}
-	self.bridge = *hue.NewBridge(self.bridgeIP, self.username)
+	bridge.bridge = *hue.NewBridge(bridge.bridgeIP, bridge.username)
 
 	// Test bridge
-	_, err := self.bridge.Search()
+	_, err := bridge.bridge.Search()
 	if err != nil {
 		return err
 	}

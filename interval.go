@@ -24,6 +24,8 @@ package main
 import "log"
 import "time"
 
+// Interval represents a time range of one day with
+// the given start and end configurations.
 type Interval struct {
 	Start TimeStamp
 	End   TimeStamp
@@ -31,17 +33,17 @@ type Interval struct {
 
 const lightStateUpdateIntervalInMinutes = 1
 
-func (self *Interval) updateCyclic(channel chan<- LightState) {
-	log.Printf("INTERVAL - Managing light state for interval %v to %v\n", self.Start.Time.Format("15:04"), self.End.Time.Format("15:04"))
+func (interval *Interval) updateCyclic(channel chan<- LightState) {
+	log.Printf("INTERVAL - Managing light state for interval %v to %v\n", interval.Start.Time.Format("15:04"), interval.End.Time.Format("15:04"))
 
 	// Now that we are responsible for the correct light states, send out the initial valid state
-	currentLightState := self.calculateLightStateInInterval(time.Now())
+	currentLightState := interval.calculateLightStateInInterval(time.Now())
 	channel <- currentLightState
 
 	intervalEnded := false
 	for intervalEnded != true {
 		// only send new light state if it changed
-		newState := self.calculateLightStateInInterval(time.Now())
+		newState := interval.calculateLightStateInInterval(time.Now())
 		if !newState.equals(currentLightState) {
 			//log.Printf("INTERVAL - Light state updated to: %+v\n", newState)
 			channel <- newState
@@ -52,25 +54,25 @@ func (self *Interval) updateCyclic(channel chan<- LightState) {
 		time.Sleep(lightStateUpdateIntervalInMinutes * time.Minute)
 
 		// check if the interval ended
-		if time.Now().After(self.End.Time) {
-			log.Printf("INTERVAL - Interval %v - %v ended. ", self.Start.Time.Format("15:04"), self.End.Time.Format("15:04"))
+		if time.Now().After(interval.End.Time) {
+			log.Printf("INTERVAL - Interval %v - %v ended. ", interval.Start.Time.Format("15:04"), interval.End.Time.Format("15:04"))
 			intervalEnded = true
 		}
 	}
 }
 
-func (self *Interval) calculateLightStateInInterval(timestamp time.Time) LightState {
-	intervalDuration := self.End.Time.Sub(self.Start.Time)
-	intervalProgress := timestamp.Sub(self.Start.Time)
+func (interval *Interval) calculateLightStateInInterval(timestamp time.Time) LightState {
+	intervalDuration := interval.End.Time.Sub(interval.Start.Time)
+	intervalProgress := timestamp.Sub(interval.Start.Time)
 	percentProgress := intervalProgress.Minutes() / intervalDuration.Minutes()
 
-	colorTemperatureDiff := self.End.Color - self.Start.Color
+	colorTemperatureDiff := interval.End.Color - interval.Start.Color
 	colorTemperaturePercentageValue := float64(colorTemperatureDiff) * percentProgress
-	targetColorTemperature := self.Start.Color + int(colorTemperaturePercentageValue)
+	targetColorTemperature := interval.Start.Color + int(colorTemperaturePercentageValue)
 
-	brightnessDiff := self.End.Brightness - self.Start.Brightness
+	brightnessDiff := interval.End.Brightness - interval.Start.Brightness
 	brightnessPercentageValue := float64(brightnessDiff) * percentProgress
-	targetBrightness := self.Start.Brightness + int(brightnessPercentageValue)
+	targetBrightness := interval.Start.Brightness + int(brightnessPercentageValue)
 
 	x, y := colorTemperatureToXYColor(targetColorTemperature)
 

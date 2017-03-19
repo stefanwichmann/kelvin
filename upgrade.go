@@ -32,6 +32,9 @@ import "time"
 const upgradeURL = "https://api.github.com/repos/stefanwichmann/kelvin/releases/latest"
 const updateCheckIntervalInMinutes = 24 * 60
 
+// CheckForUpdate will get the latest release information of Kelvin
+// from github and compare it to the given version. If a newer version
+// is found it will try to replace the running binary and restart.
 func CheckForUpdate(currentVersion string) {
 	// only look for update if version string matches a valid release version
 	version, err := version.NewVersion(currentVersion)
@@ -41,7 +44,7 @@ func CheckForUpdate(currentVersion string) {
 
 	for {
 		log.Printf("Looking for update...\n")
-		avail, err, url := updateAvailable(version, upgradeURL)
+		avail, url, err := updateAvailable(version, upgradeURL)
 		if err != nil {
 			log.Printf("Error looking for update: %v\n", err)
 		}
@@ -60,6 +63,9 @@ func CheckForUpdate(currentVersion string) {
 	}
 }
 
+// Restart the running binary.
+// All arguments, pipes and environment variables will
+// be preserved.
 func Restart() {
 	binary := os.Args[0]
 	args := []string{}
@@ -76,31 +82,31 @@ func Restart() {
 	os.Exit(0)
 }
 
-func updateAvailable(currentVersion *version.Version, url string) (bool, error, string) {
-	releaseName, assetUrl, err := downloadLatestReleaseInfo(url)
+func updateAvailable(currentVersion *version.Version, url string) (bool, string, error) {
+	releaseName, assetURL, err := downloadLatestReleaseInfo(url)
 	if err != nil {
-		return false, err, ""
+		return false, "", err
 	}
 
 	// parse name and compare
 	version, err := version.NewVersion(releaseName)
 	if err != nil {
 		log.Printf("Could parse release name: %v\n", err)
-		return false, err, ""
+		return false, "", err
 	}
 
 	if version.GreaterThan(currentVersion) {
 		log.Printf("Found new release version %s.", version)
-		return true, nil, assetUrl
+		return true, assetURL, nil
 	}
 
-	return false, nil, ""
+	return false, "", nil
 }
 
-func updateBinary(assetUrl string) error {
+func updateBinary(assetURL string) error {
 	currentBinary := os.Args[0]
-	log.Printf("Downloading update archive %s\n", assetUrl)
-	archive, err := downloadReleaseArchive(assetUrl)
+	log.Printf("Downloading update archive %s\n", assetURL)
+	archive, err := downloadReleaseArchive(assetURL)
 	if err != nil {
 		os.Remove(archive)
 		return err

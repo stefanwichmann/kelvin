@@ -25,6 +25,9 @@ import "time"
 import "log"
 import "errors"
 
+// Day represents all relevants timestamps of one day.
+// Kelvin will calculate all light states based on the intervals
+// between this timestamps.
 type Day struct {
 	endOfDay      time.Time
 	beforeSunrise []TimeStamp
@@ -33,15 +36,15 @@ type Day struct {
 	afterSunset   []TimeStamp
 }
 
-func (self *Day) updateCyclic(configuration Configuration, location Geolocation, channel chan<- Interval) {
-	self.updateForDay(time.Now(), configuration, location)
+func (day *Day) updateCyclic(configuration Configuration, location Geolocation, channel chan<- Interval) {
+	day.updateForDay(time.Now(), configuration, location)
 
 	for {
-		currentInterval, err := self.currentInterval(time.Now())
+		currentInterval, err := day.currentInterval(time.Now())
 		if err != nil {
 			// should only happen when day has ended
 			log.Println("NEW DAY?", err.Error())
-			self.updateForDay(time.Now(), configuration, location)
+			day.updateForDay(time.Now(), configuration, location)
 		} else {
 			channel <- currentInterval
 			timeLeftInInterval := currentInterval.End.Time.Sub(time.Now())
@@ -51,53 +54,53 @@ func (self *Day) updateCyclic(configuration Configuration, location Geolocation,
 	}
 }
 
-func (self *Day) updateForDay(date time.Time, configuration Configuration, location Geolocation) {
-	yr, mth, day := date.Date()
+func (day *Day) updateForDay(date time.Time, configuration Configuration, location Geolocation) {
+	yr, mth, dy := date.Date()
 	log.Printf("Configuring intervals for %v\n", date.Format("Monday January 2 2006"))
-	self.endOfDay = time.Date(yr, mth, day, 23, 59, 59, 59, date.Location())
-	self.sunrise = TimeStamp{location.CalculateSunrise(date), configuration.DefaultColorTemperature, configuration.DefaultBrightness}
-	self.sunset = TimeStamp{location.CalculateSunset(date), configuration.DefaultColorTemperature, configuration.DefaultBrightness}
+	day.endOfDay = time.Date(yr, mth, dy, 23, 59, 59, 59, date.Location())
+	day.sunrise = TimeStamp{location.CalculateSunrise(date), configuration.DefaultColorTemperature, configuration.DefaultBrightness}
+	day.sunset = TimeStamp{location.CalculateSunset(date), configuration.DefaultColorTemperature, configuration.DefaultBrightness}
 
 	// Before sunrise candidates
-	self.beforeSunrise = []TimeStamp{}
+	day.beforeSunrise = []TimeStamp{}
 	for _, candidate := range configuration.BeforeSunrise {
 		timestamp, err := candidate.AsTimestamp(date)
 		if err != nil {
 			log.Printf(err.Error())
 			continue
 		}
-		self.beforeSunrise = append(self.beforeSunrise, timestamp)
+		day.beforeSunrise = append(day.beforeSunrise, timestamp)
 	}
 
 	// After sunset candidates
-	self.afterSunset = []TimeStamp{}
+	day.afterSunset = []TimeStamp{}
 	for _, candidate := range configuration.AfterSunset {
 		timestamp, err := candidate.AsTimestamp(date)
 		if err != nil {
 			log.Printf(err.Error())
 			continue
 		}
-		self.afterSunset = append(self.afterSunset, timestamp)
+		day.afterSunset = append(day.afterSunset, timestamp)
 	}
 }
 
-func (self *Day) currentInterval(timestamp time.Time) (Interval, error) {
+func (day *Day) currentInterval(timestamp time.Time) (Interval, error) {
 	// check if timestamp respresents the current day
-	if timestamp.After(self.endOfDay) {
-		return Interval{TimeStamp{time.Now(), 0, 0}, TimeStamp{time.Now(), 0, 0}}, errors.New("DAY - No current interval as the requested timestamp respresents a different day.")
+	if timestamp.After(day.endOfDay) {
+		return Interval{TimeStamp{time.Now(), 0, 0}, TimeStamp{time.Now(), 0, 0}}, errors.New("DAY - No current interval as the requested timestamp respresents a different day")
 	}
 
 	// if we are between todays sunrise and sunset, return daylight interval
-	if timestamp.After(self.sunrise.Time) && timestamp.Before(self.sunset.Time) {
-		return Interval{self.sunrise, self.sunset}, nil
+	if timestamp.After(day.sunrise.Time) && timestamp.Before(day.sunset.Time) {
+		return Interval{day.sunrise, day.sunset}, nil
 	}
 
 	var before, after TimeStamp
 	// Before sunrise
-	if timestamp.Before(self.sunrise.Time) {
-		yr, mth, day := timestamp.Date()
-		startOfDay := TimeStamp{time.Date(yr, mth, day, 0, 0, 0, 0, timestamp.Location()), -1, -1}
-		candidates := append(self.beforeSunrise, startOfDay, self.sunrise)
+	if timestamp.Before(day.sunrise.Time) {
+		yr, mth, dy := timestamp.Date()
+		startOfDay := TimeStamp{time.Date(yr, mth, dy, 0, 0, 0, 0, timestamp.Location()), -1, -1}
+		candidates := append(day.beforeSunrise, startOfDay, day.sunrise)
 
 		before, after = findTargetTimes(timestamp, candidates)
 
@@ -111,10 +114,10 @@ func (self *Day) currentInterval(timestamp time.Time) (Interval, error) {
 	}
 
 	// After sunset
-	if timestamp.After(self.sunset.Time) {
-		yr, mth, day := timestamp.Date()
-		endOfDay := TimeStamp{time.Date(yr, mth, day, 23, 59, 59, 0, timestamp.Location()), -1, -1}
-		candidates := append(self.afterSunset, endOfDay, self.sunset)
+	if timestamp.After(day.sunset.Time) {
+		yr, mth, dy := timestamp.Date()
+		endOfDay := TimeStamp{time.Date(yr, mth, dy, 23, 59, 59, 0, timestamp.Location()), -1, -1}
+		candidates := append(day.afterSunset, endOfDay, day.sunset)
 
 		before, after = findTargetTimes(timestamp, candidates)
 	}

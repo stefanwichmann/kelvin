@@ -21,59 +21,57 @@
 // SOFTWARE.
 package main
 
-import (
-	"math"
-)
+import "math"
 
+// LightState represents a light configuration.
+// It can be read from or written to the physical lights.
 type LightState struct {
 	colorTemperature int
 	color            []float32
 	brightness       int
 }
 
-func (self *LightState) equals(state LightState) bool {
+func (lightstate *LightState) equals(state LightState) bool {
 	// if comparing light states always prefer color comparison
-	if (self.color[0] != 0 && self.color[1] != 0) || (state.color[0] != 0 && state.color[1] != 0) {
-		diffx := math.Abs(float64(self.color[0] - state.color[0]))
-		diffy := math.Abs(float64(self.color[1] - state.color[1]))
-		diffbri := math.Abs(float64(self.brightness - state.brightness))
+	if (lightstate.color[0] != 0 && lightstate.color[1] != 0) || (state.color[0] != 0 && state.color[1] != 0) {
+		diffx := math.Abs(float64(lightstate.color[0] - state.color[0]))
+		diffy := math.Abs(float64(lightstate.color[1] - state.color[1]))
+		diffbri := math.Abs(float64(lightstate.brightness - state.brightness))
 
 		if diffx < 0.001 && diffy < 0.001 && diffbri < 3 {
 			return true
-		} else {
-			return false
 		}
-	} else {
-		if self.colorTemperature != state.colorTemperature || self.brightness != state.brightness {
-			return false
-		} else {
-			return true
-		}
+		return false
 	}
+
+	if lightstate.colorTemperature != state.colorTemperature || lightstate.brightness != state.brightness {
+		return false
+	}
+	return true
 }
 
-func (self *LightState) convertValuesToHue() (int, []float32, int) {
+func (lightstate *LightState) convertValuesToHue() (int, []float32, int) {
 	// color temperature
-	if self.colorTemperature > 6500 {
-		self.colorTemperature = 6500
-	} else if self.colorTemperature < 2000 {
-		self.colorTemperature = 2000
+	if lightstate.colorTemperature > 6500 {
+		lightstate.colorTemperature = 6500
+	} else if lightstate.colorTemperature < 2000 {
+		lightstate.colorTemperature = 2000
 	}
-	hueColor := (float64(1) / float64(self.colorTemperature)) * float64(1000000)
+	hueColor := (float64(1) / float64(lightstate.colorTemperature)) * float64(1000000)
 
 	// brightness
-	if self.brightness > 100 {
-		self.brightness = 100
-	} else if self.brightness < 0 {
-		self.brightness = 0
+	if lightstate.brightness > 100 {
+		lightstate.brightness = 100
+	} else if lightstate.brightness < 0 {
+		lightstate.brightness = 0
 	}
-	hueBrightness := (float64(self.brightness) / float64(100)) * float64(254)
+	hueBrightness := (float64(lightstate.brightness) / float64(100)) * float64(254)
 
 	// map temperature to xy if not set
-	x := self.color[0]
-	y := self.color[1]
+	x := lightstate.color[0]
+	y := lightstate.color[1]
 	if x == 0 || y == 0 {
-		x, y = colorTemperatureToXYColor(self.colorTemperature)
+		x, y = colorTemperatureToXYColor(lightstate.colorTemperature)
 	}
 
 	return int(hueColor), []float32{float32(x), float32(y)}, int(hueBrightness)

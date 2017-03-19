@@ -82,7 +82,7 @@ func extractBinaryFromZipArchive(archiveFile string, binaryName string, destinat
 		}
 	}
 
-	return "", errors.New("Binary not found in archive.")
+	return "", errors.New("Binary not found in archive")
 }
 
 func extractBinaryFromTarArchive(archiveFile string, binaryName string, destinationFolder string) (binaryFile string, err error) {
@@ -135,5 +135,5 @@ func extractBinaryFromTarArchive(archiveFile string, binaryName string, destinat
 		}
 	}
 
-	return "", errors.New("Binary not found in archive.")
+	return "", errors.New("Binary not found in archive")
 }

@@ -28,22 +28,27 @@ import "errors"
 import "time"
 import "log"
 
+// Bridge respresents the hue bridge in your system.
 type Bridge struct {
 	IP       string `json:"ip"`
 	Username string `json:"username"`
 }
 
+// Location represents the geolocation for which sunrise and sunset will be calculated.
 type Location struct {
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
 }
 
+// TimedColorTemperature represents a light configuration which will be
+// reached at the given time.
 type TimedColorTemperature struct {
 	Time       string `json:"time"`
 	Color      int    `json:"color"`
 	Brightness int    `json:"brightness"`
 }
 
+// Configuration encapsulates all relevant parameters for Kelvin to operate.
 type Configuration struct {
 	ConfigurationFile       string                  `json:"-"`
 	Bridge                  Bridge                  `json:"bridge"`
@@ -54,13 +59,14 @@ type Configuration struct {
 	BeforeSunrise           []TimedColorTemperature `json:"beforeSunrise"`
 }
 
+// TimeStamp represents a parsed and validated TimedColorTemperature.
 type TimeStamp struct {
 	Time       time.Time
 	Color      int
 	Brightness int
 }
 
-func (self *Configuration) initializeDefaults() {
+func (configuration *Configuration) initializeDefaults() {
 	var bridge Bridge
 	bridge.IP = ""
 	bridge.Username = ""
@@ -84,15 +90,19 @@ func (self *Configuration) initializeDefaults() {
 	wakeupTime.Color = 2000
 	wakeupTime.Brightness = 60
 
-	self.ConfigurationFile = "config.json"
-	self.Bridge = bridge
-	self.Location = location
-	self.DefaultColorTemperature = 2750
-	self.DefaultBrightness = 100
-	self.AfterSunset = []TimedColorTemperature{tvTime, bedTime}
-	self.BeforeSunrise = []TimedColorTemperature{wakeupTime}
+	configuration.ConfigurationFile = "config.json"
+	configuration.Bridge = bridge
+	configuration.Location = location
+	configuration.DefaultColorTemperature = 2750
+	configuration.DefaultBrightness = 100
+	configuration.AfterSunset = []TimedColorTemperature{tvTime, bedTime}
+	configuration.BeforeSunrise = []TimedColorTemperature{wakeupTime}
 }
 
+// InitializeConfiguration creates and returns an initialized
+// configuration.
+// If no configuration can be found on disk, one with default values
+// will be created.
 func InitializeConfiguration() (Configuration, error) {
 	var configuration Configuration
 	configuration.initializeDefaults()
@@ -113,35 +123,18 @@ func InitializeConfiguration() (Configuration, error) {
 	return configuration, nil
 }
 
-func (self *Configuration) Write() error {
-	if self.ConfigurationFile == "" {
-		return errors.New("No configuration filename configured.")
+// Write saves a configuration to disk.
+func (configuration *Configuration) Write() error {
+	if configuration.ConfigurationFile == "" {
+		return errors.New("No configuration filename configured")
 	}
 
-	json, err := json.MarshalIndent(self, "", "  ")
+	json, err := json.MarshalIndent(configuration, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(self.ConfigurationFile, json, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (self *Configuration) Read() error {
-	if self.ConfigurationFile == "" {
-		return errors.New("No configuration filename configured.")
-	}
-
-	raw, err := ioutil.ReadFile(self.ConfigurationFile)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(raw, self)
+	err = ioutil.WriteFile(configuration.ConfigurationFile, json, 0644)
 	if err != nil {
 		return err
 	}
@@ -149,25 +142,48 @@ func (self *Configuration) Read() error {
 	return nil
 }
 
-func (self *Configuration) Exists() bool {
-	if self.ConfigurationFile == "" {
+// Read loads a configuration from disk.
+func (configuration *Configuration) Read() error {
+	if configuration.ConfigurationFile == "" {
+		return errors.New("No configuration filename configured")
+	}
+
+	raw, err := ioutil.ReadFile(configuration.ConfigurationFile)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(raw, configuration)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Exists return true if a configuration file is found on disk.
+// False otherwise.
+func (configuration *Configuration) Exists() bool {
+	if configuration.ConfigurationFile == "" {
 		return false
 	}
 
-	if _, err := os.Stat(self.ConfigurationFile); os.IsNotExist(err) {
+	if _, err := os.Stat(configuration.ConfigurationFile); os.IsNotExist(err) {
 		return false
 	}
 	return true
 }
 
-func (self *TimedColorTemperature) AsTimestamp(referenceTime time.Time) (TimeStamp, error) {
+// AsTimestamp parses and validates a TimedColorTemperature and returns
+// a corresponding TimeStamp.
+func (color *TimedColorTemperature) AsTimestamp(referenceTime time.Time) (TimeStamp, error) {
 	layout := "3:04PM"
-	t, err := time.Parse(layout, self.Time)
+	t, err := time.Parse(layout, color.Time)
 	if err != nil {
-		return TimeStamp{time.Now(), self.Color, self.Brightness}, err
+		return TimeStamp{time.Now(), color.Color, color.Brightness}, err
 	}
 	yr, mth, day := referenceTime.Date()
 	targetTime := time.Date(yr, mth, day, t.Hour(), t.Minute(), t.Second(), 0, referenceTime.Location())
 
-	return TimeStamp{targetTime, self.Color, self.Brightness}, nil
+	return TimeStamp{targetTime, color.Color, color.Brightness}, nil
 }
