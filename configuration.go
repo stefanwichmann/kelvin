@@ -76,7 +76,7 @@ func (self *Configuration) initializeDefaults() {
 
 	var tvTime TimedColorTemperature
 	tvTime.Time = "8:00PM"
-	tvTime.Color = 5000
+	tvTime.Color = 2300
 	tvTime.Brightness = 80
 
 	var wakeupTime TimedColorTemperature
@@ -87,7 +87,7 @@ func (self *Configuration) initializeDefaults() {
 	self.ConfigurationFile = "config.json"
 	self.Bridge = bridge
 	self.Location = location
-	self.DefaultColorTemperature = 4000
+	self.DefaultColorTemperature = 2750
 	self.DefaultBrightness = 100
 	self.AfterSunset = []TimedColorTemperature{tvTime, bedTime}
 	self.BeforeSunrise = []TimedColorTemperature{wakeupTime}
