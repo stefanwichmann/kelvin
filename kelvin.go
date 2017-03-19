@@ -99,7 +99,6 @@ func main() {
 			}
 		case interval := <-intervalChannel:
 			log.Printf("⌘ - New interval received: %v - %v\n", interval.Start.Time.Format("15:04"), interval.End.Time.Format("15:04"))
-			interval = interval
 			go interval.updateCyclic(lightStateChannel)
 		}
 	}
