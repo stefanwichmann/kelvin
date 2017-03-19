@@ -79,7 +79,8 @@ func (self *Geolocation) UpdateByIP() error {
 	}
 
 	log.Printf("🌍 Detected location: %s, %s (%v, %v).\n", data.City, data.CountryName, data.Latitude, data.Longitude)
-	self = &data
+	self.Latitude = data.Latitude
+	self.Longitude = data.Longitude
 	return nil
 }
 
