@@ -194,7 +194,7 @@ func (self *Light) setLightState(state LightState) (LightState, error) {
 		return LightState{0, []float32{0, 0}, 0}, err
 	}
 
-	// iterate over result to aquire set values
+	// iterate over result to acquire set values
 	for _, result := range results {
 		for key, value := range result.Success {
 			path := strings.Split(key, "/")

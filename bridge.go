@@ -125,7 +125,7 @@ func (self *HueBridge) Discover() error {
 		}
 
 		if bridge.Username != "" {
-			// registration successfull
+			// registration successful
 			fmt.Printf(" Success!\n")
 
 			self.bridge = *bridge

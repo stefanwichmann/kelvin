@@ -136,7 +136,7 @@ func updateBinary(assetUrl string) error {
 		return err
 	}
 
-	log.Printf("Update successfull\n")
+	log.Printf("Update successful\n")
 	return nil
 }
 
