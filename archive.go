@@ -49,7 +49,7 @@ func extractBinaryFromZipArchive(archiveFile string, binaryName string, destinat
 		} else {
 			filename := path.Base(f.Name)
 			dir := path.Dir(f.Name)
-			if filename == binaryName {
+			if filename == path.Base(binaryName) {
 				archiveDirs := strings.Split(dir, "/")
 				if len(archiveDirs) > 1 {
 					// Don't consider nested files with binaryName
@@ -111,7 +111,7 @@ func extractBinaryFromTarArchive(archiveFile string, binaryName string, destinat
 
 		filename := path.Base(f.Name)
 		dir := path.Dir(f.Name)
-		if filename == binaryName {
+		if filename == path.Base(binaryName) {
 			archiveDirs := strings.Split(dir, "/")
 			if len(archiveDirs) > 1 {
 				// Don't consider nested files with binaryName

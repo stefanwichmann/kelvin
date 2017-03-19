@@ -76,7 +76,7 @@ func downloadLatestReleaseInfo(url string) (releaseName string, assetUrl string,
 func assetMatchesPlattform(asset map[string]interface{}) (bool, string) {
 	// match content type
 	contentType := asset["content_type"].(string)
-	if !strings.Contains(contentType, "application/gzip") || !strings.Contains(contentType, "application/zip") {
+	if !(strings.Contains(contentType, "application/gzip") || strings.Contains(contentType, "application/zip")) {
 		return false, ""
 	}
 
