@@ -197,6 +197,7 @@ func (light *Light) setLightState(state LightState) (LightState, error) {
 	}
 
 	// iterate over result to acquire set values
+	color = []float32{} // clear old color values
 	for _, result := range results {
 		for key, value := range result.Success {
 			path := strings.Split(key, "/")
