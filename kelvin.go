@@ -29,7 +29,7 @@ import "os"
 var applicationVersion = "development"
 
 func main() {
-	log.Printf("🚀 Kelvin %v starting up...\n", applicationVersion)
+	log.Printf("Kelvin %v starting up... 🚀\n", applicationVersion)
 	go CheckForUpdate(applicationVersion)
 	go handleSIGHUP()
 
@@ -78,7 +78,7 @@ func main() {
 		// Ignore devices that don't support dimming and colors
 		// TODO Move to bridge.go
 		if !hueLight.dimmable && !hueLight.supportsXYColor && !hueLight.supportsColorTemperature {
-			log.Printf("⌘ Device %v doesn't support any functionality we use. Exlude it from unnessesary polling.\n", hueLight.name)
+			log.Printf("Device %v doesn't support any functionality we use. Exlude it from unnessesary polling.\n", hueLight.name)
 			continue
 		}
 		lightChannel := make(chan LightState, 1)
@@ -103,7 +103,6 @@ func main() {
 				light <- state
 			}
 		case interval := <-intervalChannel:
-			log.Printf("⌘ - New interval received: %v - %v\n", interval.Start.Time.Format("15:04"), interval.End.Time.Format("15:04"))
 			go interval.updateCyclic(lightStateChannel)
 		}
 	}

@@ -43,12 +43,10 @@ func (day *Day) updateCyclic(configuration Configuration, location Geolocation, 
 		currentInterval, err := day.currentInterval(time.Now())
 		if err != nil {
 			// should only happen when day has ended
-			log.Println("NEW DAY?", err.Error())
 			day.updateForDay(time.Now(), configuration, location)
 		} else {
 			channel <- currentInterval
 			timeLeftInInterval := currentInterval.End.Time.Sub(time.Now())
-			log.Printf("DAY - Time left in interval %v - %v: %v\n", currentInterval.Start.Time.Format("15:04"), currentInterval.End.Time.Format("15:04"), timeLeftInInterval)
 			time.Sleep(timeLeftInInterval + (1 * time.Second))
 		}
 	}
@@ -87,7 +85,7 @@ func (day *Day) updateForDay(date time.Time, configuration Configuration, locati
 func (day *Day) currentInterval(timestamp time.Time) (Interval, error) {
 	// check if timestamp respresents the current day
 	if timestamp.After(day.endOfDay) {
-		return Interval{TimeStamp{time.Now(), 0, 0}, TimeStamp{time.Now(), 0, 0}}, errors.New("DAY - No current interval as the requested timestamp respresents a different day")
+		return Interval{TimeStamp{time.Now(), 0, 0}, TimeStamp{time.Now(), 0, 0}}, errors.New("No current interval as the requested timestamp respresents a different day")
 	}
 
 	// if we are between todays sunrise and sunset, return daylight interval

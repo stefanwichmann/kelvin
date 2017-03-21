@@ -34,7 +34,7 @@ type Interval struct {
 const lightStateUpdateIntervalInMinutes = 1
 
 func (interval *Interval) updateCyclic(channel chan<- LightState) {
-	log.Printf("INTERVAL - Managing light state for interval %v to %v\n", interval.Start.Time.Format("15:04"), interval.End.Time.Format("15:04"))
+	log.Printf("Managing lights for interval %v to %v\n", interval.Start.Time.Format("15:04"), interval.End.Time.Format("15:04"))
 
 	// Now that we are responsible for the correct light states, send out the initial valid state
 	currentLightState := interval.calculateLightStateInInterval(time.Now())
@@ -55,7 +55,6 @@ func (interval *Interval) updateCyclic(channel chan<- LightState) {
 
 		// check if the interval ended
 		if time.Now().After(interval.End.Time) {
-			log.Printf("INTERVAL - Interval %v - %v ended. ", interval.Start.Time.Format("15:04"), interval.End.Time.Format("15:04"))
 			intervalEnded = true
 		}
 	}
