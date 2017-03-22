@@ -43,7 +43,7 @@ func CheckForUpdate(currentVersion string) {
 	}
 
 	for {
-		log.Printf("Looking for update...\n")
+		log.Printf("Looking for updates...\n")
 		avail, url, err := updateAvailable(version, upgradeURL)
 		if err != nil {
 			log.Printf("Error looking for update: %v\n", err)
