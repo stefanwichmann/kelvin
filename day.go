@@ -103,8 +103,8 @@ func (day *Day) currentInterval(timestamp time.Time) (Interval, error) {
 		before, after = findTargetTimes(timestamp, candidates)
 
 		// fix dummy values
-		if before.Color == -1 && before.Brightness == -1 {
-			before.Color = after.Color
+		if before.ColorTemperature == -1 && before.Brightness == -1 {
+			before.ColorTemperature = after.ColorTemperature
 			before.Brightness = after.Brightness
 		}
 
@@ -121,8 +121,8 @@ func (day *Day) currentInterval(timestamp time.Time) (Interval, error) {
 	}
 
 	// fix dummy values
-	if after.Color == -1 && after.Brightness == -1 {
-		after.Color = before.Color
+	if after.ColorTemperature == -1 && after.Brightness == -1 {
+		after.ColorTemperature = before.ColorTemperature
 		after.Brightness = before.Brightness
 	}
 

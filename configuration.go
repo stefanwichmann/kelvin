@@ -43,9 +43,9 @@ type Location struct {
 // TimedColorTemperature represents a light configuration which will be
 // reached at the given time.
 type TimedColorTemperature struct {
-	Time       string `json:"time"`
-	Color      int    `json:"color"`
-	Brightness int    `json:"brightness"`
+	Time             string `json:"time"`
+	ColorTemperature int    `json:"colorTemperature"`
+	Brightness       int    `json:"brightness"`
 }
 
 // Configuration encapsulates all relevant parameters for Kelvin to operate.
@@ -55,15 +55,15 @@ type Configuration struct {
 	Location                Location                `json:"location"`
 	DefaultColorTemperature int                     `json:"defaultColorTemperature"`
 	DefaultBrightness       int                     `json:"defaultBrightness"`
-	AfterSunset             []TimedColorTemperature `json:"afterSunset"`
 	BeforeSunrise           []TimedColorTemperature `json:"beforeSunrise"`
+	AfterSunset             []TimedColorTemperature `json:"afterSunset"`
 }
 
 // TimeStamp represents a parsed and validated TimedColorTemperature.
 type TimeStamp struct {
-	Time       time.Time
-	Color      int
-	Brightness int
+	Time             time.Time
+	ColorTemperature int
+	Brightness       int
 }
 
 func (configuration *Configuration) initializeDefaults() {
@@ -77,17 +77,17 @@ func (configuration *Configuration) initializeDefaults() {
 
 	var bedTime TimedColorTemperature
 	bedTime.Time = "10:00PM"
-	bedTime.Color = 2000
+	bedTime.ColorTemperature = 2000
 	bedTime.Brightness = 60
 
 	var tvTime TimedColorTemperature
 	tvTime.Time = "8:00PM"
-	tvTime.Color = 2300
+	tvTime.ColorTemperature = 2300
 	tvTime.Brightness = 80
 
 	var wakeupTime TimedColorTemperature
 	wakeupTime.Time = "4:00AM"
-	wakeupTime.Color = 2000
+	wakeupTime.ColorTemperature = 2000
 	wakeupTime.Brightness = 60
 
 	configuration.ConfigurationFile = "config.json"
@@ -180,10 +180,10 @@ func (color *TimedColorTemperature) AsTimestamp(referenceTime time.Time) (TimeSt
 	layout := "3:04PM"
 	t, err := time.Parse(layout, color.Time)
 	if err != nil {
-		return TimeStamp{time.Now(), color.Color, color.Brightness}, err
+		return TimeStamp{time.Now(), color.ColorTemperature, color.Brightness}, err
 	}
 	yr, mth, day := referenceTime.Date()
 	targetTime := time.Date(yr, mth, day, t.Hour(), t.Minute(), t.Second(), 0, referenceTime.Location())
 
-	return TimeStamp{targetTime, color.Color, color.Brightness}, nil
+	return TimeStamp{targetTime, color.ColorTemperature, color.Brightness}, nil
 }
