@@ -3,12 +3,12 @@
 [![Build Status](https://travis-ci.org/stefanwichmann/kelvin.svg?branch=master)](https://travis-ci.org/stefanwichmann/kelvin)
 [![Go Report Card](https://goreportcard.com/badge/github.com/stefanwichmann/kelvin)](https://goreportcard.com/report/github.com/stefanwichmann/kelvin)
 
-## Meet Kelvin
+# Meet Kelvin
 Kelvin is a little helper bot who will automate the lights in your house. Its job is to adjust the color temperature and brightness in your home based on your local sunrise and sunset times and custom intervals defined by you. Think of it as [f.lux](https://justgetflux.com/) or Apple's Night Shift for your home.
 
 Imagine your lights shine in an energetic but not to bright blue color to get you started in the early morning. On sunrise your lights will change to a more natural color temperature to reflect the sunlight outside. On sunset they will slowly fade to a warmer and softer color scheme perfectly suited to Netflix and chill. When it's time to go to bed Kelvin will reduce the intensity even more to get you into a sleepy mood. It will keep this reduced setting through the night so you don't get blinded by bright lights if you have to get up at night...
 
-## Features
+# Features
 - Adjust the color temperature and brightness of your lights based on the local sunrise and sunset times
 - Define a fine grained daily schedule to fit your personal needs throughout the day
 - Define a default startup color for your lights
@@ -20,7 +20,7 @@ Imagine your lights shine in an energetic but not to bright blue color to get yo
 - Free and open source
 
 
-## Getting started
+# Getting started
 If you want to give Kelvin a try, there are some things you will need to benefit from its services:
 - [ ] Supported **Philips Hue** lights
 - [ ] A configured **Philips Hue** bridge
@@ -28,7 +28,7 @@ If you want to give Kelvin a try, there are some things you will need to benefit
 
 Got all these? Great, let's get started!
 
-## Installation
+# Installation
 1. Download the latest version of Kelvin from the [Releases](https://github.com/stefanwichmann/kelvin/releases) page.
 2. Extract the Kelvin archive.
 3. Start Kelvin by double-clicking `kelvin.exe` on windows or by typing `./kelvin` in your terminal on macOS, Linux and other Unix-based systems.
@@ -70,9 +70,9 @@ Got all these? Great, let's get started!
    2017/03/22 10:45:59 Managing lights for interval 06:21 to 18:40
    ```
 6. Wohoo! Kelvin is up and running! Well done!
-7. Kelvin is now managing your lights and will gradually adjust the color temperature and brightness for you. Give it a try by switching lights on and off to see how Kelvin reacts. If you want to adjust the default schedule to your needs, just read on and edit the configuration. 
+7. Kelvin is now managing your lights and will gradually adjust the color temperature and brightness for you. Give it a try by switching lights on and off to see how Kelvin reacts. If you want to adjust the default schedule to your needs, just read on and edit the configuration.
 
-## Configuration
+# Configuration
 Kelvin will create it's configuration file `config.json` in the current directory and store all necessary information to operate in it. By default it is fully usable and looks like this:
 
 ```
@@ -123,14 +123,14 @@ The configuration contains the following fields:
 
 After altering the configuration you have to restart Kelvin. Just kill the running instance (`Ctrl+C` or `kill $PID`) or send a HUP signal (`kill -s HUP $PID`) to the process to restart (unix only).
 
-## Raspberry Pi
+# Raspberry Pi
 A [Raspberry Pi](https://www.raspberrypi.org/) is the **perfect** device to run Kelvin on. It's cheap, it's small and it consumes very little energy! Recently the [Raspberry Pi Zero W](https://www.raspberrypi.org/products/pi-zero-w/) was released which makes your Kelvin hardware look like this (plus a power cord):
 
 ![Raspberry Pi Zero W](https://www.raspberrypi.org/wp-content/uploads/2017/02/zero-wireless.png)
 
 But any other model of the Raspberry Pi will be sufficient. To setup Kelvin on a Raspberry Pi follow the installation guide [here](https://www.raspberrypi.org/documentation/installation/). Once your Pi is up and running (booting, connected to your network and the internet) just download the latest `linux-arm` release and follow the steps in [Installation](#Installation)
 
-## Troubleshooting
+# Troubleshooting
 If anything goes wrong keep calm and follow these steps:
 
 1. Make sure the Philips Hue bridge is configured and working in your network. Kelvin will need it to communicate with your lights. If you got the hue app running on your smartphone you should be fine. Otherwise follow the Philips Hue manual to configure your lights.
