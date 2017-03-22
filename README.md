@@ -24,7 +24,7 @@ Imagine your lights shine in an energetic but not to bright blue color to get yo
 If you want to give Kelvin a try, there are some things you will need to benefit from its services:
 - [ ] Supported **Philips Hue** lights
 - [ ] A configured **Philips Hue** bridge
-- [ ] A permanently running computer connected to your network (See [Raspberry Pi](#Raspberry Pi))
+- [ ] A permanently running computer connected to your network (See [Raspberry Pi](#raspberry-pi))
 
 Got all these? Great, let's get started!
 
@@ -128,7 +128,7 @@ A [Raspberry Pi](https://www.raspberrypi.org/) is the **perfect** device to run 
 
 ![Raspberry Pi Zero W](https://www.raspberrypi.org/wp-content/uploads/2017/02/zero-wireless.png)
 
-But any other model of the Raspberry Pi will be sufficient. To setup Kelvin on a Raspberry Pi follow the installation guide [here](https://www.raspberrypi.org/documentation/installation/). Once your Pi is up and running (booting, connected to your network and the internet) just download the latest `linux-arm` release and follow the steps in [Installation](#Installation)
+But any other model of the Raspberry Pi will be sufficient. To setup Kelvin on a Raspberry Pi follow the installation guide [here](https://www.raspberrypi.org/documentation/installation/). Once your Pi is up and running (booting, connected to your network and the internet) just download the latest `linux-arm` release and follow the steps in [Installation](#installation)
 
 # Troubleshooting
 If anything goes wrong keep calm and follow these steps:
