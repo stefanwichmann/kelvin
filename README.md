@@ -41,7 +41,7 @@ Got all these? Great, let's get started!
    2017/03/22 10:45:44 ⌘ Found bridge. Starting user registration.
    PLEASE PUSH THE BLUE BUTTON ON YOUR HUE BRIDGE...
    ```
-4. Now you have to allow Kelvin to talk to your bridge by pushing the blue button on top of your physical Hue bridge. Kelvin will wait one minute for you to push the button. If you didn't make it in time just start it again (Step 3)
+4. Now you have to allow Kelvin to talk to your bridge by pushing the blue button on top of your physical Hue bridge. Kelvin will wait one minute for you to push the button. If you didn't make it in time just start it again with step 3.
 5. Once you pushed the button you should see something like:
    ```
    2017/03/22 10:45:41 Kelvin v0.0.7 starting up... 🚀
@@ -124,18 +124,18 @@ The configuration contains the following fields:
 After altering the configuration you have to restart Kelvin. Just kill the running instance (`Ctrl+C` or `kill $PID`) or send a HUP signal (`kill -s HUP $PID`) to the process to restart (unix only).
 
 # Raspberry Pi
-A [Raspberry Pi](https://www.raspberrypi.org/) is the **perfect** device to run Kelvin on. It's cheap, it's small and it consumes very little energy! Recently the [Raspberry Pi Zero W](https://www.raspberrypi.org/products/pi-zero-w/) was released which makes your Kelvin hardware look like this (plus a power cord):
+A [Raspberry Pi](https://www.raspberrypi.org/) is the **perfect** device to run Kelvin on. It's cheap, it's small and it consumes very little energy. Recently the [Raspberry Pi Zero W](https://www.raspberrypi.org/products/pi-zero-w/) was released which makes your Kelvin hardware look like this (plus a power cord):
 
 ![Raspberry Pi Zero W](https://www.raspberrypi.org/wp-content/uploads/2017/02/zero-wireless.png)
 
-But any other model of the Raspberry Pi will be sufficient. To setup Kelvin on a Raspberry Pi follow the installation guide [here](https://www.raspberrypi.org/documentation/installation/). Once your Pi is up and running (booting, connected to your network and the internet) just download the latest `linux-arm` release and follow the steps in [Installation](#installation)
+But any other model of the Raspberry Pi will be sufficient. To setup Kelvin on a Raspberry Pi follow the installation guide [here](https://www.raspberrypi.org/documentation/installation/). Once your Pi is up and running (booting, connected to your network and the internet) just download the latest `linux-arm` release and follow the steps in [Installation](#installation).
 
 # Troubleshooting
 If anything goes wrong keep calm and follow these steps:
 
 1. Make sure the Philips Hue bridge is configured and working in your network. Kelvin will need it to communicate with your lights. If you got the hue app running on your smartphone you should be fine. Otherwise follow the Philips Hue manual to configure your lights.
 
-2. To identify the IP address of your bridge open [this](https://www.meethue.com/api/nupnp) link in your browser. After you got the IP enter the following URL in your browser: `http://<bridge IP address>/debug/clip.html`
+2. To identify the IP address of your bridge open [this](https://www.meethue.com/api/nupnp) link in your browser. After you got the IP enter the following URL into your browser: `http://<bridge IP address>/debug/clip.html`
 
 3. Make sure the Philips Hue bridge is reachable from the computer Kelvin will run on. Enter the following command (in a terminal window or on the remote console): `ping <bridge IP address>`
 If this fails you might have a network issue.
@@ -143,3 +143,15 @@ If this fails you might have a network issue.
 4. Make sure you downloaded the latest release for your Operating system and CPU architecture. If you are not sure stick to the most appropriate `amd64` release or `arm` if you are using a Raspberry Pi.
 
 5. If all this doesn't help, feel free to open an [issue](https://github.com/stefanwichmann/kelvin/issues) on github.
+
+# Development & Participation
+If you want to tinker with Kelvin and it's inner workings, feel free to do so. To get started you can simple clone the main repository in your `GOPATH` by executing the following commands:
+
+```
+cd $GOPATH
+go get -v github.com/stefanwichmann/kelvin
+```
+
+Make sure you have set up your [go](https://www.golang.org) development environment by following the steps in the official [documentation](https://golang.org/doc/).
+
+If you have ideas how to improve Kelvin I will gladly accept pull requests from your forks or discuss them with you through an [issue](https://github.com/stefanwichmann/kelvin/issues).
