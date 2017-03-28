@@ -33,7 +33,19 @@ func main() {
 	go CheckForUpdate(applicationVersion)
 	go handleSIGHUP()
 
-	// load config or create new on
+	// validate local clock as it forms the basis for all time calculations.
+	log.Printf("Validating local system time...\n")
+	valid, err := IsLocalTimeValid()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !valid {
+		log.Printf("WARNING: Your local system time seems to be more than one minute off. Timings may be inaccurate.\n")
+	} else {
+		log.Printf("Local system time seems to be valid.\n")
+	}
+
+	// load configuration or create a new one
 	configuration, err := InitializeConfiguration()
 	if err != nil {
 		log.Fatal(err)
