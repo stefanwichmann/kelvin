@@ -22,7 +22,7 @@ Imagine your lights shine in an energetic but not to bright blue color to get yo
 
 # Getting started
 If you want to give Kelvin a try, there are some things you will need to benefit from its services:
-- [ ] Supported **Philips Hue** lights
+- [ ] Supported **Philips Hue** (or compatible) lights
 - [ ] A configured **Philips Hue** bridge
 - [ ] A permanently running computer connected to your network (See [Raspberry Pi](#raspberry-pi))
 
@@ -135,23 +135,20 @@ If anything goes wrong keep calm and follow these steps:
 
 1. Make sure the Philips Hue bridge is configured and working in your network. Kelvin will need it to communicate with your lights. If you got the hue app running on your smartphone you should be fine. Otherwise follow the Philips Hue manual to configure your lights.
 
-2. To identify the IP address of your bridge open [this](https://www.meethue.com/api/nupnp) link in your browser. After you got the IP enter the following URL into your browser: `http://<bridge IP address>/debug/clip.html`
+2. To identify the IP address of your bridge open [this](https://www.meethue.com/api/nupnp) link in your browser. After you got the IP address enter `http://<bridge IP address>/debug/clip.html` into your browser. You should see the debug page of you hue bridge. If this fails please follow the Philips Hue manual to configure your bridge.
 
-3. Make sure the Philips Hue bridge is reachable from the computer Kelvin will run on. Enter the following command (in a terminal window or on the remote console): `ping <bridge IP address>`
-If this fails you might have a network issue.
+3. Make sure the Philips Hue bridge is reachable from the computer Kelvin will run on. Enter the command `ping <bridge IP address>` in a terminal window or on a remote console. You should see packages reaching the destination IP address. If this fails you might have a network issue.
 
-4. Make sure you downloaded the latest release for your Operating system and CPU architecture. If you are not sure stick to the most appropriate `amd64` release or `arm` if you are using a Raspberry Pi.
+4. Make sure you downloaded the latest release for your operating system and CPU architecture. If you are not sure stick to the most appropriate `amd64` release or `arm` if you are using a Raspberry Pi.
 
 5. If all this doesn't help, feel free to open an [issue](https://github.com/stefanwichmann/kelvin/issues) on github.
 
 # Development & Participation
 If you want to tinker with Kelvin and it's inner workings, feel free to do so. To get started you can simple clone the main repository in your `GOPATH` by executing the following commands:
-
 ```
 cd $GOPATH
 go get -v github.com/stefanwichmann/kelvin
 ```
-
 Make sure you have set up your [go](https://www.golang.org) development environment by following the steps in the official [documentation](https://golang.org/doc/).
 
 If you have ideas how to improve Kelvin I will gladly accept pull requests from your forks or discuss them with you through an [issue](https://github.com/stefanwichmann/kelvin/issues).
