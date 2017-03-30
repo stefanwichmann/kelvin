@@ -105,7 +105,8 @@ Kelvin will create it's configuration file `config.json` in the current director
       "colorTemperature": 2000,
       "brightness": 60
     }
-  ]
+  ],
+  "ignoredDeviceIDs": []
 }
 ```
 As the configuration file is a simple text file in JSON format you can display and edit it with you favorite text editor. Just make sure you keep the JSON structure valid. If something goes wrong fix it using [JSONLint](http://jsonlint.com/) or just delete the `config.json` and let Kelvin generate a configuration from scratch.
@@ -120,6 +121,7 @@ The configuration contains the following fields:
 | defaultBrightness | This default brightness value will be used between sunrise and sunset. Valid values are between 0% and 100%. |
 | beforeSunrise | This element contains a list of timestamps and their configuration you want to set between midnight and sunrise of any given day. The *time* value must follow the `XX:XXAM/PM` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
 | afterSunset | This element contains a list of timestamps and their configuration you want to set between sunset and midnight of any given day. The *time* value must follow the `XX:XXAM/PM` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
+| ignoredDeviceIDs | This element contains a list of device IDs which will be exluded from Kelvin's automatic adjustments. Kelvin will print all device IDs found on your bridge during startup. Just add them (seperated by comma) to this list if you want to exlude them.|
 
 After altering the configuration you have to restart Kelvin. Just kill the running instance (`Ctrl+C` or `kill $PID`) or send a HUP signal (`kill -s HUP $PID`) to the process to restart (unix only).
 

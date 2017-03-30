@@ -49,6 +49,7 @@ type Light struct {
 	dimmable                 bool
 	supportsColorTemperature bool
 	supportsXYColor          bool
+	ignored                  bool
 }
 
 const lightUpdateIntervalInSeconds = 1
@@ -82,9 +83,10 @@ func (light *Light) initialize() error {
 
 	// initialize non changing values
 	light.name = attr.Name
-	light.dimmable = contains(lightsSupportingDimming, attr.Type)
-	light.supportsColorTemperature = contains(lightsSupportingColorTemperature, attr.Type)
-	light.supportsXYColor = contains(lightsSupportingXYColor, attr.Type)
+	light.dimmable = containsString(lightsSupportingDimming, attr.Type)
+	light.supportsColorTemperature = containsString(lightsSupportingColorTemperature, attr.Type)
+	light.supportsXYColor = containsString(lightsSupportingXYColor, attr.Type)
+	light.ignored = false
 
 	// initialize changing values
 	light.on = attr.State.On

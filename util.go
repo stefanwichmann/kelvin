@@ -23,9 +23,18 @@ package main
 
 import "strings"
 
-func contains(slice []string, element string) bool {
+func containsString(slice []string, element string) bool {
 	for _, current := range slice {
 		if strings.ToLower(current) == strings.ToLower(element) {
+			return true
+		}
+	}
+	return false
+}
+
+func containsInt(slice []int, element int) bool {
+	for _, current := range slice {
+		if current == element {
 			return true
 		}
 	}
