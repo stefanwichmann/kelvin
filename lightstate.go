@@ -79,12 +79,20 @@ func (lightstate *LightState) convertValuesToHue() (int, []float32, int) {
 
 func lightStateFromHueValues(colorTemperature int, color []float32, brightness int) LightState {
 	// color temperature
-	newColorTemperature := (float64(1000000) / float64(colorTemperature))
+	newColorTemperature := int(float64(1000000) / float64(colorTemperature))
 
 	if newColorTemperature > 6500 {
 		newColorTemperature = 6500
 	} else if newColorTemperature < 2000 {
 		newColorTemperature = 2000
+	}
+
+	// color
+	if len(color) != 2 || color[0] == 0 || color[1] == 0 {
+		// color is not properly initialized. Since we need it
+		// for state comparison we need to provide a valid state
+		x, y := colorTemperatureToXYColor(newColorTemperature)
+		color = []float32{float32(x), float32(y)}
 	}
 
 	// brightness
