@@ -3,6 +3,7 @@ language: go
 
 before_script:
   - go get
+  - go vet ./...
 
 script:
   - go build
