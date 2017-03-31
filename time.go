@@ -24,15 +24,15 @@ package main
 import "time"
 import "github.com/bt51/ntpclient"
 
-const TimeServer = "0.pool.ntp.org"
-const MaxTimeDifferenceInSeconds = 60
+const timeServer = "0.pool.ntp.org"
+const maxTimeDifferenceInSeconds = 60
 
 // IsLocalTimeValid validates the clock on the local machine via NTP.
 // If the network time differs more than one minute from the local
 // time it is considered invalid. It is up to the caller to continue
 // anyway.
 func IsLocalTimeValid() (bool, error) {
-	networkTime, err := ntpclient.GetNetworkTime(TimeServer, 123)
+	networkTime, err := ntpclient.GetNetworkTime(timeServer, 123)
 	if err != nil {
 		return false, err
 	}
@@ -41,7 +41,7 @@ func IsLocalTimeValid() (bool, error) {
 		timeDifference = timeDifference * -1
 	}
 
-	if timeDifference < MaxTimeDifferenceInSeconds {
+	if timeDifference < maxTimeDifferenceInSeconds {
 		return true, nil
 	}
 	return false, nil
