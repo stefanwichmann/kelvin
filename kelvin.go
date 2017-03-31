@@ -89,13 +89,13 @@ func main() {
 		hueLight := hueLight
 		// Filter devices ignored by configuration
 		if hueLight.ignored {
-			log.Printf("Device %v is exluded in the configuration file. Exlude it from unnessesary polling.\n", hueLight.name)
+			log.Printf("Device %v is excluded by configuration.\n", hueLight.name)
 			continue
 		}
 
 		// Ignore devices that don't support dimming and colors
 		if !hueLight.dimmable && !hueLight.supportsXYColor && !hueLight.supportsColorTemperature {
-			log.Printf("Device %v doesn't support any functionality we use. Exlude it from unnessesary polling.\n", hueLight.name)
+			log.Printf("Device %v doesn't support any functionality we use. Exclude it from unnecessary polling.\n", hueLight.name)
 			continue
 		}
 		lightChannel := make(chan LightState, 1)

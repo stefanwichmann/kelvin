@@ -53,12 +53,12 @@ Got all these? Great, let's get started!
    2017/03/22 10:45:59 💡 Devices found on current bridge:
    2017/03/22 10:45:59 | Name                 |  ID | Reachable | On    | Dimmable | Temperature | Color | Cur. Temp | Cur. Bri |
    2017/03/22 10:45:59 | Dining table         |   5 | false     | false | true     | true        | true  |     2638K |       92 |
-   2017/03/22 10:45:59 | Poweroutlet          |   6 | true      | false | false    | false       | false |         - |        0 |
+   2017/03/22 10:45:59 | Power outlet         |   6 | true      | false | false    | false       | false |         - |        0 |
    2017/03/22 10:45:59 | Window               |   1 | false     | false | true     | true        | true  |     2197K |       72 |
    2017/03/22 10:45:59 | Kitchen              |   2 | false     | false | true     | true        | true  |     2012K |       60 |
    2017/03/22 10:45:59 | Couch                |   3 | false     | false | true     | true        | true  |     2012K |       59 |
    2017/03/22 10:45:59 | Desk                 |   4 | true      | false | true     | false       | true  |     6500K |        0 |
-   2017/03/22 10:45:59 Device Poweroutlet doesn't support any functionality we use. Exlude it from unnessesary polling.
+   2017/03/22 10:45:59 Device Power outlet doesn't support any functionality we use. Exclude it from unnecessary polling.
    2017/03/22 10:45:59 🌍 Location not configured. Detecting by IP
    2017/03/22 10:45:59 🌍 Detected location: Hamburg, Germany (53.5553, 9.995).
    2017/03/22 10:45:59 💡 Starting cyclic update for Desk
@@ -121,7 +121,7 @@ The configuration contains the following fields:
 | defaultBrightness | This default brightness value will be used between sunrise and sunset. Valid values are between 0% and 100%. |
 | beforeSunrise | This element contains a list of timestamps and their configuration you want to set between midnight and sunrise of any given day. The *time* value must follow the `XX:XXAM/PM` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
 | afterSunset | This element contains a list of timestamps and their configuration you want to set between sunset and midnight of any given day. The *time* value must follow the `XX:XXAM/PM` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
-| ignoredDeviceIDs | This element contains a list of device IDs which will be exluded from Kelvin's automatic adjustments. Kelvin will print all device IDs found on your bridge during startup. Just add them (seperated by comma) to this list if you want to exlude them.|
+| ignoredDeviceIDs | This element contains a list of device IDs which will be excluded from Kelvin's automatic adjustments. Kelvin will print all device IDs found on your bridge during startup. Just add them (separated by comma) to this list if you want to exclude them.|
 
 After altering the configuration you have to restart Kelvin. Just kill the running instance (`Ctrl+C` or `kill $PID`) or send a HUP signal (`kill -s HUP $PID`) to the process to restart (unix only).
 
