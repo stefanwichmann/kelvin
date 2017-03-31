@@ -24,7 +24,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/dillonhafer/go.hue"
+	"github.com/stefanwichmann/go.hue"
 	"log"
 	"strconv"
 	"strings"

@@ -22,7 +22,7 @@
 package main
 
 import (
-	"github.com/dillonhafer/go.hue"
+	"github.com/stefanwichmann/go.hue"
 	"log"
 	"strconv"
 	"strings"
