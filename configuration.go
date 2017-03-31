@@ -57,6 +57,7 @@ type Configuration struct {
 	DefaultBrightness       int                     `json:"defaultBrightness"`
 	BeforeSunrise           []TimedColorTemperature `json:"beforeSunrise"`
 	AfterSunset             []TimedColorTemperature `json:"afterSunset"`
+	IgnoredDeviceIDs        []int                   `json:"ignoredDeviceIDs"`
 }
 
 // TimeStamp represents a parsed and validated TimedColorTemperature.
@@ -97,6 +98,7 @@ func (configuration *Configuration) initializeDefaults() {
 	configuration.DefaultBrightness = 100
 	configuration.AfterSunset = []TimedColorTemperature{tvTime, bedTime}
 	configuration.BeforeSunrise = []TimedColorTemperature{wakeupTime}
+	configuration.IgnoredDeviceIDs = []int{}
 }
 
 // InitializeConfiguration creates and returns an initialized

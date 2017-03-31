@@ -52,7 +52,7 @@ func main() {
 	}
 
 	// find bridge
-	bridge, err := InitializeBridge(configuration.Bridge.IP, configuration.Bridge.Username)
+	bridge, err := InitializeBridge(configuration.Bridge.IP, configuration.Bridge.Username, configuration.IgnoredDeviceIDs)
 	if err != nil {
 		log.Fatal(err)
 	} else {
@@ -87,8 +87,13 @@ func main() {
 	var lightChannels []chan LightState
 	for _, hueLight := range hueLights {
 		hueLight := hueLight
+		// Filter devices ignored by configuration
+		if hueLight.ignored {
+			log.Printf("Device %v is exluded in the configuration file. Exlude it from unnessesary polling.\n", hueLight.name)
+			continue
+		}
+
 		// Ignore devices that don't support dimming and colors
-		// TODO Move to bridge.go
 		if !hueLight.dimmable && !hueLight.supportsXYColor && !hueLight.supportsColorTemperature {
 			log.Printf("Device %v doesn't support any functionality we use. Exlude it from unnessesary polling.\n", hueLight.name)
 			continue

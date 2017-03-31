@@ -32,17 +32,17 @@ const MaxTimeDifferenceInSeconds = 60
 // time it is considered invalid. It is up to the caller to continue
 // anyway.
 func IsLocalTimeValid() (bool, error) {
-  networkTime, err := ntpclient.GetNetworkTime(TimeServer, 123)
-  if err != nil {
-      return false, err
-  }
-  timeDifference :=  networkTime.Sub(time.Now()).Seconds()
-  if timeDifference < 0 {
-    timeDifference = timeDifference * -1
-  }
+	networkTime, err := ntpclient.GetNetworkTime(TimeServer, 123)
+	if err != nil {
+		return false, err
+	}
+	timeDifference := networkTime.Sub(time.Now()).Seconds()
+	if timeDifference < 0 {
+		timeDifference = timeDifference * -1
+	}
 
-  if timeDifference < MaxTimeDifferenceInSeconds {
-    return true, nil
-  }
-  return false, nil
+	if timeDifference < MaxTimeDifferenceInSeconds {
+		return true, nil
+	}
+	return false, nil
 }

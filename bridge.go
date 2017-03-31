@@ -35,9 +35,10 @@ import (
 // your system.
 // It is used to communicate with all devices.
 type HueBridge struct {
-	bridge   hue.Bridge
-	bridgeIP string
-	username string
+	bridge           hue.Bridge
+	bridgeIP         string
+	username         string
+	ignoredDeviceIDs []int
 }
 
 const hueBridgeAppName = "kelvin"
@@ -45,8 +46,10 @@ const hueBridgeAppName = "kelvin"
 // InitializeBridge creates and returns an initialized HueBridge.
 // If you have a valid configuration this will be used. Otherwise a local
 // discovery will be started, followed by a user registration on your bridge.
-func InitializeBridge(ip string, username string) (HueBridge, error) {
+func InitializeBridge(ip string, username string, ignoredDeviceIDs []int) (HueBridge, error) {
 	var bridge HueBridge
+	bridge.ignoredDeviceIDs = ignoredDeviceIDs
+
 	if ip != "" && username != "" {
 		// known bridge configuration
 		log.Println("⌘ Initializing bridge from configuration")
@@ -85,8 +88,14 @@ func (bridge *HueBridge) Lights() ([]Light, error) {
 		if err != nil {
 			return lights, err
 		}
+
 		light.hueLight = *hueLight
 		light.initialize()
+
+		// ignore current device?
+		if containsInt(bridge.ignoredDeviceIDs, light.id) {
+			light.ignored = true
+		}
 		lights = append(lights, light)
 	}
 
@@ -100,7 +109,7 @@ func (bridge *HueBridge) printDevices() error {
 	}
 
 	log.Printf("💡 Devices found on current bridge:\n")
-	log.Printf("| %-20s | %3v | %-9v | %-5v | %-8v | %-11v | %-5v | %-9v | %-8v |", "Name", "ID", "Reachable", "On", "Dimmable", "Temperature", "Color", "Cur. Temp", "Cur. Bri")
+	log.Printf("| %-20s | %3v | %-9v | %-5v | %-7v | %-8v | %-11v | %-5v | %-9v | %-8v |", "Name", "ID", "Reachable", "On", "Ignored", "Dimmable", "Temperature", "Color", "Cur. Temp", "Cur. Bri")
 	for _, light := range lights {
 		var temp string
 		if light.supportsColorTemperature == false && light.supportsXYColor == false {
@@ -108,7 +117,7 @@ func (bridge *HueBridge) printDevices() error {
 		} else {
 			temp = strings.Join([]string{strconv.Itoa(light.currentLightState.colorTemperature), "K"}, "")
 		}
-		log.Printf("| %-20s | %3v | %-9v | %-5v | %-8v | %-11v | %-5v | %9v | %8v |", light.name, light.id, light.reachable, light.on, light.dimmable, light.supportsColorTemperature, light.supportsXYColor, temp, light.currentLightState.brightness)
+		log.Printf("| %-20s | %3v | %-9v | %-5v | %-7v | %-8v | %-11v | %-5v | %9v | %8v |", light.name, light.id, light.reachable, light.on, light.ignored, light.dimmable, light.supportsColorTemperature, light.supportsXYColor, temp, light.currentLightState.brightness)
 	}
 	return nil
 }
