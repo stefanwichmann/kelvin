@@ -43,6 +43,7 @@ buildTarget() {
 
   export GOOS=$OS
   export GOARCH=$ARCH
+  export GOARM=5
   export CGO_ENABLED=0
   go build -ldflags "-X main.applicationVersion=${GIT_TAG}" -v -o "$OUTPUT_BINARY"
 
