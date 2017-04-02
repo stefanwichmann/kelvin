@@ -11,7 +11,7 @@ Imagine your lights shine in an energetic but not to bright blue color to get yo
 # Features
 - Adjust the color temperature and brightness of your lights based on the local sunrise and sunset times
 - Define a fine grained daily schedule to fit your personal needs throughout the day
-- Define a default startup color for your lights
+- Define a default startup color and brightness for your lights
 - Gradual light transitions you won't even notice
 - Works with smart switches as well as conventional switches
 - Respects manual light changes until a light is switched off and on again
@@ -117,8 +117,8 @@ The configuration contains the following fields:
 | ---- | ----------- |
 | bridge | This element contains the IP and username of your Philips Hue bridge. Both values are usually obtained automatically. If the lookup fails you can fill in this details by hand. |
 | location | This element contains the latitude and longitude of your location on earth. Both values are determined by your public IP. If this fails, is inaccurate or you want to change it manually just fill in your own coordinates. |
-| defaultColorTemperature | This default color temperature will be used between sunrise and sunset. Valid values are between 2000K and 6500K. See [Wikipedia](https://en.wikipedia.org/wiki/Color_temperature) for reference values. |
-| defaultBrightness | This default brightness value will be used between sunrise and sunset. Valid values are between 0% and 100%. |
+| defaultColorTemperature | This default color temperature will be used between sunrise and sunset. Valid values are between 2000K and 6500K. See [Wikipedia](https://en.wikipedia.org/wiki/Color_temperature) for reference values. If you set this value to 0 Kelvin will ignore the color temperature and you can change it manually.|
+| defaultBrightness | This default brightness value will be used between sunrise and sunset. Valid values are between 0% and 100%. If you set this value to 0 Kelvin will ignore the brightness and you can change it manually.|
 | beforeSunrise | This element contains a list of timestamps and their configuration you want to set between midnight and sunrise of any given day. The *time* value must follow the `XX:XXAM/PM` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
 | afterSunset | This element contains a list of timestamps and their configuration you want to set between sunset and midnight of any given day. The *time* value must follow the `XX:XXAM/PM` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
 | ignoredDeviceIDs | This element contains a list of device IDs which will be excluded from Kelvin's automatic adjustments. Kelvin will print all device IDs found on your bridge during startup. Just add them (separated by comma) to this list if you want to exclude them.|

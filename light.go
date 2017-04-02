@@ -104,6 +104,7 @@ func (light *Light) updateCurrentLightState() error {
 	light.reachable = attr.State.Reachable
 	light.on = attr.State.On
 	light.currentLightState = lightStateFromHueValues(attr.State.Ct, attr.State.Xy, attr.State.Bri)
+
 	return nil
 }
 
@@ -128,7 +129,8 @@ func (light *Light) update() error {
 	if !light.tracking {
 		log.Printf("💡 Light %s just appeared. Initializing state to %vK at %v%s\n", light.name, light.targetLightState.colorTemperature, light.targetLightState.brightness, "%")
 
-		// For initialization we set the state again and again for 10 seconds because during startup the zigbee communication is unstable
+		// For initialization we set the state again and again for 10 seconds
+		// because during startup the zigbee communication is unstable
 		for index := 0; index < 9; index++ {
 			light.setLightState(light.targetLightState)
 		}
@@ -149,14 +151,14 @@ func (light *Light) update() error {
 	}
 
 	// did the user manually change the light state?
-	if !light.currentLightState.equals(light.savedLightState) {
+	if !light.savedLightState.equals(light.currentLightState) {
 		log.Printf("💡 Light %s was manually changed - current: %+v - saved: %+v\n", light.name, light.currentLightState, light.savedLightState)
 		light.manually = true
 		return nil
 	}
 
 	// Update needed?
-	if light.currentLightState.equals(light.targetLightState) {
+	if light.targetLightState.equals(light.currentLightState) {
 		return nil
 	}
 
@@ -180,32 +182,31 @@ func (light *Light) update() error {
 
 func (light *Light) setLightState(state LightState) (LightState, error) {
 	// Don't send repeated "On" as this slows the bridge down (see https://developers.meethue.com/faq-page #Performance)
-	var newLightState hue.SetLightState
+	var hueLightState hue.SetLightState
 	colorTemperature, color, brightness := state.convertValuesToHue()
-	if light.supportsXYColor {
-		newLightState.Xy = []float32{color[0], color[1]}
-		newLightState.Ct = strconv.Itoa(colorTemperature)
-	} else if light.supportsColorTemperature {
-		newLightState.Ct = strconv.Itoa(colorTemperature)
+	if light.supportsXYColor && state.color[0] != 0 && state.color[1] != 0 {
+		hueLightState.Xy = []float32{color[0], color[1]}
+	} else if light.supportsColorTemperature && state.colorTemperature != 0 {
+		hueLightState.Ct = strconv.Itoa(colorTemperature)
 	}
-	if light.dimmable {
-		newLightState.Bri = strconv.Itoa(brightness)
+	if light.dimmable && state.brightness != 0 {
+		hueLightState.Bri = strconv.Itoa(brightness)
 	}
-	newLightState.TransitionTime = strconv.Itoa(lightTransitionIntervalInSeconds * 10) // conversion to 100ms-value
+	hueLightState.TransitionTime = strconv.Itoa(lightTransitionIntervalInSeconds * 10) // conversion to 100ms-value
 
-	results, err := light.hueLight.SetState(newLightState)
+	results, err := light.hueLight.SetState(hueLightState)
 	if err != nil {
 		return LightState{0, []float32{0, 0}, 0}, err
 	}
 
 	// iterate over result to acquire set values
-	color = []float32{} // clear old color values
 	for _, result := range results {
 		for key, value := range result.Success {
 			path := strings.Split(key, "/")
 
 			switch path[len(path)-1] {
 			case "xy":
+				color = []float32{} // clear old color values
 				for _, elem := range value.([]interface{}) {
 					color = append(color, float32(elem.(float64)))
 				}

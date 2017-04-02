@@ -32,77 +32,117 @@ type LightState struct {
 }
 
 func (lightstate *LightState) equals(state LightState) bool {
-	// if comparing light states always prefer color comparison
-	if (lightstate.color[0] != 0 && lightstate.color[1] != 0) || (state.color[0] != 0 && state.color[1] != 0) {
-		diffx := math.Abs(float64(lightstate.color[0] - state.color[0]))
-		diffy := math.Abs(float64(lightstate.color[1] - state.color[1]))
-		diffbri := math.Abs(float64(lightstate.brightness - state.brightness))
+	var sameColor = false
+	var sameColorTemperature = false
+	var sameBrightness = false
 
-		if diffx < 0.001 && diffy < 0.001 && diffbri < 3 {
-			return true
+	// compare color values
+	currentX := lightstate.color[0]
+	currentY := lightstate.color[1]
+	if currentX == 0 && currentY == 0 {
+		// zero value implies ignore color
+		sameColor = true
+	} else {
+		diffx := math.Abs(float64(currentX - state.color[0]))
+		diffy := math.Abs(float64(currentY - state.color[1]))
+		if diffx < 0.001 && diffy < 0.001 {
+			sameColor = true
 		}
-		return false
 	}
 
-	if lightstate.colorTemperature != state.colorTemperature || lightstate.brightness != state.brightness {
-		return false
+	// compare color temperature
+	if lightstate.colorTemperature == 0 {
+		// zero value implies ignore color temperature
+		sameColorTemperature = true
+	} else {
+		diffTemperature := math.Abs(float64(lightstate.colorTemperature - state.colorTemperature))
+		if diffTemperature < 3 {
+			sameColorTemperature = true
+		}
 	}
-	return true
+
+	// compare brightness
+	if lightstate.brightness == 0 {
+		// zero value implies ignore brightness
+		sameBrightness = true
+	} else {
+		diffBrightness := math.Abs(float64(lightstate.brightness - state.brightness))
+		if diffBrightness < 3 {
+			sameBrightness = true
+		}
+	}
+
+	// check if equal and prefer same color over same color temperature
+	if sameColor && sameBrightness {
+		return true
+	}
+	if sameColorTemperature && sameBrightness {
+		return true
+	}
+	return false
 }
 
 func (lightstate *LightState) convertValuesToHue() (int, []float32, int) {
+	var hueColorTemperature = 0
+	var hueBrightness = 0
+
 	// color temperature
-	if lightstate.colorTemperature > 6500 {
-		lightstate.colorTemperature = 6500
-	} else if lightstate.colorTemperature < 2000 {
-		lightstate.colorTemperature = 2000
+	if lightstate.colorTemperature != 0 {
+		if lightstate.colorTemperature > 6500 {
+			lightstate.colorTemperature = 6500
+		} else if lightstate.colorTemperature < 2000 {
+			lightstate.colorTemperature = 2000
+		}
+		hueColorTemperature = int((float64(1) / float64(lightstate.colorTemperature)) * float64(1000000))
 	}
-	hueColor := (float64(1) / float64(lightstate.colorTemperature)) * float64(1000000)
 
 	// brightness
-	if lightstate.brightness > 100 {
-		lightstate.brightness = 100
-	} else if lightstate.brightness < 0 {
-		lightstate.brightness = 0
-	}
-	hueBrightness := (float64(lightstate.brightness) / float64(100)) * float64(254)
-
-	// map temperature to xy if not set
-	x := lightstate.color[0]
-	y := lightstate.color[1]
-	if x == 0 || y == 0 {
-		x, y = colorTemperatureToXYColor(lightstate.colorTemperature)
+	if lightstate.brightness != 0 {
+		if lightstate.brightness > 100 {
+			lightstate.brightness = 100
+		} else if lightstate.brightness < 0 {
+			lightstate.brightness = 0
+		}
+		hueBrightness = int((float64(lightstate.brightness) / float64(100)) * float64(254))
 	}
 
-	return int(hueColor), []float32{float32(x), float32(y)}, int(hueBrightness)
+	// xy color should not need a mapping
+	return hueColorTemperature, lightstate.color, hueBrightness
 }
 
 func lightStateFromHueValues(colorTemperature int, color []float32, brightness int) LightState {
-	// color temperature
-	newColorTemperature := int(float64(1000000) / float64(colorTemperature))
+	var stateColorTemperature = 0
+	var stateColor = []float32{0, 0}
+	var stateBrightness = 0
 
-	if newColorTemperature > 6500 {
-		newColorTemperature = 6500
-	} else if newColorTemperature < 2000 {
-		newColorTemperature = 2000
+	// color temperature
+	if colorTemperature != 0 {
+		stateColorTemperature = int(float64(1000000) / float64(colorTemperature))
+		if stateColorTemperature > 6500 {
+			stateColorTemperature = 6500
+		} else if stateColorTemperature < 2000 {
+			stateColorTemperature = 2000
+		}
 	}
 
 	// color
-	if len(color) != 2 || color[0] == 0 || color[1] == 0 {
+	if len(color) != 2 {
 		// color is not properly initialized. Since we need it
 		// for state comparison we need to provide a valid state
-		x, y := colorTemperatureToXYColor(newColorTemperature)
-		color = []float32{float32(x), float32(y)}
+		x, y := colorTemperatureToXYColor(stateColorTemperature)
+		stateColor = []float32{float32(x), float32(y)}
+	} else {
+		stateColor = color
 	}
 
 	// brightness
-	newBrightness := (float64(brightness) / float64(254)) * float64(100)
-
-	if newBrightness > 100 {
-		newBrightness = 100
-	} else if newBrightness < 0 {
-		newBrightness = 0
+	if brightness != 0 {
+		stateBrightness = int((float64(brightness) / float64(254)) * float64(100))
+		if stateBrightness > 100 {
+			stateBrightness = 100
+		} else if stateBrightness < 0 {
+			stateBrightness = 0
+		}
 	}
-
-	return LightState{int(newColorTemperature), color, int(newBrightness)}
+	return LightState{stateColorTemperature, stateColor, stateBrightness}
 }

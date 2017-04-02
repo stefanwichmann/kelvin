@@ -24,6 +24,11 @@ package main
 import "math"
 
 func colorTemperatureToXYColor(t int) (float32, float32) {
+	// zero indicates values to ignore. Map these to {0,0}
+	if t == 0 {
+		return 0, 0
+	}
+
 	// http://www.brucelindbloom.com/index.html?Eqn_T_to_xy.html
 	var x float64
 	if t < 2000 {
