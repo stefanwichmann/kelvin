@@ -127,6 +127,9 @@ func (bridge *HueBridge) discover() error {
 	if err != nil {
 		return err
 	}
+	if len(locators) == 0 {
+		return errors.New("Bridge discovery failed. Please configure manually in config.json.")
+	}
 	locator := locators[0] // use the first locator
 
 	log.Println("⌘ Found bridge. Starting user registration.")
