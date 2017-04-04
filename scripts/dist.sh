@@ -17,14 +17,14 @@ buildTarget() {
   fi
 
   # configure paths
-  DIST_PATH=$GOPATH/dist
+  DIST_PATH="dist"
+  ARCHIVE_PATH="archives"
   OUTPUT_FOLDER="$BINARY_NAME-$TARGET-$GIT_TAG"
   OUTPUT_PATH=$DIST_PATH/$OUTPUT_FOLDER
   OUTPUT_BINARY=$OUTPUT_PATH/$BINARY_NAME
   if [ "$OS" = "windows" ]; then
     OUTPUT_BINARY="$OUTPUT_BINARY.exe"
   fi
-  ARCHIVE_PATH=$DIST_PATH/archives
   ARCHIVE_NAME=$ARCHIVE_PATH/"$BINARY_NAME-$TARGET-$GIT_TAG"
   if [ "$OS" = "windows" ]; then
     ARCHIVE_NAME="$ARCHIVE_NAME.zip"
@@ -32,7 +32,7 @@ buildTarget() {
     ARCHIVE_NAME="$ARCHIVE_NAME.tar.gz"
   fi
   mkdir "-p" "$OUTPUT_PATH"
-  mkdir "-p" "$ARCHIVE_PATH"
+  mkdir "-p" "$DIST_PATH/$ARCHIVE_PATH"
 
   # Start go build
   echo ===== Starting build =====
@@ -58,9 +58,9 @@ buildTarget() {
   DIR="$(pwd)"
   cd "$DIST_PATH"
   if [ "$OS" = "windows" ]; then
-    zip -r "$ARCHIVE_NAME" "$OUTPUT_FOLDER"
+    zip -r "./$ARCHIVE_NAME" "$OUTPUT_FOLDER"
   else
-    tar cfvz "$ARCHIVE_NAME" "$OUTPUT_FOLDER"
+    tar cfvz "./$ARCHIVE_NAME" "$OUTPUT_FOLDER" #
   fi
   cd "$DIR"
   echo ===== "$TARGET" build successfull =====

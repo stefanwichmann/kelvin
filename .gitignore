@@ -22,3 +22,9 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+# Kelvin files
+dist
+
+# macOS
+.DS_Store
