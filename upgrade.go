@@ -47,11 +47,7 @@ func CheckForUpdate(currentVersion string) {
 		avail, url, err := updateAvailable(version, upgradeURL)
 		if err != nil {
 			log.Printf("Error looking for update: %v\n", err)
-		}
-
-		if !avail {
-			time.Sleep(updateCheckIntervalInMinutes * time.Minute)
-		} else {
+		} else if avail {
 			err = updateBinary(url)
 			if err != nil {
 				log.Printf("Error updating binary: %v.\n", err)
@@ -60,6 +56,8 @@ func CheckForUpdate(currentVersion string) {
 				Restart()
 			}
 		}
+		// try again in 24 hours...
+		time.Sleep(updateCheckIntervalInMinutes * time.Minute)
 	}
 }
 
