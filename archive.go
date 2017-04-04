@@ -30,7 +30,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -47,9 +47,9 @@ func extractBinaryFromZipArchive(archiveFile string, binaryName string, destinat
 			// skip directories
 			continue
 		} else {
-			filename := path.Base(f.Name)
-			dir := path.Dir(f.Name)
-			if filename == path.Base(binaryName) {
+			filename := filepath.Base(f.Name)
+			dir := filepath.Dir(f.Name)
+			if filename == filepath.Base(binaryName) {
 				archiveDirs := strings.Split(dir, "/")
 				if len(archiveDirs) > 1 {
 					// Don't consider nested files with binaryName
@@ -57,7 +57,7 @@ func extractBinaryFromZipArchive(archiveFile string, binaryName string, destinat
 				}
 
 				log.Printf("Found candidate %s in directory %s\n", filename, dir)
-				out, err := ioutil.TempFile(destinationFolder, binaryName)
+				out, err := ioutil.TempFile(destinationFolder, filepath.Base(binaryName))
 				if err != nil {
 					return "", err
 				}
@@ -109,9 +109,9 @@ func extractBinaryFromTarArchive(archiveFile string, binaryName string, destinat
 			log.Fatalln(err)
 		}
 
-		filename := path.Base(f.Name)
-		dir := path.Dir(f.Name)
-		if filename == path.Base(binaryName) {
+		filename := filepath.Base(f.Name)
+		dir := filepath.Dir(f.Name)
+		if filename == filepath.Base(binaryName) {
 			archiveDirs := strings.Split(dir, "/")
 			if len(archiveDirs) > 1 {
 				// Don't consider nested files with binaryName
@@ -119,7 +119,7 @@ func extractBinaryFromTarArchive(archiveFile string, binaryName string, destinat
 			}
 
 			log.Printf("Found candidate %s in directory %s\n", filename, dir)
-			out, err := ioutil.TempFile(destinationFolder, binaryName)
+			out, err := ioutil.TempFile(destinationFolder, filepath.Base(binaryName))
 			if err != nil {
 				return "", err
 			}
