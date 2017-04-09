@@ -22,7 +22,6 @@
 package main
 
 import "time"
-import "errors"
 import "fmt"
 
 // Interval represents a time range of one day with
@@ -34,7 +33,7 @@ type Interval struct {
 
 func (interval *Interval) calculateLightStateInInterval(timestamp time.Time) (LightState, error) {
 	if timestamp.Before(interval.Start.Time) || timestamp.After(interval.End.Time) {
-		return LightState{0, []float32{0.0, 0.0}, 0}, errors.New(fmt.Sprintf("Timestamp %v is not suitable for interval %v - %v\n", timestamp, interval.Start.Time, interval.End.Time))
+		return LightState{0, []float32{0.0, 0.0}, 0}, fmt.Errorf("Timestamp %v is not suitable for interval %v - %v\n", timestamp, interval.Start.Time, interval.End.Time)
 	}
 
 	// Calculate regular progress inside interval
