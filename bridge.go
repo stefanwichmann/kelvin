@@ -130,9 +130,12 @@ func (bridge *HueBridge) discover() error {
 	if len(locators) == 0 {
 		return errors.New("Bridge discovery failed. Please configure manually in config.json.")
 	}
+	if len(locators) > 1 {
+		log.Printf("Found multiple bridges. Using first one.")
+	}
 	locator := locators[0] // use the first locator
 
-	log.Println("⌘ Found bridge. Starting user registration.")
+	log.Printf("⌘ Found bridge. Starting user registration.")
 	fmt.Printf("PLEASE PUSH THE BLUE BUTTON ON YOUR HUE BRIDGE.")
 	for index := 0; index < 30; index++ {
 		time.Sleep(5 * time.Second)
