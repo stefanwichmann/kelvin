@@ -1,7 +1,9 @@
 # **Kelvin** - The hue bot
-
+[![GitHub release](https://img.shields.io/github/release/stefanwichmann/kelvin.svg)](https://github.com/stefanwichmann/kelvin/releases)
+[![Github All Releases](https://img.shields.io/github/downloads/stefanwichmann/kelvin/total.svg)](https://github.com/stefanwichmann/kelvin/releases)
 [![Build Status](https://travis-ci.org/stefanwichmann/kelvin.svg?branch=master)](https://travis-ci.org/stefanwichmann/kelvin)
 [![Go Report Card](https://goreportcard.com/badge/github.com/stefanwichmann/kelvin)](https://goreportcard.com/report/github.com/stefanwichmann/kelvin)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/stefanwichmann/kelvin/blob/master/LICENSE)
 
 # Meet Kelvin
 Kelvin is a little helper bot who will automate the lights in your house. Its job is to adjust the color temperature and brightness in your home based on your local sunrise and sunset times and custom intervals defined by you. Think of it as [f.lux](https://justgetflux.com/) or Apple's Night Shift for your home.
