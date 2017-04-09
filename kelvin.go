@@ -25,6 +25,7 @@ import "log"
 import "os/signal"
 import "syscall"
 import "os"
+import "sync"
 
 var applicationVersion = "development"
 
@@ -79,50 +80,22 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Lights and their channels
+	// start routine for every light
 	hueLights, err := bridge.Lights()
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatal(err)
 	}
-	var lightChannels []chan LightState
+	var wg sync.WaitGroup
 	for _, hueLight := range hueLights {
 		hueLight := hueLight
-		// Filter devices ignored by configuration
-		if hueLight.ignored {
-			log.Printf("Device %v is excluded by configuration.\n", hueLight.name)
-			continue
-		}
-
-		// Ignore devices that don't support dimming and colors
-		if !hueLight.dimmable && !hueLight.supportsXYColor && !hueLight.supportsColorTemperature {
-			log.Printf("Device %v doesn't support any functionality we use. Exclude it from unnecessary polling.\n", hueLight.name)
-			continue
-		}
-		lightChannel := make(chan LightState, 1)
-		lightChannels = append(lightChannels, lightChannel)
-		go hueLight.updateCyclic(lightChannel)
+		wg.Add(1)
+		go func() {
+			hueLight.updateCyclic(configuration)
+			wg.Done()
+		}()
 	}
-
-	// time intervals off the day
-	var day Day
-	intervalChannel := make(chan Interval, 1)
-	go day.updateCyclic(configuration, location, intervalChannel)
-
-	// light state channel
-	lightStateChannel := make(chan LightState, 5)
-
-	for {
-		select {
-		case state := <-lightStateChannel:
-			// Send new state to all lights
-			for _, light := range lightChannels {
-				state := state
-				light <- state
-			}
-		case interval := <-intervalChannel:
-			go interval.updateCyclic(lightStateChannel)
-		}
-	}
+	wg.Wait()
+	log.Printf("All routines ended...\n")
 }
 
 func handleSIGHUP() {

@@ -90,20 +90,20 @@ func (location *Geolocation) updateByIP() error {
 
 // CalculateSunset calculates the sunset for the given day based on
 // the configured position on earth.
-func (location *Geolocation) CalculateSunset(date time.Time) time.Time {
+func CalculateSunset(date time.Time, latitude float64, longitude float64) time.Time {
 	// calculate start of day
 	yr, mth, day := date.Date()
 	startOfDay := time.Date(yr, mth, day, 0, 0, 0, 0, date.Location())
 
-	return astrotime.NextSunset(startOfDay, location.Latitude, location.Longitude)
+	return astrotime.NextSunset(startOfDay, latitude, longitude)
 }
 
 // CalculateSunrise calculates the sunrise for the given day based on
 // the configured position on earth.
-func (location *Geolocation) CalculateSunrise(date time.Time) time.Time {
+func CalculateSunrise(date time.Time, latitude float64, longitude float64) time.Time {
 	// calculate start of day
 	yr, mth, day := date.Date()
 	startOfDay := time.Date(yr, mth, day, 0, 0, 0, 0, date.Location())
 
-	return astrotime.NextSunrise(startOfDay, location.Latitude, location.Longitude)
+	return astrotime.NextSunrise(startOfDay, latitude, longitude)
 }

@@ -25,10 +25,10 @@ import "time"
 import "log"
 import "errors"
 
-// Day represents all relevants timestamps of one day.
+// Schedule represents all relevants timestamps of one day.
 // Kelvin will calculate all light states based on the intervals
 // between this timestamps.
-type Day struct {
+type Schedule struct {
 	endOfDay      time.Time
 	beforeSunrise []TimeStamp
 	sunrise       TimeStamp
@@ -36,69 +36,23 @@ type Day struct {
 	afterSunset   []TimeStamp
 }
 
-func (day *Day) updateCyclic(configuration Configuration, location Geolocation, channel chan<- Interval) {
-	day.updateForDay(time.Now(), configuration, location)
-
-	for {
-		currentInterval, err := day.currentInterval(time.Now())
-		if err != nil {
-			// should only happen when day has ended
-			day.updateForDay(time.Now(), configuration, location)
-		} else {
-			channel <- currentInterval
-			timeLeftInInterval := currentInterval.End.Time.Sub(time.Now())
-			time.Sleep(timeLeftInInterval + (1 * time.Second))
-		}
-	}
-}
-
-func (day *Day) updateForDay(date time.Time, configuration Configuration, location Geolocation) {
-	yr, mth, dy := date.Date()
-	log.Printf("Configuring intervals for %v\n", date.Format("Monday January 2 2006"))
-	day.endOfDay = time.Date(yr, mth, dy, 23, 59, 59, 59, date.Location())
-	day.sunrise = TimeStamp{location.CalculateSunrise(date), configuration.DefaultColorTemperature, configuration.DefaultBrightness}
-	day.sunset = TimeStamp{location.CalculateSunset(date), configuration.DefaultColorTemperature, configuration.DefaultBrightness}
-
-	// Before sunrise candidates
-	day.beforeSunrise = []TimeStamp{}
-	for _, candidate := range configuration.BeforeSunrise {
-		timestamp, err := candidate.AsTimestamp(date)
-		if err != nil {
-			log.Printf(err.Error())
-			continue
-		}
-		day.beforeSunrise = append(day.beforeSunrise, timestamp)
-	}
-
-	// After sunset candidates
-	day.afterSunset = []TimeStamp{}
-	for _, candidate := range configuration.AfterSunset {
-		timestamp, err := candidate.AsTimestamp(date)
-		if err != nil {
-			log.Printf(err.Error())
-			continue
-		}
-		day.afterSunset = append(day.afterSunset, timestamp)
-	}
-}
-
-func (day *Day) currentInterval(timestamp time.Time) (Interval, error) {
+func (schedule *Schedule) currentInterval(timestamp time.Time) (Interval, error) {
 	// check if timestamp respresents the current day
-	if timestamp.After(day.endOfDay) {
+	if timestamp.After(schedule.endOfDay) {
 		return Interval{TimeStamp{time.Now(), 0, 0}, TimeStamp{time.Now(), 0, 0}}, errors.New("No current interval as the requested timestamp respresents a different day")
 	}
 
 	// if we are between todays sunrise and sunset, return daylight interval
-	if timestamp.After(day.sunrise.Time) && timestamp.Before(day.sunset.Time) {
-		return Interval{day.sunrise, day.sunset}, nil
+	if timestamp.After(schedule.sunrise.Time) && timestamp.Before(schedule.sunset.Time) {
+		return Interval{schedule.sunrise, schedule.sunset}, nil
 	}
 
 	var before, after TimeStamp
 	// Before sunrise
-	if timestamp.Before(day.sunrise.Time) {
+	if timestamp.Before(schedule.sunrise.Time) {
 		yr, mth, dy := timestamp.Date()
 		startOfDay := TimeStamp{time.Date(yr, mth, dy, 0, 0, 0, 0, timestamp.Location()), -1, -1}
-		candidates := append(day.beforeSunrise, startOfDay, day.sunrise)
+		candidates := append(schedule.beforeSunrise, startOfDay, schedule.sunrise)
 
 		before, after = findTargetTimes(timestamp, candidates)
 
@@ -112,10 +66,10 @@ func (day *Day) currentInterval(timestamp time.Time) (Interval, error) {
 	}
 
 	// After sunset
-	if timestamp.After(day.sunset.Time) {
+	if timestamp.After(schedule.sunset.Time) {
 		yr, mth, dy := timestamp.Date()
 		endOfDay := TimeStamp{time.Date(yr, mth, dy, 23, 59, 59, 0, timestamp.Location()), -1, -1}
-		candidates := append(day.afterSunset, endOfDay, day.sunset)
+		candidates := append(schedule.afterSunset, endOfDay, schedule.sunset)
 
 		before, after = findTargetTimes(timestamp, candidates)
 	}

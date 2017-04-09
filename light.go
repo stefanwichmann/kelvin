@@ -54,23 +54,65 @@ type Light struct {
 
 const lightUpdateIntervalInSeconds = 1
 const lightTransitionIntervalInSeconds = 1
+const stateUpdateIntervalInSeconds = 60
 
-func (light *Light) updateCyclic(channel <-chan LightState) {
-	log.Printf("💡 Starting cyclic update for %v\n", light.name)
-	time.Sleep(2 * time.Second)
+func (light *Light) updateCyclic(configuration Configuration) {
+	// Filter devices ignored by configuration
+	if light.ignored {
+		log.Printf("💡 Device %v is excluded by configuration.\n", light.name)
+		return
+	} else if !light.dimmable && !light.supportsXYColor && !light.supportsColorTemperature {
+		log.Printf("💡 Device %v doesn't support any functionality we use. Exclude it from unnecessary polling.\n", light.name)
+		return
+	}
+
+	log.Printf("💡 Light %s: Starting cyclic update...\n", light.name)
+	schedule := configuration.lightScheduleForDay(light.id, time.Now())
+	log.Printf("💡 Light %s: Activating schedule for %v (sunrise: %v, sunset: %v)\n", light.name, schedule.endOfDay.Format("Jan 2 2006"), schedule.sunrise.Time.Format(time.Kitchen), schedule.sunset.Time.Format(time.Kitchen))
+	interval, err := schedule.currentInterval(time.Now())
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("💡 Light %s: Activating interval %v - %v\n", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen))
+	light.targetLightState, err = interval.calculateLightStateInInterval(time.Now())
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("💡 Light %s: Initializing target state %+v", light.name, light.targetLightState)
+
+	//time.Sleep(2 * time.Second)
+	lightUpdateTick := time.Tick(lightUpdateIntervalInSeconds * time.Second)
+	stateUpdateTick := time.Tick(stateUpdateIntervalInSeconds * time.Second)
 	for {
 		select {
-		case newLightState, ok := <-channel:
-			if !ok {
-				log.Printf("💡 Channel closed for light %v\n", light.name)
-				return
+		case <-time.After(schedule.endOfDay.Sub(time.Now()) + 1*time.Second):
+			// Day has ended, calculate new schedule
+			log.Printf("💡 Light %s: End of day reached: %v)\n", light.name, schedule.endOfDay.Format("Jan 2 2006"))
+			schedule = configuration.lightScheduleForDay(light.id, time.Now())
+			log.Printf("💡 Light %s: Schedule for %v (sunrise: %v, sunset: %v)\n", light.name, schedule.endOfDay.Format("Jan 2 2006"), schedule.sunrise.Time.Format(time.Kitchen), schedule.sunset.Time.Format(time.Kitchen))
+		case <-time.After(interval.End.Time.Sub(time.Now()) + 2*time.Second):
+			// interval has ended
+			log.Printf("💡 Light %s: Active interval (%v - %v) ended)\n", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen))
+			interval, err = schedule.currentInterval(time.Now())
+			if err != nil {
+				// schedule seems to be wrong. Ignore and try again.
+				log.Println(err)
+				continue
 			}
-			light.targetLightState = newLightState
+			log.Printf("💡 Light %s: Activated interval %v - %v\n", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen))
+		case <-stateUpdateTick:
+			log.Printf("💡 Light %s: Updating target lightstate for interval %v - %v (current: %+v)\n", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen), light.targetLightState)
+			// update color every minute
+			light.targetLightState, err = interval.calculateLightStateInInterval(time.Now())
+			if err != nil {
+				// interval seems to be wrong. Ignore and try again in one minute.
+				log.Println(err)
+				continue
+			}
+			log.Printf("💡 Light %s: Updated target state to %+v", light.name, light.targetLightState)
+		case <-lightUpdateTick:
+			//log.Printf("Update light %v", light.id)
 			light.update()
-			light.clearChannel(channel)
-		default:
-			light.update()
-			time.Sleep(lightUpdateIntervalInSeconds * time.Second)
 		}
 	}
 }
@@ -163,7 +205,7 @@ func (light *Light) update() error {
 	}
 
 	// Light is reachable, on and in automatic state. Update to new color!
-	log.Printf("💡 Updating light %s to %vK at %v%s\n", light.name, light.targetLightState.colorTemperature, light.targetLightState.brightness, "%")
+	log.Printf("💡 Updating light %s to %vK at %v%%\n", light.name, light.targetLightState.colorTemperature, light.targetLightState.brightness)
 
 	setLightState, err := light.setLightState(light.targetLightState)
 	if err != nil {
@@ -222,18 +264,4 @@ func (light *Light) setLightState(state LightState) (LightState, error) {
 	// wait while the light is in transition before returning
 	time.Sleep(lightTransitionIntervalInSeconds + 1*time.Second)
 	return setLightState, nil
-}
-
-func (light *Light) clearChannel(c <-chan LightState) {
-	for {
-		select {
-		case state, ok := <-c:
-			if !ok {
-				return
-			}
-			log.Printf("Cleared light state from channel: %+v\n", state)
-		default:
-			return
-		}
-	}
 }

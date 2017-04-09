@@ -21,8 +21,9 @@
 // SOFTWARE.
 package main
 
-import "log"
 import "time"
+import "errors"
+import "fmt"
 
 // Interval represents a time range of one day with
 // the given start and end configurations.
@@ -31,36 +32,12 @@ type Interval struct {
 	End   TimeStamp
 }
 
-const lightStateUpdateIntervalInMinutes = 1
-
-func (interval *Interval) updateCyclic(channel chan<- LightState) {
-	log.Printf("Managing lights for interval %v to %v\n", interval.Start.Time.Format("15:04"), interval.End.Time.Format("15:04"))
-
-	// Now that we are responsible for the correct light states, send out the initial valid state
-	currentLightState := interval.calculateLightStateInInterval(time.Now())
-	channel <- currentLightState
-
-	intervalEnded := false
-	for intervalEnded != true {
-		// only send new light state if it changed
-		newState := interval.calculateLightStateInInterval(time.Now())
-		if !newState.equals(currentLightState) {
-			//log.Printf("INTERVAL - Light state updated to: %+v\n", newState)
-			channel <- newState
-			currentLightState = newState
-		}
-
-		// sleep until next update
-		time.Sleep(lightStateUpdateIntervalInMinutes * time.Minute)
-
-		// check if the interval ended
-		if time.Now().After(interval.End.Time) {
-			intervalEnded = true
-		}
+func (interval *Interval) calculateLightStateInInterval(timestamp time.Time) (LightState, error) {
+	if timestamp.Before(interval.Start.Time) || timestamp.After(interval.End.Time) {
+		return LightState{0, []float32{0.0, 0.0}, 0}, errors.New(fmt.Sprintf("Timestamp %v is not suitable for interval %v - %v\n", timestamp, interval.Start.Time, interval.End.Time))
 	}
-}
 
-func (interval *Interval) calculateLightStateInInterval(timestamp time.Time) LightState {
+	// Calculate regular progress inside interval
 	intervalDuration := interval.End.Time.Sub(interval.Start.Time)
 	intervalProgress := timestamp.Sub(interval.Start.Time)
 	percentProgress := intervalProgress.Minutes() / intervalDuration.Minutes()
@@ -75,5 +52,5 @@ func (interval *Interval) calculateLightStateInInterval(timestamp time.Time) Lig
 
 	x, y := colorTemperatureToXYColor(targetColorTemperature)
 
-	return LightState{targetColorTemperature, []float32{float32(x), float32(y)}, targetBrightness}
+	return LightState{targetColorTemperature, []float32{float32(x), float32(y)}, targetBrightness}, nil
 }

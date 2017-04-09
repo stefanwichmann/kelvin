@@ -163,6 +163,42 @@ func (configuration *Configuration) Read() error {
 	return nil
 }
 
+func (configuration *Configuration) lightScheduleForDay(light int, date time.Time) Schedule {
+	var schedule Schedule
+
+	// TODO Allow different schedules for lights
+
+	yr, mth, dy := date.Date()
+	schedule.endOfDay = time.Date(yr, mth, dy, 23, 59, 59, 59, date.Location())
+	schedule.sunrise = TimeStamp{CalculateSunrise(date, configuration.Location.Latitude, configuration.Location.Longitude), configuration.DefaultColorTemperature, configuration.DefaultBrightness}
+	schedule.sunset = TimeStamp{CalculateSunset(date, configuration.Location.Latitude, configuration.Location.Longitude), configuration.DefaultColorTemperature, configuration.DefaultBrightness}
+
+	// Before sunrise candidates
+	schedule.beforeSunrise = []TimeStamp{}
+	for _, candidate := range configuration.BeforeSunrise {
+		timestamp, err := candidate.AsTimestamp(date)
+		if err != nil {
+			log.Printf(err.Error())
+			continue
+		}
+		schedule.beforeSunrise = append(schedule.beforeSunrise, timestamp)
+	}
+
+	// After sunset candidates
+	schedule.afterSunset = []TimeStamp{}
+	for _, candidate := range configuration.AfterSunset {
+		timestamp, err := candidate.AsTimestamp(date)
+		if err != nil {
+			log.Printf(err.Error())
+			continue
+		}
+		schedule.afterSunset = append(schedule.afterSunset, timestamp)
+	}
+
+	log.Printf("⚙ New schedule for light %v on %v: %+v\n", light, date, schedule)
+	return schedule
+}
+
 // Exists return true if a configuration file is found on disk.
 // False otherwise.
 func (configuration *Configuration) Exists() bool {
