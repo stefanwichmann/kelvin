@@ -26,12 +26,14 @@ import "os/signal"
 import "syscall"
 import "os"
 import "sync"
+import "flag"
 
 var applicationVersion = "development"
-
-//var log = log.New()
+var debug = flag.Bool("debug", false, "Enable debug logging")
+var logfile = flag.String("log", "", "Redirect log output to specified file")
 
 func main() {
+	flag.Parse()
 	configureLogging()
 	log.Printf("Kelvin %v starting up... 🚀", applicationVersion)
 	go CheckForUpdate(applicationVersion)
@@ -103,7 +105,17 @@ func configureLogging() {
 	formatter.FullTimestamp = true
 	formatter.TimestampFormat = "2006/02/01 15:04:05"
 	log.SetFormatter(formatter)
-	log.SetLevel(log.DebugLevel)
+	if *debug {
+		log.SetLevel(log.DebugLevel)
+	}
+	if logfile != nil {
+		file, err := os.OpenFile(*logfile, os.O_CREATE|os.O_WRONLY, 0666)
+		if err == nil {
+			log.SetOutput(file)
+		} else {
+			log.Info("Failed to log to file, using default stderr")
+		}
+	}
 }
 
 func validateSystemTime() {
