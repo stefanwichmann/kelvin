@@ -22,8 +22,8 @@
 package main
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"github.com/stefanwichmann/go.hue"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -59,59 +59,58 @@ const stateUpdateIntervalInSeconds = 60
 func (light *Light) updateCyclic(configuration Configuration) {
 	// Filter devices ignored by configuration
 	if light.ignored {
-		log.Printf("💡 Device %v is excluded by configuration.\n", light.name)
+		log.Printf("💡 Device %v is excluded by configuration.", light.name)
 		return
 	} else if !light.dimmable && !light.supportsXYColor && !light.supportsColorTemperature {
-		log.Printf("💡 Device %v doesn't support any functionality we use. Exclude it from unnecessary polling.\n", light.name)
+		log.Printf("💡 Device %v doesn't support any functionality Kelvin uses. Ignoring...", light.name)
 		return
 	}
 
-	log.Printf("💡 Light %s: Starting cyclic update...\n", light.name)
 	schedule := configuration.lightScheduleForDay(light.id, time.Now())
-	log.Printf("💡 Light %s: Activating schedule for %v (sunrise: %v, sunset: %v)\n", light.name, schedule.endOfDay.Format("Jan 2 2006"), schedule.sunrise.Time.Format(time.Kitchen), schedule.sunset.Time.Format(time.Kitchen))
+	log.Printf("💡 Light %s: Activating schedule for %v (sunrise: %v, sunset: %v)", light.name, schedule.endOfDay.Format("Jan 2 2006"), schedule.sunrise.Time.Format(time.Kitchen), schedule.sunset.Time.Format(time.Kitchen))
 	interval, err := schedule.currentInterval(time.Now())
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("💡 Light %s: Activating interval %v - %v\n", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen))
+	log.Printf("💡 Light %s: Activating interval %v - %v", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen))
 	light.targetLightState, err = interval.calculateLightStateInInterval(time.Now())
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("💡 Light %s: Initializing target state %+v", light.name, light.targetLightState)
+	log.Debugf("💡 Light %s: Initializing target state %+v", light.name, light.targetLightState)
 
-	//time.Sleep(2 * time.Second)
+	// Start cyclic polling
+	log.Printf("💡 Light %s: Starting cyclic update...", light.name)
 	lightUpdateTick := time.Tick(lightUpdateIntervalInSeconds * time.Second)
 	stateUpdateTick := time.Tick(stateUpdateIntervalInSeconds * time.Second)
 	for {
 		select {
 		case <-time.After(schedule.endOfDay.Sub(time.Now()) + 1*time.Second):
 			// Day has ended, calculate new schedule
-			log.Printf("💡 Light %s: End of day reached: %v)\n", light.name, schedule.endOfDay.Format("Jan 2 2006"))
+			log.Debugf("💡 Light %s: End of day reached: %v)", light.name, schedule.endOfDay.Format("Jan 2 2006"))
 			schedule = configuration.lightScheduleForDay(light.id, time.Now())
-			log.Printf("💡 Light %s: Schedule for %v (sunrise: %v, sunset: %v)\n", light.name, schedule.endOfDay.Format("Jan 2 2006"), schedule.sunrise.Time.Format(time.Kitchen), schedule.sunset.Time.Format(time.Kitchen))
+			log.Printf("💡 Light %s: Activating schedule for %v (sunrise: %v, sunset: %v)", light.name, schedule.endOfDay.Format("Jan 2 2006"), schedule.sunrise.Time.Format(time.Kitchen), schedule.sunset.Time.Format(time.Kitchen))
 		case <-time.After(interval.End.Time.Sub(time.Now()) + 2*time.Second):
 			// interval has ended
-			log.Printf("💡 Light %s: Active interval (%v - %v) ended)\n", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen))
+			log.Debugf("💡 Light %s: Active interval (%v - %v) ended)", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen))
 			interval, err = schedule.currentInterval(time.Now())
 			if err != nil {
-				// schedule seems to be wrong. Ignore and try again.
-				log.Println(err)
+				// schedule seems to be wrong.
+				log.Warningln(err)
 				continue
 			}
-			log.Printf("💡 Light %s: Activated interval %v - %v\n", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen))
+			log.Printf("💡 Light %s: Activating interval %v - %v", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen))
 		case <-stateUpdateTick:
-			log.Printf("💡 Light %s: Updating target lightstate for interval %v - %v (current: %+v)\n", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen), light.targetLightState)
 			// update color every minute
+			log.Debugf("💡 Light %s: Updating target lightstate for interval %v - %v (current: %+v)", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen), light.targetLightState)
 			light.targetLightState, err = interval.calculateLightStateInInterval(time.Now())
 			if err != nil {
 				// interval seems to be wrong. Ignore and try again in one minute.
-				log.Println(err)
+				log.Debugln(err)
 				continue
 			}
-			log.Printf("💡 Light %s: Updated target state to %+v", light.name, light.targetLightState)
+			log.Debugf("💡 Light %s: Updated target state to %+v", light.name, light.targetLightState)
 		case <-lightUpdateTick:
-			//log.Printf("Update light %v", light.id)
 			light.update()
 		}
 	}
@@ -157,7 +156,7 @@ func (light *Light) update() error {
 	// Light reachable or on?
 	if !light.reachable || !light.on {
 		if light.tracking {
-			log.Printf("💡 Light %s is no longer reachable or turned on. Clearing state.\n", light.name)
+			log.Printf("💡 Light %s is no longer reachable or turned on. Clearing state.", light.name)
 			light.tracking = false
 			light.manually = false
 			return nil
@@ -169,7 +168,7 @@ func (light *Light) update() error {
 
 	// did the light just appear?
 	if !light.tracking {
-		log.Printf("💡 Light %s just appeared. Initializing state to %vK at %v%s\n", light.name, light.targetLightState.colorTemperature, light.targetLightState.brightness, "%")
+		log.Printf("💡 Light %s just appeared. Initializing state to %vK at %v%%", light.name, light.targetLightState.colorTemperature, light.targetLightState.brightness)
 
 		// For initialization we set the state again and again for 10 seconds
 		// because during startup the zigbee communication is unstable
@@ -194,7 +193,11 @@ func (light *Light) update() error {
 
 	// did the user manually change the light state?
 	if !light.savedLightState.equals(light.currentLightState) {
-		log.Printf("💡 Light %s was manually changed - current: %+v - saved: %+v\n", light.name, light.currentLightState, light.savedLightState)
+		if log.GetLevel() == log.DebugLevel {
+			log.Debugf("💡 Light %s was manually changed. Current state: %+v - Saved state: %+v", light.name, light.currentLightState, light.savedLightState)
+		} else {
+			log.Printf("💡 Light %s was manually changed. Disabling updates..", light.name)
+		}
 		light.manually = true
 		return nil
 	}
@@ -205,16 +208,16 @@ func (light *Light) update() error {
 	}
 
 	// Light is reachable, on and in automatic state. Update to new color!
-	log.Printf("💡 Updating light %s to %vK at %v%%\n", light.name, light.targetLightState.colorTemperature, light.targetLightState.brightness)
+	log.Printf("💡 Updating light %s to %vK at %v%%", light.name, light.targetLightState.colorTemperature, light.targetLightState.brightness)
 
 	setLightState, err := light.setLightState(light.targetLightState)
 	if err != nil {
 		return err
 	}
 
-	// Debug: compare values
+	// Debug: Compare values
 	if !setLightState.equals(light.targetLightState) {
-		log.Printf("Target and Set state differ: %v, %v\n", light.targetLightState, setLightState)
+		log.Debugf("💡 Light %s - Target and Set state differ: %v, %v", light.name, light.targetLightState, setLightState)
 	}
 
 	light.savedLightState = setLightState

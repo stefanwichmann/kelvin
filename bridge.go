@@ -24,8 +24,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/stefanwichmann/go.hue"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -108,7 +108,7 @@ func (bridge *HueBridge) printDevices() error {
 		return err
 	}
 
-	log.Printf("💡 Devices found on current bridge:\n")
+	log.Printf("💡 Devices found on current bridge:")
 	log.Printf("| %-20s | %3v | %-9v | %-5v | %-7v | %-8v | %-11v | %-5v | %-9v | %-8v |", "Name", "ID", "Reachable", "On", "Ignored", "Dimmable", "Temperature", "Color", "Cur. Temp", "Cur. Bri")
 	for _, light := range lights {
 		var temp string

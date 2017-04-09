@@ -21,7 +21,7 @@
 // SOFTWARE.
 package main
 
-import "log"
+import log "github.com/Sirupsen/logrus"
 import "os/signal"
 import "syscall"
 import "os"
@@ -29,22 +29,14 @@ import "sync"
 
 var applicationVersion = "development"
 
-func main() {
-	log.Printf("Kelvin %v starting up... 🚀\n", applicationVersion)
-	go CheckForUpdate(applicationVersion)
-	go handleSIGHUP()
+//var log = log.New()
 
-	// validate local clock as it forms the basis for all time calculations.
-	log.Printf("Validating local system time...\n")
-	valid, err := IsLocalTimeValid()
-	if err != nil {
-		log.Fatal(err)
-	}
-	if !valid {
-		log.Printf("WARNING: Your local system time seems to be more than one minute off. Timings may be inaccurate.\n")
-	} else {
-		log.Printf("Local system time seems to be valid.\n")
-	}
+func main() {
+	configureLogging()
+	log.Printf("Kelvin %v starting up... 🚀", applicationVersion)
+	go CheckForUpdate(applicationVersion)
+	go validateSystemTime()
+	go handleSIGHUP()
 
 	// load configuration or create a new one
 	configuration, err := InitializeConfiguration()
@@ -95,13 +87,34 @@ func main() {
 		}()
 	}
 	wg.Wait()
-	log.Printf("All routines ended...\n")
+	log.Debugf("All routines ended...")
 }
 
 func handleSIGHUP() {
 	sighup := make(chan os.Signal, 1)
 	signal.Notify(sighup, syscall.SIGHUP)
 	<-sighup // wait for signal
-	log.Printf("Received signal SIGHUP. Restarting...\n")
+	log.Printf("Received signal SIGHUP. Restarting...")
 	Restart()
+}
+
+func configureLogging() {
+	formatter := new(log.TextFormatter)
+	formatter.FullTimestamp = true
+	formatter.TimestampFormat = "2006/02/01 15:04:05"
+	log.SetFormatter(formatter)
+	log.SetLevel(log.DebugLevel)
+}
+
+func validateSystemTime() {
+	// validate local clock as it forms the basis for all time calculations.
+	valid, err := IsLocalTimeValid()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !valid {
+		log.Warningf("WARNING: Your local system time seems to be more than one minute off. Timings may be inaccurate.")
+	} else {
+		log.Debugf("Local system time validated.")
+	}
 }

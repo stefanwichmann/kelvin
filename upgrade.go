@@ -21,7 +21,7 @@
 // SOFTWARE.
 package main
 
-import "log"
+import log "github.com/Sirupsen/logrus"
 import "runtime"
 import "os"
 import "os/exec"
@@ -46,11 +46,11 @@ func CheckForUpdate(currentVersion string) {
 		log.Printf("Looking for updates...\n")
 		avail, url, err := updateAvailable(version, upgradeURL)
 		if err != nil {
-			log.Printf("Error looking for update: %v\n", err)
+			log.Warningf("Error looking for update: %v\n", err)
 		} else if avail {
 			err = updateBinary(url)
 			if err != nil {
-				log.Printf("Error updating binary: %v.\n", err)
+				log.Warningf("Error updating binary: %v.\n", err)
 			} else {
 				log.Printf("Restarting...\n")
 				Restart()
@@ -89,7 +89,7 @@ func updateAvailable(currentVersion *version.Version, url string) (bool, string,
 	// parse name and compare
 	version, err := version.NewVersion(releaseName)
 	if err != nil {
-		log.Printf("Could parse release name: %v\n", err)
+		log.Debugf("Could not parse release name: %v\n", err)
 		return false, "", err
 	}
 
@@ -110,7 +110,7 @@ func updateBinary(assetURL string) error {
 		return err
 	}
 	defer os.Remove(archive)
-	log.Printf("Update archive downloaded to %v\n", archive)
+	log.Debugf("Update archive downloaded to %v\n", archive)
 
 	// Find and extract binary
 	var tempBinary string
@@ -134,7 +134,7 @@ func updateBinary(assetURL string) error {
 	}
 
 	// Replace binary
-	log.Printf("Replacing current binary %v with %v\n", currentBinary, tempBinary)
+	log.Debugf("Replacing current binary %v with %v\n", currentBinary, tempBinary)
 	err = replaceBinary(currentBinary, tempBinary)
 	if err != nil {
 		return err

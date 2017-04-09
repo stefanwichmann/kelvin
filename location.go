@@ -24,7 +24,7 @@ package main
 import "net/http"
 import "io/ioutil"
 import "encoding/json"
-import "log"
+import log "github.com/Sirupsen/logrus"
 import "github.com/btittelbach/astrotime"
 import "time"
 
@@ -59,7 +59,7 @@ func InitializeLocation(latitude float64, longitude float64) (Geolocation, error
 	} else {
 		location.Latitude = latitude
 		location.Longitude = longitude
-		log.Printf("🌍 Working with location: %v, %v from configuration\n", location.Latitude, location.Longitude)
+		log.Printf("🌍 Working with location: %v, %v from configuration", location.Latitude, location.Longitude)
 	}
 	return location, nil
 }
@@ -82,7 +82,7 @@ func (location *Geolocation) updateByIP() error {
 		return err
 	}
 
-	log.Printf("🌍 Detected location: %s, %s (%v, %v).\n", data.City, data.CountryName, data.Latitude, data.Longitude)
+	log.Printf("🌍 Detected location: %s, %s (%v, %v).", data.City, data.CountryName, data.Latitude, data.Longitude)
 	location.Latitude = data.Latitude
 	location.Longitude = data.Longitude
 	return nil

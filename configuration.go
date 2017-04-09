@@ -26,7 +26,7 @@ import "encoding/json"
 import "os"
 import "errors"
 import "time"
-import "log"
+import log "github.com/Sirupsen/logrus"
 
 // Bridge respresents the hue bridge in your system.
 type Bridge struct {
@@ -195,7 +195,7 @@ func (configuration *Configuration) lightScheduleForDay(light int, date time.Tim
 		schedule.afterSunset = append(schedule.afterSunset, timestamp)
 	}
 
-	log.Printf("⚙ New schedule for light %v on %v: %+v\n", light, date, schedule)
+	log.Debugf("⚙ New schedule for light %v on %v: %+v", light, date, schedule)
 	return schedule
 }
 

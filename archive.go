@@ -26,9 +26,9 @@ import (
 	"archive/zip"
 	"compress/gzip"
 	"errors"
+	log "github.com/Sirupsen/logrus"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -56,7 +56,7 @@ func extractBinaryFromZipArchive(archiveFile string, binaryName string, destinat
 					continue
 				}
 
-				log.Printf("Found candidate %s in directory %s\n", filename, dir)
+				log.Debugf("Found candidate %s in directory %s\n", filename, dir)
 				out, err := ioutil.TempFile(destinationFolder, filepath.Base(binaryName))
 				if err != nil {
 					return "", err
@@ -76,7 +76,7 @@ func extractBinaryFromZipArchive(archiveFile string, binaryName string, destinat
 					os.Remove(out.Name())
 					return "", err
 				}
-				log.Printf("Extracted binary %v to file %v\n", filename, out.Name())
+				log.Debugf("Extracted binary %v to file %v\n", filename, out.Name())
 				return out.Name(), nil
 			}
 		}
@@ -118,7 +118,7 @@ func extractBinaryFromTarArchive(archiveFile string, binaryName string, destinat
 				continue
 			}
 
-			log.Printf("Found candidate %s in directory %s\n", filename, dir)
+			log.Debugf("Found candidate %s in directory %s\n", filename, dir)
 			out, err := ioutil.TempFile(destinationFolder, filepath.Base(binaryName))
 			if err != nil {
 				return "", err
@@ -131,6 +131,7 @@ func extractBinaryFromTarArchive(archiveFile string, binaryName string, destinat
 				return "", err
 			}
 
+			log.Debugf("Extracted binary %v to file %v\n", filename, out.Name())
 			return out.Name(), nil
 		}
 	}

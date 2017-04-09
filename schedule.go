@@ -22,7 +22,7 @@
 package main
 
 import "time"
-import "log"
+import log "github.com/Sirupsen/logrus"
 import "errors"
 
 // Schedule represents all relevants timestamps of one day.
