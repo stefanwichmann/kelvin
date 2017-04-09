@@ -43,16 +43,16 @@ func CheckForUpdate(currentVersion string) {
 	}
 
 	for {
-		log.Printf("Looking for updates...\n")
+		log.Printf("Looking for updates...")
 		avail, url, err := updateAvailable(version, upgradeURL)
 		if err != nil {
-			log.Warningf("Error looking for update: %v\n", err)
+			log.Warningf("Error looking for update: %v", err)
 		} else if avail {
 			err = updateBinary(url)
 			if err != nil {
-				log.Warningf("Error updating binary: %v.\n", err)
+				log.Warningf("Error updating binary: %v.", err)
 			} else {
-				log.Printf("Restarting...\n")
+				log.Printf("Restarting...")
 				Restart()
 			}
 		}
@@ -89,7 +89,7 @@ func updateAvailable(currentVersion *version.Version, url string) (bool, string,
 	// parse name and compare
 	version, err := version.NewVersion(releaseName)
 	if err != nil {
-		log.Debugf("Could not parse release name: %v\n", err)
+		log.Debugf("Could not parse release name: %v", err)
 		return false, "", err
 	}
 
@@ -103,14 +103,14 @@ func updateAvailable(currentVersion *version.Version, url string) (bool, string,
 
 func updateBinary(assetURL string) error {
 	currentBinary := os.Args[0]
-	log.Printf("Downloading update archive %s\n", assetURL)
+	log.Printf("Downloading update archive %s", assetURL)
 	archive, err := downloadReleaseArchive(assetURL)
 	if err != nil {
 		os.Remove(archive)
 		return err
 	}
 	defer os.Remove(archive)
-	log.Debugf("Update archive downloaded to %v\n", archive)
+	log.Debugf("Update archive downloaded to %v", archive)
 
 	// Find and extract binary
 	var tempBinary string
@@ -134,13 +134,13 @@ func updateBinary(assetURL string) error {
 	}
 
 	// Replace binary
-	log.Debugf("Replacing current binary %v with %v\n", currentBinary, tempBinary)
+	log.Debugf("Replacing current binary %v with %v", currentBinary, tempBinary)
 	err = replaceBinary(currentBinary, tempBinary)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("Update successful\n")
+	log.Printf("Update successful")
 	return nil
 }
 
