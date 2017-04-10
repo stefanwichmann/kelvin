@@ -51,6 +51,7 @@ type TimedColorTemperature struct {
 // Configuration encapsulates all relevant parameters for Kelvin to operate.
 type Configuration struct {
 	ConfigurationFile       string                  `json:"-"`
+	Modified                bool                    `json:"-"`
 	Bridge                  Bridge                  `json:"bridge"`
 	Location                Location                `json:"location"`
 	DefaultColorTemperature int                     `json:"defaultColorTemperature"`
@@ -92,6 +93,7 @@ func (configuration *Configuration) initializeDefaults() {
 	wakeupTime.Brightness = 60
 
 	configuration.ConfigurationFile = "config.json"
+	configuration.Modified = true
 	configuration.Bridge = bridge
 	configuration.Location = location
 	configuration.DefaultColorTemperature = 2750
@@ -160,13 +162,14 @@ func (configuration *Configuration) Read() error {
 		return err
 	}
 
+	configuration.Modified = false
 	return nil
 }
 
-func (configuration *Configuration) lightScheduleForDay(light int, date time.Time) Schedule {
+func (configuration *Configuration) lightScheduleForDay(light int, date time.Time) (Schedule, error) {
 	var schedule Schedule
 
-	// TODO Allow different schedules for lights
+	// TODO Allow different schedules for lights (return error if light not configured)
 
 	yr, mth, dy := date.Date()
 	schedule.endOfDay = time.Date(yr, mth, dy, 23, 59, 59, 59, date.Location())
@@ -196,7 +199,7 @@ func (configuration *Configuration) lightScheduleForDay(light int, date time.Tim
 	}
 
 	log.Debugf("⚙ New schedule for light %v on %v: %+v", light, date, schedule)
-	return schedule
+	return schedule, nil
 }
 
 // Exists return true if a configuration file is found on disk.

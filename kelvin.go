@@ -31,12 +31,13 @@ import "flag"
 var applicationVersion = "development"
 var debug = flag.Bool("debug", false, "Enable debug logging")
 var logfile = flag.String("log", "", "Redirect log output to specified file")
+var forceUpdate = flag.Bool("forceUpdate", false, "Update to new major version")
 
 func main() {
 	flag.Parse()
 	configureLogging()
 	log.Printf("Kelvin %v starting up... 🚀", applicationVersion)
-	go CheckForUpdate(applicationVersion)
+	go CheckForUpdate(applicationVersion, *forceUpdate)
 	go validateSystemTime()
 	go handleSIGHUP()
 
@@ -47,12 +48,9 @@ func main() {
 	}
 
 	// find bridge
-	bridge, err := InitializeBridge(configuration.Bridge.IP, configuration.Bridge.Username, configuration.IgnoredDeviceIDs)
+	bridge, err := InitializeBridge(configuration)
 	if err != nil {
 		log.Fatal(err)
-	} else {
-		configuration.Bridge.IP = bridge.bridgeIP
-		configuration.Bridge.Username = bridge.username
 	}
 	err = bridge.printDevices()
 	if err != nil {
@@ -60,18 +58,18 @@ func main() {
 	}
 
 	// find location
-	location, err := InitializeLocation(configuration.Location.Latitude, configuration.Location.Longitude)
+	_, err = InitializeLocation(configuration)
 	if err != nil {
 		log.Fatal(err)
-	} else {
-		configuration.Location.Latitude = location.Latitude
-		configuration.Location.Longitude = location.Longitude
 	}
 
-	// Save configuration
-	err = configuration.Write()
-	if err != nil {
-		log.Fatal(err)
+	// Save configuration if we changed it.
+	if configuration.Modified {
+		log.Debugf("Configuration changed. Saving...")
+		err = configuration.Write()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// start routine for every light
@@ -109,7 +107,7 @@ func configureLogging() {
 		log.SetLevel(log.DebugLevel)
 	}
 	if logfile != nil {
-		file, err := os.OpenFile(*logfile, os.O_CREATE|os.O_WRONLY, 0666)
+		file, err := os.OpenFile(*logfile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err == nil {
 			log.SetOutput(file)
 		} else {

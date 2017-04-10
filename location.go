@@ -48,17 +48,20 @@ type Geolocation struct {
 const geolocationURL = "https://freegeoip.net/json/"
 
 // InitializeLocation creates and return a geolocation for the current system.
-func InitializeLocation(latitude float64, longitude float64) (Geolocation, error) {
+func InitializeLocation(configuration Configuration) (Geolocation, error) {
 	var location Geolocation
-	if latitude == 0 || longitude == 0 {
+	if configuration.Location.Latitude == 0 || configuration.Location.Longitude == 0 {
 		log.Println("🌍 Location not configured. Detecting by IP")
 		err := location.updateByIP()
 		if err != nil {
 			return location, err
 		}
+		configuration.Location.Latitude = location.Latitude
+		configuration.Location.Longitude = location.Longitude
+		configuration.Modified = true
 	} else {
-		location.Latitude = latitude
-		location.Longitude = longitude
+		location.Latitude = configuration.Location.Latitude
+		location.Longitude = configuration.Location.Longitude
 		log.Printf("🌍 Working with location: %v, %v from configuration", location.Latitude, location.Longitude)
 	}
 	return location, nil

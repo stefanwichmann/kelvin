@@ -23,28 +23,28 @@ package main
 
 import log "github.com/Sirupsen/logrus"
 import "runtime"
-import "os"
-import "os/exec"
 import "path/filepath"
-import "github.com/hashicorp/go-version"
+import "github.com/Masterminds/semver"
 import "time"
+import "fmt"
+import "os"
 
 const upgradeURL = "https://api.github.com/repos/stefanwichmann/kelvin/releases/latest"
-const updateCheckIntervalInMinutes = 24 * 60
+const updateCheckIntervalInMinutes = 12 * 60
 
 // CheckForUpdate will get the latest release information of Kelvin
 // from github and compare it to the given version. If a newer version
 // is found it will try to replace the running binary and restart.
-func CheckForUpdate(currentVersion string) {
+func CheckForUpdate(currentVersion string, forceUpdate bool) {
 	// only look for update if version string matches a valid release version
-	version, err := version.NewVersion(currentVersion)
+	version, err := semver.NewVersion(currentVersion)
 	if err != nil {
 		return
 	}
 
 	for {
 		log.Printf("Looking for updates...")
-		avail, url, err := updateAvailable(version, upgradeURL)
+		avail, url, err := updateAvailable(version, upgradeURL, forceUpdate)
 		if err != nil {
 			log.Warningf("Error looking for update: %v", err)
 		} else if avail {
@@ -56,48 +56,41 @@ func CheckForUpdate(currentVersion string) {
 				Restart()
 			}
 		}
-		// try again in 24 hours...
+		// try again in 12 hours...
 		time.Sleep(updateCheckIntervalInMinutes * time.Minute)
 	}
 }
 
-// Restart the running binary.
-// All arguments, pipes and environment variables will
-// be preserved.
-func Restart() {
-	binary := os.Args[0]
-	args := []string{}
-	if len(os.Args) > 1 {
-		args = os.Args[1:]
-	}
-
-	cmd := exec.Command(binary, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Env = os.Environ()
-
-	cmd.Start()
-	os.Exit(0)
-}
-
-func updateAvailable(currentVersion *version.Version, url string) (bool, string, error) {
+func updateAvailable(currentVersion *semver.Version, url string, forceUpdate bool) (bool, string, error) {
 	releaseName, assetURL, err := downloadLatestReleaseInfo(url)
 	if err != nil {
 		return false, "", err
 	}
 
 	// parse name and compare
-	version, err := version.NewVersion(releaseName)
+	version, err := semver.NewVersion(releaseName)
 	if err != nil {
 		log.Debugf("Could not parse release name: %v", err)
 		return false, "", err
 	}
 
-	if version.GreaterThan(currentVersion) {
+	if !version.GreaterThan(currentVersion) {
+		return false, "", nil
+	}
+
+	// Found new version. Exlude major upgrades with breaking changes.
+	c, err := semver.NewConstraint(fmt.Sprintf("^%s", currentVersion.String()))
+	if err != nil {
+		log.Debugf("Could not parse constraint: %v", err)
+		return false, "", nil
+	}
+
+	if c.Check(version) || forceUpdate {
 		log.Printf("Found new release version %s.", version)
 		return true, assetURL, nil
 	}
 
+	log.Warningf("Found new major release %s which might break your existing configuration file. Please upgrade by running Kelvin with parameter '-forceUpdate'.", version)
 	return false, "", nil
 }
 

@@ -46,15 +46,15 @@ const hueBridgeAppName = "kelvin"
 // InitializeBridge creates and returns an initialized HueBridge.
 // If you have a valid configuration this will be used. Otherwise a local
 // discovery will be started, followed by a user registration on your bridge.
-func InitializeBridge(ip string, username string, ignoredDeviceIDs []int) (HueBridge, error) {
+func InitializeBridge(configuration Configuration) (HueBridge, error) {
 	var bridge HueBridge
-	bridge.ignoredDeviceIDs = ignoredDeviceIDs
+	bridge.ignoredDeviceIDs = configuration.IgnoredDeviceIDs
 
-	if ip != "" && username != "" {
+	if configuration.Bridge.IP != "" && configuration.Bridge.Username != "" {
 		// known bridge configuration
 		log.Println("⌘ Initializing bridge from configuration")
-		bridge.bridgeIP = ip
-		bridge.username = username
+		bridge.bridgeIP = configuration.Bridge.IP
+		bridge.username = configuration.Bridge.Username
 
 		err := bridge.connect()
 		if err != nil {
@@ -71,6 +71,9 @@ func InitializeBridge(ip string, username string, ignoredDeviceIDs []int) (HueBr
 		return bridge, err
 	}
 
+	configuration.Bridge.IP = bridge.bridgeIP
+	configuration.Bridge.Username = bridge.username
+	configuration.Modified = true
 	return bridge, nil
 }
 

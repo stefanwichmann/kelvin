@@ -66,7 +66,11 @@ func (light *Light) updateCyclic(configuration Configuration) {
 		return
 	}
 
-	schedule := configuration.lightScheduleForDay(light.id, time.Now())
+	schedule, err := configuration.lightScheduleForDay(light.id, time.Now())
+	if err != nil {
+		log.Printf("💡 Light %v is not associated to any schedule. Ignoring...", light.name)
+		return
+	}
 	log.Printf("💡 Light %s: Activating schedule for %v (sunrise: %v, sunset: %v)", light.name, schedule.endOfDay.Format("Jan 2 2006"), schedule.sunrise.Time.Format(time.Kitchen), schedule.sunset.Time.Format(time.Kitchen))
 	interval, err := schedule.currentInterval(time.Now())
 	if err != nil {
@@ -88,7 +92,12 @@ func (light *Light) updateCyclic(configuration Configuration) {
 		case <-time.After(schedule.endOfDay.Sub(time.Now()) + 1*time.Second):
 			// Day has ended, calculate new schedule
 			log.Debugf("💡 Light %s: End of day reached: %v)", light.name, schedule.endOfDay.Format("Jan 2 2006"))
-			schedule = configuration.lightScheduleForDay(light.id, time.Now())
+			schedule, err = configuration.lightScheduleForDay(light.id, time.Now())
+			if err != nil {
+				// should not happen
+				log.Warningln(err)
+				continue
+			}
 			log.Printf("💡 Light %s: Activating schedule for %v (sunrise: %v, sunset: %v)", light.name, schedule.endOfDay.Format("Jan 2 2006"), schedule.sunrise.Time.Format(time.Kitchen), schedule.sunset.Time.Format(time.Kitchen))
 		case <-time.After(interval.End.Time.Sub(time.Now()) + 2*time.Second):
 			// interval has ended

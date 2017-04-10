@@ -22,6 +22,8 @@
 package main
 
 import "strings"
+import "os/exec"
+import "os"
 
 func containsString(slice []string, element string) bool {
 	for _, current := range slice {
@@ -39,4 +41,23 @@ func containsInt(slice []int, element int) bool {
 		}
 	}
 	return false
+}
+
+// Restart the running binary.
+// All arguments, pipes and environment variables will
+// be preserved.
+func Restart() {
+	binary := os.Args[0]
+	args := []string{}
+	if len(os.Args) > 1 {
+		args = os.Args[1:]
+	}
+
+	cmd := exec.Command(binary, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = os.Environ()
+
+	cmd.Start()
+	os.Exit(0)
 }
