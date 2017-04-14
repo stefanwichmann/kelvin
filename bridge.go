@@ -126,17 +126,17 @@ func (bridge *HueBridge) printDevices() error {
 }
 
 func (bridge *HueBridge) discover() error {
-	locators, err := hue.DiscoverBridges(false)
+	bridges, err := hue.DiscoverBridges(false)
 	if err != nil {
 		return err
 	}
-	if len(locators) == 0 {
+	if len(bridges) == 0 {
 		return errors.New("Bridge discovery failed. Please configure manually in config.json.")
 	}
-	if len(locators) > 1 {
+	if len(bridges) > 1 {
 		log.Printf("Found multiple bridges. Using first one.")
 	}
-	locator := locators[0] // use the first locator
+	hueBridge := bridges[0] // use the first locator
 
 	log.Printf("⌘ Found bridge. Starting user registration.")
 	fmt.Printf("PLEASE PUSH THE BLUE BUTTON ON YOUR HUE BRIDGE.")
@@ -144,18 +144,18 @@ func (bridge *HueBridge) discover() error {
 		time.Sleep(5 * time.Second)
 		fmt.Printf(".")
 		// try user creation, will fail if the button wasn't pressed.
-		newBridge, err := locator.CreateUser(hueBridgeAppName)
+		err := hueBridge.CreateUser(hueBridgeAppName)
 		if err != nil {
 			return err
 		}
 
-		if newBridge.Username != "" {
+		if hueBridge.Username != "" {
 			// registration successful
 			fmt.Printf(" Success!\n")
 
-			bridge.bridge = *newBridge
-			bridge.username = newBridge.Username
-			bridge.bridgeIP = newBridge.IpAddr
+			bridge.bridge = hueBridge
+			bridge.username = hueBridge.Username
+			bridge.bridgeIP = hueBridge.IpAddr
 			return nil
 		}
 	}
