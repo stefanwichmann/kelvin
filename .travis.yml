@@ -26,8 +26,6 @@ deploy:
     tags: true
 
 after_deploy:
-  - if [ "$TRAVIS_BRANCH" == "master" ]; then
-    docker build -t kelvin .;
-    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-    docker push stefanwichmann/kelvin;
-    fi
+  - docker build -t kelvin .
+  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+  - docker push stefanwichmann/kelvin
