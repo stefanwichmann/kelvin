@@ -117,7 +117,7 @@ The configuration contains the following fields:
 
 | Name | Description |
 | ---- | ----------- |
-| bridge | This element contains the IP and username of your Philips Hue bridge. Both values are usually obtained automatically. If the lookup fails you can fill in this details by hand. |
+| bridge | This element contains the IP and username of your Philips Hue bridge. Both values are usually obtained automatically. If the lookup fails you can fill in this details by hand. [Learn more](https://github.com/stefanwichmann/kelvin/wiki/Manual-bridge-configuration)|
 | location | This element contains the latitude and longitude of your location on earth. Both values are determined by your public IP. If this fails, is inaccurate or you want to change it manually just fill in your own coordinates. |
 | defaultColorTemperature | This default color temperature will be used between sunrise and sunset. Valid values are between 2000K and 6500K. See [Wikipedia](https://en.wikipedia.org/wiki/Color_temperature) for reference values. If you set this value to 0 Kelvin will ignore the color temperature and you can change it manually.|
 | defaultBrightness | This default brightness value will be used between sunrise and sunset. Valid values are between 0% and 100%. If you set this value to 0 Kelvin will ignore the brightness and you can change it manually.|
@@ -148,7 +148,7 @@ If anything goes wrong keep calm and follow these steps:
 5. If all this doesn't help, feel free to open an [issue](https://github.com/stefanwichmann/kelvin/issues) on github.
 
 # Development & Participation
-If you want to tinker with Kelvin and it's inner workings, feel free to do so. To get started you can simple clone the main repository in your `GOPATH` by executing the following commands:
+If you want to tinker with Kelvin and it's inner workings, feel free to do so. To get started you can simple clone the main repository into your `GOPATH` by executing the following commands:
 ```
 cd $GOPATH
 go get -v github.com/stefanwichmann/kelvin
