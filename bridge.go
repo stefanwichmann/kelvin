@@ -46,7 +46,7 @@ const hueBridgeAppName = "kelvin"
 // InitializeBridge creates and returns an initialized HueBridge.
 // If you have a valid configuration this will be used. Otherwise a local
 // discovery will be started, followed by a user registration on your bridge.
-func InitializeBridge(configuration Configuration) (HueBridge, error) {
+func InitializeBridge(configuration *Configuration) (HueBridge, error) {
 	var bridge HueBridge
 	bridge.ignoredDeviceIDs = configuration.IgnoredDeviceIDs
 

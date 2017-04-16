@@ -48,7 +48,7 @@ type Geolocation struct {
 const geolocationURL = "https://freegeoip.net/json/"
 
 // InitializeLocation creates and return a geolocation for the current system.
-func InitializeLocation(configuration Configuration) (Geolocation, error) {
+func InitializeLocation(configuration *Configuration) (Geolocation, error) {
 	var location Geolocation
 	if configuration.Location.Latitude == 0 || configuration.Location.Longitude == 0 {
 		log.Println("🌍 Location not configured. Detecting by IP")

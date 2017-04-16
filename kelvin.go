@@ -48,7 +48,7 @@ func main() {
 	}
 
 	// find bridge
-	bridge, err := InitializeBridge(configuration)
+	bridge, err := InitializeBridge(&configuration)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func main() {
 	}
 
 	// find location
-	_, err = InitializeLocation(configuration)
+	_, err = InitializeLocation(&configuration)
 	if err != nil {
 		log.Fatal(err)
 	}
