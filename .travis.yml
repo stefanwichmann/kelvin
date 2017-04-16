@@ -1,6 +1,9 @@
-sudo: false
+sudo: required
 language: go
 
+services:
+  - docker
+  
 before_script:
   - go get
   - go vet ./...
