@@ -3,7 +3,7 @@ language: go
 
 services:
   - docker
-  
+
 before_script:
   - go get
   - go vet ./...
@@ -29,6 +29,6 @@ deploy:
     tags: true
 
 after_deploy:
-  - docker build -t kelvin .
+  - docker build -t stefanwichmann/kelvin .
   - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
   - docker push stefanwichmann/kelvin
