@@ -12,7 +12,7 @@ Imagine your lights shine in an energetic but not to bright blue color to get yo
 
 # Features
 - Adjust the color temperature and brightness of your lights based on the local sunrise and sunset times
-- Define a fine grained daily schedule to fit your personal needs throughout the day
+- Define a fine grained daily schedules to fit your personal needs throughout the day for every single room
 - Define a default startup color and brightness for your lights
 - Gradual light transitions you won't even notice
 - Works with smart switches as well as conventional switches
@@ -20,7 +20,6 @@ Imagine your lights shine in an energetic but not to bright blue color to get yo
 - Auto upgrade to seamlessly deliver improvements to you
 - Small, self contained binary with sane defaults and no dependencies to get you started right away
 - Free and open source
-
 
 # Getting started
 If you want to give Kelvin a try, there are some things you will need to benefit from its services:
@@ -36,7 +35,7 @@ Got all these? Great, let's get started!
 3. Start Kelvin by double-clicking `kelvin.exe` on windows or by typing `./kelvin` in your terminal on macOS, Linux and other Unix-based systems.
    You should see an output similar to the following snippet:
    ```
-   2017/03/22 10:45:41 Kelvin v0.0.7 starting up... 🚀
+   2017/03/22 10:45:41 Kelvin v1.0.0 starting up... 🚀
    2017/03/22 10:45:41 Looking for updates...
    2017/03/22 10:45:41 ⚙ Default configuration generated
    2017/03/22 10:45:41 ⌘ No bridge configuration found. Starting local discovery...
@@ -46,7 +45,7 @@ Got all these? Great, let's get started!
 4. Now you have to allow Kelvin to talk to your bridge by pushing the blue button on top of your physical Hue bridge. Kelvin will wait one minute for you to push the button. If you didn't make it in time just start it again with step 3.
 5. Once you pushed the button you should see something like:
    ```
-   2017/03/22 10:45:41 Kelvin v0.0.7 starting up... 🚀
+   2017/03/22 10:45:41 Kelvin v1.0.0 starting up... 🚀
    2017/03/22 10:45:41 Looking for updates...
    2017/03/22 10:45:41 ⚙ Default configuration generated
    2017/03/22 10:45:41 ⌘ No bridge configuration found. Starting local discovery...
@@ -87,28 +86,33 @@ Kelvin will create it's configuration file `config.json` in the current director
     "latitude": 53.5553,
     "longitude": 9.995
   },
-  "defaultColorTemperature": 2750,
-  "defaultBrightness": 100,
-  "beforeSunrise": [
+  "schedules": [
     {
-      "time": "4:00AM",
-      "colorTemperature": 2000,
-      "brightness": 60
+      "name": "default",
+      "associatedDeviceIDs": [1,2,3,4,5,6],
+      "defaultColorTemperature": 2750,
+      "defaultBrightness": 100,
+      "beforeSunrise": [
+        {
+          "time": "4:00AM",
+          "colorTemperature": 2000,
+          "brightness": 60
+        }
+      ],
+      "afterSunset": [
+        {
+          "time": "8:00PM",
+          "colorTemperature": 2300,
+          "brightness": 80
+        },
+        {
+          "time": "10:00PM",
+          "colorTemperature": 2000,
+          "brightness": 60
+        }
+      ]
     }
-  ],
-  "afterSunset": [
-    {
-      "time": "8:00PM",
-      "colorTemperature": 2300,
-      "brightness": 80
-    },
-    {
-      "time": "10:00PM",
-      "colorTemperature": 2000,
-      "brightness": 60
-    }
-  ],
-  "ignoredDeviceIDs": []
+  ]
 }
 ```
 As the configuration file is a simple text file in JSON format you can display and edit it with you favorite text editor. Just make sure you keep the JSON structure valid. If something goes wrong fix it using [JSONLint](http://jsonlint.com/) or just delete the `config.json` and let Kelvin generate a configuration from scratch.
@@ -119,11 +123,18 @@ The configuration contains the following fields:
 | ---- | ----------- |
 | bridge | This element contains the IP and username of your Philips Hue bridge. Both values are usually obtained automatically. If the lookup fails you can fill in this details by hand. [Learn more](https://github.com/stefanwichmann/kelvin/wiki/Manual-bridge-configuration)|
 | location | This element contains the latitude and longitude of your location on earth. Both values are determined by your public IP. If this fails, is inaccurate or you want to change it manually just fill in your own coordinates. |
+| schedules | This element contains an array of all your configured schedules. See below for a detailed description of a schedule configuration. |
+
+Each schedule must be configured in the following format:
+
+| Name | Description |
+| ---- | ----------- |
+| name | The name of this schedule. This is only used for better readability. |
+| associatedDeviceIDs | A list of all devices/lights that should be managed according to this schedule. Kelvin will print an overview of all your devices on startup. You should use this to associated your lights with the right schedule. *ATTENTION: Every light should be associated to only one schedule. If you skip an ID this device will be ignored.* |
 | defaultColorTemperature | This default color temperature will be used between sunrise and sunset. Valid values are between 2000K and 6500K. See [Wikipedia](https://en.wikipedia.org/wiki/Color_temperature) for reference values. If you set this value to 0 Kelvin will ignore the color temperature and you can change it manually.|
 | defaultBrightness | This default brightness value will be used between sunrise and sunset. Valid values are between 0% and 100%. If you set this value to 0 Kelvin will ignore the brightness and you can change it manually.|
 | beforeSunrise | This element contains a list of timestamps and their configuration you want to set between midnight and sunrise of any given day. The *time* value must follow the `XX:XXAM/PM` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
 | afterSunset | This element contains a list of timestamps and their configuration you want to set between sunset and midnight of any given day. The *time* value must follow the `XX:XXAM/PM` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
-| ignoredDeviceIDs | This element contains a list of device IDs which will be excluded from Kelvin's automatic adjustments. Kelvin will print all device IDs found on your bridge during startup. Just add them (separated by comma) to this list if you want to exclude them.|
 
 After altering the configuration you have to restart Kelvin. Just kill the running instance (`Ctrl+C` or `kill $PID`) or send a HUP signal (`kill -s HUP $PID`) to the process to restart (unix only).
 
@@ -146,6 +157,19 @@ If anything goes wrong keep calm and follow these steps:
 4. Make sure you downloaded the latest release for your operating system and CPU architecture. If you are not sure stick to the most appropriate `amd64` release or `arm` if you are using a Raspberry Pi.
 
 5. If all this doesn't help, feel free to open an [issue](https://github.com/stefanwichmann/kelvin/issues) on github.
+
+# How Kelvin works
+In order to decide if Kelvin suits your needs and works in your setup, it helps to understand it's inner workings and behavior. In a nutshells Kelvin uses your Philips Hue bridge to talk to all the Hue lights in your home and will automatically configure them according to the schedules in your configuration file. In order to do this it will request the current state of every light every two seconds. For this state Kelvin differentiates three possible scenarios:
+
+1. ***The light is turned on:*** Kelvin will calculate the appropriate color temperature and brightness, send it to the light and safe this state.
+2. ***The light is turned on but it's state was changed since the last update:*** Kelvin detects that you have manually changed the state (for example by activating a custom scene) and will stop managing the state for you.
+3. ***The light is turned off:*** Kelvin will clear the last known state and do nothing.
+
+By following this scenarios you can expect these behaviors
+
+- Kelvin will automatically take control of every light you turn on.
+- Once you manually changed a light it will be ignored by Kelvin until it is turned off and on again.
+- If you have a Hue Tap to control your lights, the first tap will always trigger Kelvin. Any following tap will disable it.
 
 # Development & Participation
 If you want to tinker with Kelvin and it's inner workings, feel free to do so. To get started you can simple clone the main repository into your `GOPATH` by executing the following commands:
