@@ -167,7 +167,7 @@ func (configuration *Configuration) Read() error {
 	if err != nil {
 		return err
 	}
-	log.Printf("%+v", configuration)
+
 	if len(configuration.Schedules) == 0 {
 		log.Warningf("⚙ Your current configuration doesn't contain any schedules! Generating default schedule...")
 		err := configuration.backup()
