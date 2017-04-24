@@ -26,6 +26,8 @@ import "encoding/json"
 import "os"
 import "errors"
 import "time"
+import "fmt"
+import "crypto/sha256"
 import log "github.com/Sirupsen/logrus"
 
 // Bridge respresents the hue bridge in your system.
@@ -40,6 +42,15 @@ type Location struct {
 	Longitude float64 `json:"longitude"`
 }
 
+type LightSchedule struct {
+	Name                    string                  `json:"name"`
+	AssociatedDeviceIDs     []int                   `json:"associatedDeviceIDs"`
+	DefaultColorTemperature int                     `json:"defaultColorTemperature"`
+	DefaultBrightness       int                     `json:"defaultBrightness"`
+	BeforeSunrise           []TimedColorTemperature `json:"beforeSunrise"`
+	AfterSunset             []TimedColorTemperature `json:"afterSunset"`
+}
+
 // TimedColorTemperature represents a light configuration which will be
 // reached at the given time.
 type TimedColorTemperature struct {
@@ -50,15 +61,11 @@ type TimedColorTemperature struct {
 
 // Configuration encapsulates all relevant parameters for Kelvin to operate.
 type Configuration struct {
-	ConfigurationFile       string                  `json:"-"`
-	Modified                bool                    `json:"-"`
-	Bridge                  Bridge                  `json:"bridge"`
-	Location                Location                `json:"location"`
-	DefaultColorTemperature int                     `json:"defaultColorTemperature"`
-	DefaultBrightness       int                     `json:"defaultBrightness"`
-	BeforeSunrise           []TimedColorTemperature `json:"beforeSunrise"`
-	AfterSunset             []TimedColorTemperature `json:"afterSunset"`
-	IgnoredDeviceIDs        []int                   `json:"ignoredDeviceIDs"`
+	ConfigurationFile string          `json:"-"`
+	Hash              string          `json:"-"`
+	Bridge            Bridge          `json:"bridge"`
+	Location          Location        `json:"location"`
+	Schedules         []LightSchedule `json:"schedules"`
 }
 
 // TimeStamp represents a parsed and validated TimedColorTemperature.
@@ -69,14 +76,6 @@ type TimeStamp struct {
 }
 
 func (configuration *Configuration) initializeDefaults() {
-	var bridge Bridge
-	bridge.IP = ""
-	bridge.Username = ""
-
-	var location Location
-	location.Latitude = 0
-	location.Longitude = 0
-
 	var bedTime TimedColorTemperature
 	bedTime.Time = "10:00PM"
 	bedTime.ColorTemperature = 2000
@@ -92,15 +91,15 @@ func (configuration *Configuration) initializeDefaults() {
 	wakeupTime.ColorTemperature = 2000
 	wakeupTime.Brightness = 60
 
-	configuration.ConfigurationFile = "config.json"
-	configuration.Modified = true
-	configuration.Bridge = bridge
-	configuration.Location = location
-	configuration.DefaultColorTemperature = 2750
-	configuration.DefaultBrightness = 100
-	configuration.AfterSunset = []TimedColorTemperature{tvTime, bedTime}
-	configuration.BeforeSunrise = []TimedColorTemperature{wakeupTime}
-	configuration.IgnoredDeviceIDs = []int{}
+	var defaultSchedule LightSchedule
+	defaultSchedule.Name = "default"
+	defaultSchedule.AssociatedDeviceIDs = []int{}
+	defaultSchedule.DefaultColorTemperature = 2750
+	defaultSchedule.DefaultBrightness = 100
+	defaultSchedule.AfterSunset = []TimedColorTemperature{tvTime, bedTime}
+	defaultSchedule.BeforeSunrise = []TimedColorTemperature{wakeupTime}
+
+	configuration.Schedules = []LightSchedule{defaultSchedule}
 }
 
 // InitializeConfiguration creates and returns an initialized
@@ -109,7 +108,7 @@ func (configuration *Configuration) initializeDefaults() {
 // will be created.
 func InitializeConfiguration() (Configuration, error) {
 	var configuration Configuration
-	configuration.initializeDefaults()
+	configuration.ConfigurationFile = "config.json"
 	if configuration.Exists() {
 		err := configuration.Read()
 		if err != nil {
@@ -118,6 +117,7 @@ func InitializeConfiguration() (Configuration, error) {
 		log.Printf("⚙ Configuration %v loaded", configuration.ConfigurationFile)
 	} else {
 		// write default config to disk
+		configuration.initializeDefaults()
 		err := configuration.Write()
 		if err != nil {
 			return configuration, err
@@ -133,6 +133,10 @@ func (configuration *Configuration) Write() error {
 		return errors.New("No configuration filename configured")
 	}
 
+	if !configuration.HasChanged() {
+		return nil
+	}
+	log.Debugf("Configuration changed. Saving...")
 	json, err := json.MarshalIndent(configuration, "", "  ")
 	if err != nil {
 		return err
@@ -143,6 +147,8 @@ func (configuration *Configuration) Write() error {
 		return err
 	}
 
+	configuration.Hash = configuration.HashValue()
+	log.Debugf("Updated configuration hash")
 	return nil
 }
 
@@ -161,24 +167,48 @@ func (configuration *Configuration) Read() error {
 	if err != nil {
 		return err
 	}
-
-	configuration.Modified = false
+	log.Printf("%+v", configuration)
+	if len(configuration.Schedules) == 0 {
+		log.Warningf("⚙ Your current configuration doesn't contain any schedules! Generating default schedule...")
+		err := configuration.backup()
+		if err != nil {
+			log.Warningf("Could not create backup: %v", err)
+		} else {
+			log.Printf("Configuration backup created.")
+			configuration.initializeDefaults()
+			log.Printf("Default schedule created.")
+			configuration.Write()
+		}
+	}
+	configuration.Hash = configuration.HashValue()
+	log.Debugf("Updated configuration hash.")
 	return nil
 }
 
 func (configuration *Configuration) lightScheduleForDay(light int, date time.Time) (Schedule, error) {
 	var schedule Schedule
+	var lightSchedule LightSchedule
+	found := false
+	for _, candidate := range configuration.Schedules {
+		if containsInt(candidate.AssociatedDeviceIDs, light) {
+			lightSchedule = candidate
+			found = true
+			break
+		}
+	}
 
-	// TODO Allow different schedules for lights (return error if light not configured)
+	if !found {
+		return schedule, errors.New(fmt.Sprintf("Light %d is not associated with any schedule in configuration.", light))
+	}
 
 	yr, mth, dy := date.Date()
 	schedule.endOfDay = time.Date(yr, mth, dy, 23, 59, 59, 59, date.Location())
-	schedule.sunrise = TimeStamp{CalculateSunrise(date, configuration.Location.Latitude, configuration.Location.Longitude), configuration.DefaultColorTemperature, configuration.DefaultBrightness}
-	schedule.sunset = TimeStamp{CalculateSunset(date, configuration.Location.Latitude, configuration.Location.Longitude), configuration.DefaultColorTemperature, configuration.DefaultBrightness}
+	schedule.sunrise = TimeStamp{CalculateSunrise(date, configuration.Location.Latitude, configuration.Location.Longitude), lightSchedule.DefaultColorTemperature, lightSchedule.DefaultBrightness}
+	schedule.sunset = TimeStamp{CalculateSunset(date, configuration.Location.Latitude, configuration.Location.Longitude), lightSchedule.DefaultColorTemperature, lightSchedule.DefaultBrightness}
 
 	// Before sunrise candidates
 	schedule.beforeSunrise = []TimeStamp{}
-	for _, candidate := range configuration.BeforeSunrise {
+	for _, candidate := range lightSchedule.BeforeSunrise {
 		timestamp, err := candidate.AsTimestamp(date)
 		if err != nil {
 			log.Printf(err.Error())
@@ -189,7 +219,7 @@ func (configuration *Configuration) lightScheduleForDay(light int, date time.Tim
 
 	// After sunset candidates
 	schedule.afterSunset = []TimeStamp{}
-	for _, candidate := range configuration.AfterSunset {
+	for _, candidate := range lightSchedule.AfterSunset {
 		timestamp, err := candidate.AsTimestamp(date)
 		if err != nil {
 			log.Printf(err.Error())
@@ -198,7 +228,7 @@ func (configuration *Configuration) lightScheduleForDay(light int, date time.Tim
 		schedule.afterSunset = append(schedule.afterSunset, timestamp)
 	}
 
-	log.Debugf("⚙ New schedule for light %v on %v: %+v", light, date, schedule)
+	log.Debugf("⚙ New schedule %s for light %v on %v: %+v", lightSchedule.Name, light, date, schedule)
 	return schedule, nil
 }
 
@@ -215,6 +245,18 @@ func (configuration *Configuration) Exists() bool {
 	return true
 }
 
+func (configuration *Configuration) HasChanged() bool {
+	if configuration.Hash == "" {
+		return true
+	}
+	return configuration.HashValue() != configuration.Hash
+}
+
+func (configuration *Configuration) HashValue() string {
+	json, _ := json.Marshal(configuration)
+	return fmt.Sprintf("%x", sha256.Sum256(json))
+}
+
 // AsTimestamp parses and validates a TimedColorTemperature and returns
 // a corresponding TimeStamp.
 func (color *TimedColorTemperature) AsTimestamp(referenceTime time.Time) (TimeStamp, error) {
@@ -227,4 +269,10 @@ func (color *TimedColorTemperature) AsTimestamp(referenceTime time.Time) (TimeSt
 	targetTime := time.Date(yr, mth, day, t.Hour(), t.Minute(), t.Second(), 0, referenceTime.Location())
 
 	return TimeStamp{targetTime, color.ColorTemperature, color.Brightness}, nil
+}
+
+func (configuration *Configuration) backup() error {
+	backupFilename := configuration.ConfigurationFile + "_" + time.Now().Format("01022006")
+	log.Debugf("Moving configuration to %s.", backupFilename)
+	return os.Rename(configuration.ConfigurationFile, backupFilename)
 }

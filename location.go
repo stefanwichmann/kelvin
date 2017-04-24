@@ -58,7 +58,6 @@ func InitializeLocation(configuration *Configuration) (Geolocation, error) {
 		}
 		configuration.Location.Latitude = location.Latitude
 		configuration.Location.Longitude = location.Longitude
-		configuration.Modified = true
 	} else {
 		location.Latitude = configuration.Location.Latitude
 		location.Longitude = configuration.Location.Longitude

@@ -49,7 +49,6 @@ type Light struct {
 	dimmable                 bool
 	supportsColorTemperature bool
 	supportsXYColor          bool
-	ignored                  bool
 }
 
 const lightUpdateIntervalInSeconds = 1
@@ -57,11 +56,8 @@ const lightTransitionIntervalInSeconds = 1
 const stateUpdateIntervalInSeconds = 60
 
 func (light *Light) updateCyclic(configuration Configuration) {
-	// Filter devices ignored by configuration
-	if light.ignored {
-		log.Printf("💡 Device %v is excluded by configuration.", light.name)
-		return
-	} else if !light.dimmable && !light.supportsXYColor && !light.supportsColorTemperature {
+	// Filter devices we can't control
+	if !light.dimmable && !light.supportsXYColor && !light.supportsColorTemperature {
 		log.Printf("💡 Device %v doesn't support any functionality Kelvin uses. Ignoring...", light.name)
 		return
 	}
@@ -136,7 +132,6 @@ func (light *Light) initialize() error {
 	light.dimmable = containsString(lightsSupportingDimming, attr.Type)
 	light.supportsColorTemperature = containsString(lightsSupportingColorTemperature, attr.Type)
 	light.supportsXYColor = containsString(lightsSupportingXYColor, attr.Type)
-	light.ignored = false
 
 	// initialize changing values
 	light.on = attr.State.On
@@ -180,7 +175,7 @@ func (light *Light) update() error {
 		log.Printf("💡 Light %s just appeared. Initializing state to %vK at %v%%", light.name, light.targetLightState.colorTemperature, light.targetLightState.brightness)
 
 		// For initialization we set the state again and again for 10 seconds
-		// because during startup the zigbee communication is unstable
+		// because during startup the zigbee communication might be unstable
 		for index := 0; index < 9; index++ {
 			light.setLightState(light.targetLightState)
 		}
@@ -216,9 +211,8 @@ func (light *Light) update() error {
 		return nil
 	}
 
-	// Light is reachable, on and in automatic state. Update to new color!
+	// Light is reachable, turned on and in automatic state. Update to new state.
 	log.Printf("💡 Updating light %s to %vK at %v%%", light.name, light.targetLightState.colorTemperature, light.targetLightState.brightness)
-
 	setLightState, err := light.setLightState(light.targetLightState)
 	if err != nil {
 		return err

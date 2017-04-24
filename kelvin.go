@@ -52,10 +52,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = bridge.printDevices()
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	// find location
 	_, err = InitializeLocation(&configuration)
@@ -63,13 +59,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Save configuration if we changed it.
-	if configuration.Modified {
-		log.Debugf("Configuration changed. Saving...")
-		err = configuration.Write()
-		if err != nil {
-			log.Fatal(err)
-		}
+	// save configuration
+	err = configuration.Write()
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// start routine for every light

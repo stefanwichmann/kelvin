@@ -35,10 +35,9 @@ import (
 // your system.
 // It is used to communicate with all devices.
 type HueBridge struct {
-	bridge           hue.Bridge
-	bridgeIP         string
-	username         string
-	ignoredDeviceIDs []int
+	bridge   hue.Bridge
+	bridgeIP string
+	username string
 }
 
 const hueBridgeAppName = "kelvin"
@@ -48,7 +47,6 @@ const hueBridgeAppName = "kelvin"
 // discovery will be started, followed by a user registration on your bridge.
 func InitializeBridge(configuration *Configuration) (HueBridge, error) {
 	var bridge HueBridge
-	bridge.ignoredDeviceIDs = configuration.IgnoredDeviceIDs
 
 	if configuration.Bridge.IP != "" && configuration.Bridge.Username != "" {
 		// known bridge configuration
@@ -60,20 +58,30 @@ func InitializeBridge(configuration *Configuration) (HueBridge, error) {
 		if err != nil {
 			return bridge, err
 		}
-		log.Println("⌘ Connection to bridge established")
-		return bridge, nil
+	} else {
+		// no known bridge or username
+		log.Println("⌘ No bridge configuration found. Starting local discovery...")
+		err := bridge.discover()
+		if err != nil {
+			return bridge, err
+		}
+
+		// Found bridge. Update configuration.
+		configuration.Bridge.IP = bridge.bridgeIP
+		configuration.Bridge.Username = bridge.username
 	}
 
-	// no known bridge or username
-	log.Println("⌘ No bridge configuration found. Starting local discovery...")
-	err := bridge.discover()
+	log.Println("⌘ Connection to bridge established")
+	err := bridge.printDevices()
 	if err != nil {
 		return bridge, err
 	}
 
-	configuration.Bridge.IP = bridge.bridgeIP
-	configuration.Bridge.Username = bridge.username
-	configuration.Modified = true
+	err = bridge.populateSchedule(configuration)
+	if err != nil {
+		return bridge, err
+	}
+
 	return bridge, nil
 }
 
@@ -95,10 +103,6 @@ func (bridge *HueBridge) Lights() ([]Light, error) {
 		light.hueLight = *hueLight
 		light.initialize()
 
-		// ignore current device?
-		if containsInt(bridge.ignoredDeviceIDs, light.id) {
-			light.ignored = true
-		}
 		lights = append(lights, light)
 	}
 
@@ -112,7 +116,7 @@ func (bridge *HueBridge) printDevices() error {
 	}
 
 	log.Printf("💡 Devices found on current bridge:")
-	log.Printf("| %-20s | %3v | %-9v | %-5v | %-7v | %-8v | %-11v | %-5v | %-9v | %-8v |", "Name", "ID", "Reachable", "On", "Ignored", "Dimmable", "Temperature", "Color", "Cur. Temp", "Cur. Bri")
+	log.Printf("| %-20s | %3v | %-9v | %-5v | %-8v | %-11v | %-5v | %-9v | %-8v |", "Name", "ID", "Reachable", "On", "Dimmable", "Temperature", "Color", "Cur. Temp", "Cur. Bri")
 	for _, light := range lights {
 		var temp string
 		if light.supportsColorTemperature == false && light.supportsXYColor == false {
@@ -120,7 +124,7 @@ func (bridge *HueBridge) printDevices() error {
 		} else {
 			temp = strings.Join([]string{strconv.Itoa(light.currentLightState.colorTemperature), "K"}, "")
 		}
-		log.Printf("| %-20s | %3v | %-9v | %-5v | %-7v | %-8v | %-11v | %-5v | %9v | %8v |", light.name, light.id, light.reachable, light.on, light.ignored, light.dimmable, light.supportsColorTemperature, light.supportsXYColor, temp, light.currentLightState.brightness)
+		log.Printf("| %-20s | %3v | %-9v | %-5v | %-8v | %-11v | %-5v | %9v | %8v |", light.name, light.id, light.reachable, light.on, light.dimmable, light.supportsColorTemperature, light.supportsXYColor, temp, light.currentLightState.brightness)
 	}
 	return nil
 }
@@ -178,5 +182,32 @@ func (bridge *HueBridge) connect() error {
 		return err
 	}
 
+	return nil
+}
+
+func (bridge *HueBridge) populateSchedule(configuration *Configuration) error {
+	if len(configuration.Schedules) == 0 {
+		return errors.New("Configuration does not contain any schedules to populate")
+	}
+
+	// Do we have associated lights?
+	for _, schedule := range configuration.Schedules {
+		if len(schedule.AssociatedDeviceIDs) > 0 {
+			log.Debugf("Configuration contains at least one schedule with associated lights.")
+			return nil // At least one schedule is configured
+		}
+	}
+
+	// No schedule has associated lights
+	log.Debugf("Configuration contains no schedule with associated lights. Initializing first schedule with all lights.")
+	lights, err := bridge.Lights()
+	if err != nil {
+		return err
+	}
+	var lightIDs []int
+	for _, light := range lights {
+		lightIDs = append(lightIDs, light.id)
+	}
+	configuration.Schedules[0].AssociatedDeviceIDs = lightIDs
 	return nil
 }
