@@ -12,7 +12,7 @@ Imagine your lights shine in an energetic but not to bright blue color to get yo
 
 # Features
 - Adjust the color temperature and brightness of your lights based on the local sunrise and sunset times
-- Define a fine grained daily schedules to fit your personal needs throughout the day for every single room
+- Define fine grained daily schedules to fit your personal needs throughout the day for every single room
 - Define a default startup color and brightness for your lights
 - Gradual light transitions you won't even notice
 - Works with smart switches as well as conventional switches
