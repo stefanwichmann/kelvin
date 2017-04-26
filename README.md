@@ -73,6 +73,8 @@ Got all these? Great, let's get started!
 6. Wohoo! Kelvin is up and running! Well done!
 7. Kelvin is now managing your lights and will gradually adjust the color temperature and brightness for you. Give it a try by switching lights on and off to see how Kelvin reacts. If you want to adjust the default schedule to your needs, just read on and edit the configuration.
 
+As an alternative to manual installation you can also pull the official [docker image](https://hub.docker.com/r/stefanwichmann/kelvin/) from docker hub. Just run ```docker pull stefanwichmann/kelvin```
+
 # Configuration
 Kelvin will create it's configuration file `config.json` in the current directory and store all necessary information to operate in it. By default it is fully usable and looks like this:
 
