@@ -61,7 +61,7 @@ func InitializeLocation(configuration *Configuration) (Geolocation, error) {
 	} else {
 		location.Latitude = configuration.Location.Latitude
 		location.Longitude = configuration.Location.Longitude
-		log.Printf("🌍 Working with location: %v, %v from configuration", location.Latitude, location.Longitude)
+		log.Printf("🌍 Working with location %v, %v from configuration", location.Latitude, location.Longitude)
 	}
 	return location, nil
 }

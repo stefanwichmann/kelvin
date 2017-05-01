@@ -80,7 +80,7 @@ func (light *Light) updateCyclic(configuration Configuration) {
 	log.Debugf("💡 Light %s: Initializing target state %+v", light.name, light.targetLightState)
 
 	// Start cyclic polling
-	log.Printf("💡 Light %s: Starting cyclic update...", light.name)
+	log.Debugf("💡 Light %s: Starting cyclic update...", light.name)
 	lightUpdateTick := time.Tick(lightUpdateIntervalInSeconds * time.Second)
 	stateUpdateTick := time.Tick(stateUpdateIntervalInSeconds * time.Second)
 	for {
