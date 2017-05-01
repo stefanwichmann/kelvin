@@ -72,6 +72,7 @@ func InitializeBridge(configuration *Configuration) (HueBridge, error) {
 	}
 
 	log.Println("⌘ Connection to bridge established")
+	go bridge.validateSofwareVersion()
 	err := bridge.printDevices()
 	if err != nil {
 		return bridge, err
@@ -210,4 +211,25 @@ func (bridge *HueBridge) populateSchedule(configuration *Configuration) error {
 	}
 	configuration.Schedules[0].AssociatedDeviceIDs = lightIDs
 	return nil
+}
+
+func (bridge *HueBridge) validateSofwareVersion() {
+	configuration, err := bridge.bridge.Configuration()
+	if err != nil {
+		log.Warningf("Could not validate bridge software version: %v", err)
+		return
+	}
+
+	swversion, err := strconv.Atoi(configuration.SoftwareVersion)
+	if err != nil {
+		log.Warningf("Could not validate bridge software version: %v", err)
+		return
+	}
+
+	log.Debugf("Bridge is running software version %s", configuration.SoftwareVersion)
+	if swversion < 1039019 {
+		log.Warningf("Your hue bridge is running an old software version. Please update using the hue app to ensure Kelvin will run smoothly.")
+	} else {
+		log.Debugf("Bridge software is up to date")
+	}
 }
