@@ -42,6 +42,7 @@ type Location struct {
 	Longitude float64 `json:"longitude"`
 }
 
+// LightSchedule represents the schedule for any given day for the associated lights.
 type LightSchedule struct {
 	Name                    string                  `json:"name"`
 	AssociatedDeviceIDs     []int                   `json:"associatedDeviceIDs"`
@@ -198,7 +199,7 @@ func (configuration *Configuration) lightScheduleForDay(light int, date time.Tim
 	}
 
 	if !found {
-		return schedule, errors.New(fmt.Sprintf("Light %d is not associated with any schedule in configuration.", light))
+		return schedule, fmt.Errorf("Light %d is not associated with any schedule in configuration", light)
 	}
 
 	yr, mth, dy := date.Date()
@@ -245,6 +246,7 @@ func (configuration *Configuration) Exists() bool {
 	return true
 }
 
+// HasChanged will detect changes to the configuration struct.
 func (configuration *Configuration) HasChanged() bool {
 	if configuration.Hash == "" {
 		return true
@@ -252,6 +254,7 @@ func (configuration *Configuration) HasChanged() bool {
 	return configuration.HashValue() != configuration.Hash
 }
 
+// HashValue will calculate a SHA256 hash of the configuration struct.
 func (configuration *Configuration) HashValue() string {
 	json, _ := json.Marshal(configuration)
 	return fmt.Sprintf("%x", sha256.Sum256(json))
