@@ -97,19 +97,19 @@ Kelvin will create it's configuration file `config.json` in the current director
       "defaultBrightness": 100,
       "beforeSunrise": [
         {
-          "time": "4:00AM",
+          "time": "4:00",
           "colorTemperature": 2000,
           "brightness": 60
         }
       ],
       "afterSunset": [
         {
-          "time": "8:00PM",
+          "time": "20:00",
           "colorTemperature": 2300,
           "brightness": 80
         },
         {
-          "time": "10:00PM",
+          "time": "22:00",
           "colorTemperature": 2000,
           "brightness": 60
         }
@@ -136,8 +136,8 @@ Each schedule must be configured in the following format:
 | associatedDeviceIDs | A list of all devices/lights that should be managed according to this schedule. Kelvin will print an overview of all your devices on startup. You should use this to associated your lights with the right schedule. *ATTENTION: Every light should be associated to only one schedule. If you skip an ID this device will be ignored.* |
 | defaultColorTemperature | This default color temperature will be used between sunrise and sunset. Valid values are between 2000K and 6500K. See [Wikipedia](https://en.wikipedia.org/wiki/Color_temperature) for reference values. If you set this value to 0 Kelvin will ignore the color temperature and you can change it manually.|
 | defaultBrightness | This default brightness value will be used between sunrise and sunset. Valid values are between 0% and 100%. If you set this value to 0 Kelvin will ignore the brightness and you can change it manually.|
-| beforeSunrise | This element contains a list of timestamps and their configuration you want to set between midnight and sunrise of any given day. The *time* value must follow the `XX:XXAM/PM` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
-| afterSunset | This element contains a list of timestamps and their configuration you want to set between sunset and midnight of any given day. The *time* value must follow the `XX:XXAM/PM` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
+| beforeSunrise | This element contains a list of timestamps and their configuration you want to set between midnight and sunrise of any given day. The *time* value must follow the `hh:mm` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
+| afterSunset | This element contains a list of timestamps and their configuration you want to set between sunset and midnight of any given day. The *time* value must follow the `hh:mm` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
 
 After altering the configuration you have to restart Kelvin. Just kill the running instance (`Ctrl+C` or `kill $PID`) or send a HUP signal (`kill -s HUP $PID`) to the process to restart (unix only).
 

@@ -78,17 +78,17 @@ type TimeStamp struct {
 
 func (configuration *Configuration) initializeDefaults() {
 	var bedTime TimedColorTemperature
-	bedTime.Time = "10:00PM"
+	bedTime.Time = "22:00"
 	bedTime.ColorTemperature = 2000
 	bedTime.Brightness = 60
 
 	var tvTime TimedColorTemperature
-	tvTime.Time = "8:00PM"
+	tvTime.Time = "20:00"
 	tvTime.ColorTemperature = 2300
 	tvTime.Brightness = 80
 
 	var wakeupTime TimedColorTemperature
-	wakeupTime.Time = "4:00AM"
+	wakeupTime.Time = "4:00"
 	wakeupTime.ColorTemperature = 2000
 	wakeupTime.Brightness = 60
 
@@ -135,6 +135,7 @@ func (configuration *Configuration) Write() error {
 	}
 
 	if !configuration.HasChanged() {
+		log.Debugf("Configuration hasn't changed. Omiting write.")
 		return nil
 	}
 	log.Debugf("Configuration changed. Saving...")
@@ -183,6 +184,28 @@ func (configuration *Configuration) Read() error {
 	}
 	configuration.Hash = configuration.HashValue()
 	log.Debugf("Updated configuration hash.")
+
+	// Migrate to new timestamp format
+	for scheduleIndex, _ := range configuration.Schedules {
+		for beforeTimestampIndex, _ := range configuration.Schedules[scheduleIndex].BeforeSunrise {
+			t, err := migrateTimestampFormat(configuration.Schedules[scheduleIndex].BeforeSunrise[beforeTimestampIndex].Time)
+			if err != nil {
+				log.Warningf(err.Error())
+			} else {
+				configuration.Schedules[scheduleIndex].BeforeSunrise[beforeTimestampIndex].Time = t
+			}
+		}
+		for afterTimestampIndex, _ := range configuration.Schedules[scheduleIndex].AfterSunset {
+			t, err := migrateTimestampFormat(configuration.Schedules[scheduleIndex].AfterSunset[afterTimestampIndex].Time)
+			if err != nil {
+				log.Warningf(err.Error())
+			} else {
+				configuration.Schedules[scheduleIndex].AfterSunset[afterTimestampIndex].Time = t
+			}
+		}
+	}
+	configuration.Write()
+
 	return nil
 }
 
@@ -263,7 +286,7 @@ func (configuration *Configuration) HashValue() string {
 // AsTimestamp parses and validates a TimedColorTemperature and returns
 // a corresponding TimeStamp.
 func (color *TimedColorTemperature) AsTimestamp(referenceTime time.Time) (TimeStamp, error) {
-	layout := "3:04PM"
+	layout := "15:04"
 	t, err := time.Parse(layout, color.Time)
 	if err != nil {
 		return TimeStamp{time.Now(), color.ColorTemperature, color.Brightness}, err
@@ -278,4 +301,23 @@ func (configuration *Configuration) backup() error {
 	backupFilename := configuration.ConfigurationFile + "_" + time.Now().Format("01022006")
 	log.Debugf("Moving configuration to %s.", backupFilename)
 	return os.Rename(configuration.ConfigurationFile, backupFilename)
+}
+
+func migrateTimestampFormat(timestamp string) (string, error) {
+	// Check for old format and convert
+	layout := "3:04PM"
+	t, err := time.Parse(layout, timestamp)
+	if err == nil {
+		log.Debugf("Migrating old timestamp %s to %s", timestamp, t.Format("15:04"))
+		return t.Format("15:04"), nil
+	}
+
+	// Already new format? Return unchanged
+	layout = "15:04"
+	t, err = time.Parse(layout, timestamp)
+	if err == nil {
+		return timestamp, nil
+	}
+
+	return "", errors.New(fmt.Sprintf("Invalid timestamp format: %s", timestamp))
 }
