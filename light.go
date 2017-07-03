@@ -114,7 +114,7 @@ func (light *Light) updateCurrentLightState() error {
 	light.Reachable = attr.State.Reachable
 	if !light.Reachable {
 		light.On = false
-		light.CurrentLightState = LightState{0, []float32{0,0}, 0}
+		light.CurrentLightState = LightState{0, []float32{0, 0}, 0}
 	} else {
 		light.On = attr.State.On
 		light.CurrentLightState = lightStateFromHueValues(attr.State.Ct, attr.State.Xy, attr.State.Bri)
