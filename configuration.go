@@ -135,7 +135,7 @@ func (configuration *Configuration) Write() error {
 	}
 
 	if !configuration.HasChanged() {
-		log.Debugf("Configuration hasn't changed. Omiting write.")
+		log.Debugf("Configuration hasn't changed. Omitting write.")
 		return nil
 	}
 	log.Debugf("Configuration changed. Saving...")
@@ -186,8 +186,8 @@ func (configuration *Configuration) Read() error {
 	log.Debugf("Updated configuration hash.")
 
 	// Migrate to new timestamp format
-	for scheduleIndex, _ := range configuration.Schedules {
-		for beforeTimestampIndex, _ := range configuration.Schedules[scheduleIndex].BeforeSunrise {
+	for scheduleIndex := range configuration.Schedules {
+		for beforeTimestampIndex := range configuration.Schedules[scheduleIndex].BeforeSunrise {
 			t, err := migrateTimestampFormat(configuration.Schedules[scheduleIndex].BeforeSunrise[beforeTimestampIndex].Time)
 			if err != nil {
 				log.Warningf(err.Error())
@@ -195,7 +195,7 @@ func (configuration *Configuration) Read() error {
 				configuration.Schedules[scheduleIndex].BeforeSunrise[beforeTimestampIndex].Time = t
 			}
 		}
-		for afterTimestampIndex, _ := range configuration.Schedules[scheduleIndex].AfterSunset {
+		for afterTimestampIndex := range configuration.Schedules[scheduleIndex].AfterSunset {
 			t, err := migrateTimestampFormat(configuration.Schedules[scheduleIndex].AfterSunset[afterTimestampIndex].Time)
 			if err != nil {
 				log.Warningf(err.Error())
@@ -252,7 +252,6 @@ func (configuration *Configuration) lightScheduleForDay(light int, date time.Tim
 		schedule.afterSunset = append(schedule.afterSunset, timestamp)
 	}
 
-	log.Debugf("⚙ New schedule %s for light %v on %v: %+v", lightSchedule.Name, light, date, schedule)
 	return schedule, nil
 }
 
@@ -319,5 +318,5 @@ func migrateTimestampFormat(timestamp string) (string, error) {
 		return timestamp, nil
 	}
 
-	return "", errors.New(fmt.Sprintf("Invalid timestamp format: %s", timestamp))
+	return "", fmt.Errorf("Invalid timestamp format: %s", timestamp)
 }
