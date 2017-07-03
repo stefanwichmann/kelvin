@@ -26,9 +26,9 @@ import "math"
 // LightState represents a light configuration.
 // It can be read from or written to the physical lights.
 type LightState struct {
-	colorTemperature int
-	color            []float32
-	brightness       int
+	ColorTemperature int       `json:"colorTemperature"`
+	Color            []float32 `json:"color"`
+	Brightness       int       `json:"brightness"`
 }
 
 func (lightstate *LightState) equals(state LightState) bool {
@@ -37,36 +37,36 @@ func (lightstate *LightState) equals(state LightState) bool {
 	var sameBrightness = false
 
 	// compare color values
-	currentX := lightstate.color[0]
-	currentY := lightstate.color[1]
+	currentX := lightstate.Color[0]
+	currentY := lightstate.Color[1]
 	if currentX == 0 && currentY == 0 {
 		// zero value implies ignore color
 		sameColor = true
 	} else {
-		diffx := math.Abs(float64(currentX - state.color[0]))
-		diffy := math.Abs(float64(currentY - state.color[1]))
+		diffx := math.Abs(float64(currentX - state.Color[0]))
+		diffy := math.Abs(float64(currentY - state.Color[1]))
 		if diffx < 0.001 && diffy < 0.001 {
 			sameColor = true
 		}
 	}
 
 	// compare color temperature
-	if lightstate.colorTemperature == 0 {
+	if lightstate.ColorTemperature == 0 {
 		// zero value implies ignore color temperature
 		sameColorTemperature = true
 	} else {
-		diffTemperature := math.Abs(float64(lightstate.colorTemperature - state.colorTemperature))
-		if diffTemperature < 3 {
+		diffTemperature := math.Abs(float64(lightstate.ColorTemperature - state.ColorTemperature))
+		if diffTemperature < 5 {
 			sameColorTemperature = true
 		}
 	}
 
 	// compare brightness
-	if lightstate.brightness == 0 {
+	if lightstate.Brightness == 0 {
 		// zero value implies ignore brightness
 		sameBrightness = true
 	} else {
-		diffBrightness := math.Abs(float64(lightstate.brightness - state.brightness))
+		diffBrightness := math.Abs(float64(lightstate.Brightness - state.Brightness))
 		if diffBrightness < 3 {
 			sameBrightness = true
 		}
@@ -87,27 +87,27 @@ func (lightstate *LightState) convertValuesToHue() (int, []float32, int) {
 	var hueBrightness = 0
 
 	// color temperature
-	if lightstate.colorTemperature != 0 {
-		if lightstate.colorTemperature > 6500 {
-			lightstate.colorTemperature = 6500
-		} else if lightstate.colorTemperature < 2000 {
-			lightstate.colorTemperature = 2000
+	if lightstate.ColorTemperature != 0 {
+		if lightstate.ColorTemperature > 6500 {
+			lightstate.ColorTemperature = 6500
+		} else if lightstate.ColorTemperature < 2000 {
+			lightstate.ColorTemperature = 2000
 		}
-		hueColorTemperature = int((float64(1) / float64(lightstate.colorTemperature)) * float64(1000000))
+		hueColorTemperature = int((float64(1) / float64(lightstate.ColorTemperature)) * float64(1000000))
 	}
 
 	// brightness
-	if lightstate.brightness != 0 {
-		if lightstate.brightness > 100 {
-			lightstate.brightness = 100
-		} else if lightstate.brightness < 0 {
-			lightstate.brightness = 0
+	if lightstate.Brightness != 0 {
+		if lightstate.Brightness > 100 {
+			lightstate.Brightness = 100
+		} else if lightstate.Brightness < 0 {
+			lightstate.Brightness = 0
 		}
-		hueBrightness = int((float64(lightstate.brightness) / float64(100)) * float64(254))
+		hueBrightness = int((float64(lightstate.Brightness) / float64(100)) * float64(254))
 	}
 
 	// xy color should not need a mapping
-	return hueColorTemperature, lightstate.color, hueBrightness
+	return hueColorTemperature, lightstate.Color, hueBrightness
 }
 
 func lightStateFromHueValues(colorTemperature int, color []float32, brightness int) LightState {
@@ -145,4 +145,11 @@ func lightStateFromHueValues(colorTemperature int, color []float32, brightness i
 		}
 	}
 	return LightState{stateColorTemperature, stateColor, stateBrightness}
+}
+
+func (lightstate *LightState) validate() {
+	if len(lightstate.Color) != 2 {
+		x, y := colorTemperatureToXYColor(lightstate.ColorTemperature)
+		lightstate.Color = []float32{float32(x), float32(y)}
+	}
 }
