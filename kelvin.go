@@ -25,13 +25,17 @@ import log "github.com/Sirupsen/logrus"
 import "os/signal"
 import "syscall"
 import "os"
-import "sync"
+import "runtime"
 import "flag"
 
 var applicationVersion = "development"
 var debug = flag.Bool("debug", false, "Enable debug logging")
 var logfile = flag.String("log", "", "Redirect log output to specified file")
 var forceUpdate = flag.Bool("forceUpdate", false, "Update to new major version")
+
+var configuration *Configuration
+var bridge *HueBridge
+var lights []*Light
 
 func main() {
 	flag.Parse()
@@ -42,21 +46,23 @@ func main() {
 	go handleSIGHUP()
 
 	// load configuration or create a new one
-	configuration, err := InitializeConfiguration()
+	conf, err := InitializeConfiguration()
 	if err != nil {
 		log.Fatal(err)
 	}
+	configuration = &conf
 
 	// find bridge
-	bridge, err := InitializeBridge(&configuration)
+	b, err := InitializeBridge(configuration)
 	if err != nil {
-		log.Fatal(err)
+		log.Warning(err)
 	}
+	bridge = &b
 
 	// find location
-	_, err = InitializeLocation(&configuration)
+	_, err = InitializeLocation(configuration)
 	if err != nil {
-		log.Fatal(err)
+		log.Warning(err)
 	}
 
 	// save configuration
@@ -66,20 +72,16 @@ func main() {
 	}
 
 	// start routine for every light
-	hueLights, err := bridge.Lights()
+	lights, err = bridge.Lights()
 	if err != nil {
-		log.Fatal(err)
+		log.Warning(err)
 	}
-	var wg sync.WaitGroup
-	for _, hueLight := range hueLights {
-		hueLight := hueLight
-		wg.Add(1)
-		go func() {
-			hueLight.updateCyclic(configuration)
-			wg.Done()
-		}()
+
+	for _, light := range lights {
+		light := light
+		go light.updateCyclic(configuration)
 	}
-	wg.Wait()
+	runtime.Goexit()
 	log.Debugf("All routines ended...")
 }
 
