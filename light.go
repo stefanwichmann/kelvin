@@ -36,85 +36,54 @@ var lightsSupportingXYColor = []string{"Color Light", "Extended Color Light"}
 // Light represents a single physical hue light in your system.
 // It is used to read and write it's state.
 type Light struct {
-	id                       int
-	name                     string
-	hueLight                 hue.Light
-	savedLightState          LightState
-	currentLightState        LightState
-	targetLightState         LightState
-	on                       bool
-	reachable                bool
-	tracking                 bool
-	manually                 bool
-	dimmable                 bool
-	supportsColorTemperature bool
-	supportsXYColor          bool
+	ID                       int
+	Name                     string
+	HueLight                 hue.Light
+	SavedLightState          LightState
+	CurrentLightState        LightState
+	TargetLightState         LightState
+	On                       bool
+	Reachable                bool
+	Tracking                 bool
+	Automatic                bool
+	Dimmable                 bool
+	SupportsColorTemperature bool
+	SupportsXYColor          bool
+	Configuration            *Configuration
+	Schedule                 Schedule
+	Interval                 Interval
 }
 
 const lightUpdateIntervalInSeconds = 1
 const lightTransitionIntervalInSeconds = 1
 const stateUpdateIntervalInSeconds = 60
 
-func (light *Light) updateCyclic(configuration Configuration) {
+func (light *Light) updateCyclic(configuration *Configuration) {
+	light.Configuration = configuration
+
 	// Filter devices we can't control
-	if !light.dimmable && !light.supportsXYColor && !light.supportsColorTemperature {
-		log.Printf("💡 Device %v doesn't support any functionality Kelvin uses. Ignoring...", light.name)
+	if !light.Dimmable && !light.SupportsXYColor && !light.SupportsColorTemperature {
+		log.Printf("💡 Device %v doesn't support any functionality Kelvin uses. Ignoring...", light.Name)
 		return
 	}
 
-	schedule, err := configuration.lightScheduleForDay(light.id, time.Now())
-	if err != nil {
-		log.Printf("💡 Light %v is not associated to any schedule. Ignoring...", light.name)
-		return
-	}
-	log.Printf("💡 Light %s: Activating schedule for %v (sunrise: %v, sunset: %v)", light.name, schedule.endOfDay.Format("Jan 2 2006"), schedule.sunrise.Time.Format(time.Kitchen), schedule.sunset.Time.Format(time.Kitchen))
-	interval, err := schedule.currentInterval(time.Now())
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("💡 Light %s: Activating interval %v - %v", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen))
-	light.targetLightState, err = interval.calculateLightStateInInterval(time.Now())
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Debugf("💡 Light %s: Initializing target state %+v", light.name, light.targetLightState)
+	light.updateSchedule()
+	light.updateInterval()
+	light.updateTargetLightState()
 
 	// Start cyclic polling
-	log.Debugf("💡 Light %s: Starting cyclic update...", light.name)
+	log.Debugf("💡 Light %s: Starting cyclic update...", light.Name)
 	lightUpdateTick := time.Tick(lightUpdateIntervalInSeconds * time.Second)
 	stateUpdateTick := time.Tick(stateUpdateIntervalInSeconds * time.Second)
 	for {
 		select {
-		case <-time.After(schedule.endOfDay.Sub(time.Now()) + 1*time.Second):
+		case <-time.After(light.Schedule.endOfDay.Sub(time.Now()) + 1*time.Second):
 			// Day has ended, calculate new schedule
-			log.Debugf("💡 Light %s: End of day reached: %v)", light.name, schedule.endOfDay.Format("Jan 2 2006"))
-			schedule, err = configuration.lightScheduleForDay(light.id, time.Now())
-			if err != nil {
-				// should not happen
-				log.Warningln(err)
-				continue
-			}
-			log.Printf("💡 Light %s: Activating schedule for %v (sunrise: %v, sunset: %v)", light.name, schedule.endOfDay.Format("Jan 2 2006"), schedule.sunrise.Time.Format(time.Kitchen), schedule.sunset.Time.Format(time.Kitchen))
-		case <-time.After(interval.End.Time.Sub(time.Now()) + 2*time.Second):
-			// interval has ended
-			log.Debugf("💡 Light %s: Active interval (%v - %v) ended)", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen))
-			interval, err = schedule.currentInterval(time.Now())
-			if err != nil {
-				// schedule seems to be wrong.
-				log.Warningln(err)
-				continue
-			}
-			log.Printf("💡 Light %s: Activating interval %v - %v", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen))
+			light.updateSchedule()
 		case <-stateUpdateTick:
-			// update color every minute
-			log.Debugf("💡 Light %s: Updating target lightstate for interval %v - %v (current: %+v)", light.name, interval.Start.Time.Format(time.Kitchen), interval.End.Time.Format(time.Kitchen), light.targetLightState)
-			light.targetLightState, err = interval.calculateLightStateInInterval(time.Now())
-			if err != nil {
-				// interval seems to be wrong. Ignore and try again in one minute.
-				log.Debugln(err)
-				continue
-			}
-			log.Debugf("💡 Light %s: Updated target state to %+v", light.name, light.targetLightState)
+			// update interval and color every minute
+			light.updateInterval()
+			light.updateTargetLightState()
 		case <-lightUpdateTick:
 			light.update()
 		}
@@ -122,34 +91,34 @@ func (light *Light) updateCyclic(configuration Configuration) {
 }
 
 func (light *Light) initialize() error {
-	attr, err := light.hueLight.GetLightAttributes()
+	attr, err := light.HueLight.GetLightAttributes()
 	if err != nil {
 		return err
 	}
 
 	// initialize non changing values
-	light.name = attr.Name
-	light.dimmable = containsString(lightsSupportingDimming, attr.Type)
-	light.supportsColorTemperature = containsString(lightsSupportingColorTemperature, attr.Type)
-	light.supportsXYColor = containsString(lightsSupportingXYColor, attr.Type)
+	light.Name = attr.Name
+	light.Dimmable = containsString(lightsSupportingDimming, attr.Type)
+	light.SupportsColorTemperature = containsString(lightsSupportingColorTemperature, attr.Type)
+	light.SupportsXYColor = containsString(lightsSupportingXYColor, attr.Type)
 
-	// initialize changing values
-	light.on = attr.State.On
-	light.reachable = attr.State.Reachable
-	light.currentLightState = lightStateFromHueValues(attr.State.Ct, attr.State.Xy, attr.State.Bri)
-
+	light.updateCurrentLightState()
 	return nil
 }
 
 func (light *Light) updateCurrentLightState() error {
-	attr, err := light.hueLight.GetLightAttributes()
+	attr, err := light.HueLight.GetLightAttributes()
 	if err != nil {
 		return err
 	}
-	light.reachable = attr.State.Reachable
-	light.on = attr.State.On
-	light.currentLightState = lightStateFromHueValues(attr.State.Ct, attr.State.Xy, attr.State.Bri)
-
+	light.Reachable = attr.State.Reachable
+	if !light.Reachable {
+		light.On = false
+		light.CurrentLightState = LightState{0, []float32{0,0}, 0}
+	} else {
+		light.On = attr.State.On
+		light.CurrentLightState = lightStateFromHueValues(attr.State.Ct, attr.State.Xy, attr.State.Bri)
+	}
 	return nil
 }
 
@@ -158,11 +127,11 @@ func (light *Light) update() error {
 	light.updateCurrentLightState()
 
 	// Light reachable or on?
-	if !light.reachable || !light.on {
-		if light.tracking {
-			log.Printf("💡 Light %s is no longer reachable or turned on. Clearing state.", light.name)
-			light.tracking = false
-			light.manually = false
+	if !light.Reachable || !light.On {
+		if light.Tracking {
+			log.Printf("💡 Light %s is no longer reachable or turned on. Clearing state.", light.Name)
+			light.Tracking = false
+			light.Automatic = false
 			return nil
 		}
 
@@ -171,60 +140,63 @@ func (light *Light) update() error {
 	}
 
 	// did the light just appear?
-	if !light.tracking {
-		log.Printf("💡 Light %s just appeared. Initializing state to %vK at %v%%", light.name, light.targetLightState.colorTemperature, light.targetLightState.brightness)
+	if !light.Tracking {
+		log.Printf("💡 Light %s just appeared. Initializing state to %vK at %v%% brightness.", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 
 		// For initialization we set the state again and again for 10 seconds
 		// because during startup the zigbee communication might be unstable
 		for index := 0; index < 9; index++ {
-			light.setLightState(light.targetLightState)
+			light.setLightState(light.TargetLightState)
 		}
 		// safe the state of the last iteration
-		setLightState, err := light.setLightState(light.targetLightState)
+		setLightState, err := light.setLightState(light.TargetLightState)
 		if err != nil {
 			return err
 		}
-		light.savedLightState = setLightState
-		light.targetLightState = setLightState
-		light.tracking = true
+		light.SavedLightState = setLightState
+		//light.TargetLightState = setLightState
+		light.Tracking = true
+		light.Automatic = true
+		log.Debugf("💡 Light %s was updated to %vK at %v%% brightness", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 		return nil
 	}
 
 	// light in manual state
-	if light.manually {
+	if !light.Automatic {
 		return nil
 	}
 
 	// did the user manually change the light state?
-	if !light.savedLightState.equals(light.currentLightState) {
+	if !light.SavedLightState.equals(light.CurrentLightState) {
 		if log.GetLevel() == log.DebugLevel {
-			log.Debugf("💡 Light %s was manually changed. Current state: %+v - Saved state: %+v", light.name, light.currentLightState, light.savedLightState)
+			log.Debugf("💡 Light %s was manually changed. Current state: %+v - Saved state: %+v", light.Name, light.CurrentLightState, light.SavedLightState)
 		} else {
-			log.Printf("💡 Light %s was manually changed. Disabling updates..", light.name)
+			log.Printf("💡 Light %s was changed manually. Disabling Kelvin.", light.Name)
 		}
-		light.manually = true
+		light.Automatic = false
 		return nil
 	}
 
 	// Update needed?
-	if light.targetLightState.equals(light.currentLightState) {
+	if light.TargetLightState.equals(light.CurrentLightState) {
 		return nil
 	}
+	log.Debugf("💡 Light %s - Target and Current state differ: %v, %v", light.Name, light.TargetLightState, light.CurrentLightState)
 
 	// Light is reachable, turned on and in automatic state. Update to new state.
-	log.Printf("💡 Updating light %s to %vK at %v%%", light.name, light.targetLightState.colorTemperature, light.targetLightState.brightness)
-	setLightState, err := light.setLightState(light.targetLightState)
+	setLightState, err := light.setLightState(light.TargetLightState)
 	if err != nil {
 		return err
 	}
 
 	// Debug: Compare values
-	if !setLightState.equals(light.targetLightState) {
-		log.Debugf("💡 Light %s - Target and Set state differ: %v, %v", light.name, light.targetLightState, setLightState)
+	if !setLightState.equals(light.TargetLightState) {
+		log.Debugf("💡 Light %s - Target and Set state differ: %v, %v", light.Name, light.TargetLightState, setLightState)
 	}
 
-	light.savedLightState = setLightState
-	light.targetLightState = setLightState
+	light.SavedLightState = setLightState
+	//light.TargetLightState = setLightState
+	log.Printf("💡 Light %s was updated to %vK at %v%% brightness", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 	return nil
 }
 
@@ -232,17 +204,17 @@ func (light *Light) setLightState(state LightState) (LightState, error) {
 	// Don't send repeated "On" as this slows the bridge down (see https://developers.meethue.com/faq-page #Performance)
 	var hueLightState hue.SetLightState
 	colorTemperature, color, brightness := state.convertValuesToHue()
-	if light.supportsXYColor && state.color[0] != 0 && state.color[1] != 0 {
-		hueLightState.Xy = []float32{color[0], color[1]}
-	} else if light.supportsColorTemperature && state.colorTemperature != 0 {
+	if light.SupportsColorTemperature && state.ColorTemperature != 0 {
 		hueLightState.Ct = strconv.Itoa(colorTemperature)
+	} else if light.SupportsXYColor && state.Color[0] != 0 && state.Color[1] != 0 {
+		hueLightState.Xy = []float32{color[0], color[1]}
 	}
-	if light.dimmable && state.brightness != 0 {
+	if light.Dimmable && state.Brightness != 0 {
 		hueLightState.Bri = strconv.Itoa(brightness)
 	}
 	hueLightState.TransitionTime = strconv.Itoa(lightTransitionIntervalInSeconds * 10) // conversion to 100ms-value
 
-	results, err := light.hueLight.SetState(hueLightState)
+	results, err := light.HueLight.SetState(hueLightState)
 	if err != nil {
 		return LightState{0, []float32{0, 0}, 0}, err
 	}
@@ -270,4 +242,58 @@ func (light *Light) setLightState(state LightState) (LightState, error) {
 	// wait while the light is in transition before returning
 	time.Sleep(lightTransitionIntervalInSeconds + 1*time.Second)
 	return setLightState, nil
+}
+
+func (light *Light) updateConfiguration(configuration *Configuration) {
+	light.Configuration = configuration
+	light.updateSchedule()
+	light.updateInterval()
+	light.updateTargetLightState()
+}
+
+func (light *Light) updateSchedule() {
+	newSchedule, err := light.Configuration.lightScheduleForDay(light.ID, time.Now())
+	if err != nil {
+		log.Printf("💡 Light %v is not associated to any schedule. Ignoring...", light.Name)
+		light.Schedule = newSchedule // assign empty schedule
+		return
+	}
+	light.Schedule = newSchedule
+	log.Printf("💡 Light %s: Activating schedule for %v (sunrise: %v, sunset: %v)", light.Name, light.Schedule.endOfDay.Format("Jan 2 2006"), light.Schedule.sunrise.Time.Format("15:04"), light.Schedule.sunset.Time.Format("15:04"))
+	light.updateInterval()
+}
+
+func (light *Light) updateInterval() {
+	newInterval, err := light.Schedule.currentInterval(time.Now())
+	if err != nil {
+		log.Printf("💡 Light %v has no active interval. Ignoring...", light.Name)
+		light.Interval = newInterval // assign empty interval
+		return
+	}
+	if newInterval != light.Interval {
+		light.Interval = newInterval
+		log.Printf("💡 Light %s: Activating interval %v - %v", light.Name, light.Interval.Start.Time.Format("15:04"), light.Interval.End.Time.Format("15:04"))
+	}
+}
+
+func (light *Light) updateTargetLightState() {
+	newLightState, err := light.Interval.calculateLightStateInInterval(time.Now())
+	if err != nil {
+		// interval seems to be wrong. Ignore and try again in one minute.
+		log.Debugln(err)
+		return
+	}
+	//log.Debugf("💡 Light %s: Updating target lightstate from %+v to %+v)", light.Name, light.TargetLightState, newLightState)
+
+	// First initialization of the TargetLightState
+	if light.TargetLightState.ColorTemperature == 0 && len(light.TargetLightState.Color) == 0 && light.TargetLightState.Brightness == 0 {
+		light.TargetLightState = newLightState
+		log.Debugf("💡 Light %s: Initialized target state to %+v", light.Name, light.TargetLightState)
+		return
+	}
+
+	if !light.TargetLightState.equals(newLightState) {
+		light.TargetLightState = newLightState
+		log.Debugf("💡 Light %s: Updated target state to %+v", light.Name, light.TargetLightState)
+	}
 }
