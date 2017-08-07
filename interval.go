@@ -22,7 +22,6 @@
 package main
 
 import "time"
-import "fmt"
 
 // Interval represents a time range of one day with
 // the given start and end configurations.
@@ -31,9 +30,17 @@ type Interval struct {
 	End   TimeStamp
 }
 
-func (interval *Interval) calculateLightStateInInterval(timestamp time.Time) (LightState, error) {
-	if timestamp.Before(interval.Start.Time) || timestamp.After(interval.End.Time) {
-		return LightState{0, []float32{0.0, 0.0}, 0}, fmt.Errorf("Timestamp %v is not suitable for interval %v - %v\n", timestamp, interval.Start.Time, interval.End.Time)
+func (interval *Interval) calculateLightStateInInterval(timestamp time.Time) LightState {
+	// Timestamp before interval
+	if timestamp.Before(interval.Start.Time) {
+		x, y := colorTemperatureToXYColor(interval.Start.ColorTemperature)
+		return LightState{interval.Start.ColorTemperature, []float32{float32(x), float32(y)}, interval.Start.Brightness}
+	}
+
+	// Timestamp after interval
+	if timestamp.After(interval.End.Time) {
+		x, y := colorTemperatureToXYColor(interval.End.ColorTemperature)
+		return LightState{interval.End.ColorTemperature, []float32{float32(x), float32(y)}, interval.End.Brightness}
 	}
 
 	// Calculate regular progress inside interval
@@ -50,6 +57,5 @@ func (interval *Interval) calculateLightStateInInterval(timestamp time.Time) (Li
 	targetBrightness := interval.Start.Brightness + int(brightnessPercentageValue)
 
 	x, y := colorTemperatureToXYColor(targetColorTemperature)
-
-	return LightState{targetColorTemperature, []float32{float32(x), float32(y)}, targetBrightness}, nil
+	return LightState{targetColorTemperature, []float32{float32(x), float32(y)}, targetBrightness}
 }

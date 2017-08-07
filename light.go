@@ -277,13 +277,7 @@ func (light *Light) updateInterval() {
 }
 
 func (light *Light) updateTargetLightState() {
-	newLightState, err := light.Interval.calculateLightStateInInterval(time.Now())
-	if err != nil {
-		// interval seems to be wrong. Ignore and try again in one minute.
-		log.Debugln(err)
-		return
-	}
-	//log.Debugf("💡 Light %s: Updating target lightstate from %+v to %+v)", light.Name, light.TargetLightState, newLightState)
+	newLightState := light.Interval.calculateLightStateInInterval(time.Now())
 
 	// First initialization of the TargetLightState
 	if light.TargetLightState.ColorTemperature == 0 && len(light.TargetLightState.Color) == 0 && light.TargetLightState.Brightness == 0 {
