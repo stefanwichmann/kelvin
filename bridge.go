@@ -82,11 +82,7 @@ func (bridge *HueBridge) InitializeBridge(configuration *Configuration) error {
 	}
 
 	err = bridge.populateSchedule(configuration)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // Lights return all known lights on your bridge.
@@ -124,7 +120,7 @@ func (bridge *HueBridge) printDevices() error {
 	log.Printf("| %-20s | %3v | %-9v | %-5v | %-8v | %-11v | %-5v | %-9v | %-8v |", "Name", "ID", "Reachable", "On", "Dimmable", "Temperature", "Color", "Cur. Temp", "Cur. Bri")
 	for _, light := range lights {
 		var temp string
-		if light.SupportsColorTemperature == false && light.SupportsXYColor == false {
+		if !light.SupportsColorTemperature && !light.SupportsXYColor {
 			temp = "-"
 		} else {
 			temp = strings.Join([]string{strconv.Itoa(light.CurrentLightState.ColorTemperature), "K"}, "")
@@ -203,11 +199,7 @@ func (bridge *HueBridge) connect() error {
 
 	// Test bridge
 	_, err := bridge.bridge.Search()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (bridge *HueBridge) populateSchedule(configuration *Configuration) error {

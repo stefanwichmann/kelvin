@@ -36,7 +36,7 @@ func IsLocalTimeValid() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	timeDifference := networkTime.Sub(time.Now()).Seconds()
+	timeDifference := time.Until(*networkTime).Seconds()
 	if timeDifference < 0 {
 		timeDifference = timeDifference * -1
 	}

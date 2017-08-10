@@ -78,7 +78,7 @@ func (light *Light) updateCyclic(configuration *Configuration) {
 	stateUpdateTick := time.Tick(stateUpdateIntervalInSeconds * time.Second)
 	for {
 		select {
-		case <-time.After(light.Schedule.endOfDay.Sub(time.Now()) + 1*time.Second):
+		case <-time.After(time.Until(light.Schedule.endOfDay) + 1*time.Second):
 			// Day has ended, calculate new schedule
 			light.updateSchedule()
 		case <-stateUpdateTick:
