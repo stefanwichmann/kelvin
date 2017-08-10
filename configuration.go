@@ -210,7 +210,11 @@ func (configuration *Configuration) Read() error {
 }
 
 func (configuration *Configuration) lightScheduleForDay(light int, date time.Time) (Schedule, error) {
+	// initialize schedule with end of day
 	var schedule Schedule
+	yr, mth, dy := date.Date()
+	schedule.endOfDay = time.Date(yr, mth, dy, 23, 59, 59, 59, date.Location())
+
 	var lightSchedule LightSchedule
 	found := false
 	for _, candidate := range configuration.Schedules {
@@ -225,8 +229,6 @@ func (configuration *Configuration) lightScheduleForDay(light int, date time.Tim
 		return schedule, fmt.Errorf("Light %d is not associated with any schedule in configuration", light)
 	}
 
-	yr, mth, dy := date.Date()
-	schedule.endOfDay = time.Date(yr, mth, dy, 23, 59, 59, 59, date.Location())
 	schedule.sunrise = TimeStamp{CalculateSunrise(date, configuration.Location.Latitude, configuration.Location.Longitude), lightSchedule.DefaultColorTemperature, lightSchedule.DefaultBrightness}
 	schedule.sunset = TimeStamp{CalculateSunset(date, configuration.Location.Latitude, configuration.Location.Longitude), lightSchedule.DefaultColorTemperature, lightSchedule.DefaultBrightness}
 
