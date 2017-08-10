@@ -34,7 +34,7 @@ var logfile = flag.String("log", "", "Redirect log output to specified file")
 var forceUpdate = flag.Bool("forceUpdate", false, "Update to new major version")
 
 var configuration *Configuration
-var bridge *HueBridge
+var bridge = &HueBridge{}
 var lights []*Light
 
 func main() {
@@ -53,11 +53,10 @@ func main() {
 	configuration = &conf
 
 	// find bridge
-	b, err := InitializeBridge(configuration)
+	err = bridge.InitializeBridge(configuration)
 	if err != nil {
 		log.Warning(err)
 	}
-	bridge = &b
 
 	// find location
 	_, err = InitializeLocation(configuration)
