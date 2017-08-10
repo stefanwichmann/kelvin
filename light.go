@@ -42,6 +42,7 @@ type Light struct {
 	SavedLightState          LightState
 	CurrentLightState        LightState
 	TargetLightState         LightState
+	Scheduled                bool
 	On                       bool
 	Reachable                bool
 	Tracking                 bool
@@ -125,6 +126,11 @@ func (light *Light) updateCurrentLightState() error {
 func (light *Light) update() error {
 	// refresh current state
 	light.updateCurrentLightState()
+
+	// is the light associated to any schedule?
+	if !light.Scheduled {
+		return nil
+	}
 
 	// Light reachable or on?
 	if !light.Reachable || !light.On {
@@ -256,14 +262,21 @@ func (light *Light) updateSchedule() {
 	if err != nil {
 		log.Printf("💡 Light %v is not associated to any schedule. Ignoring...", light.Name)
 		light.Schedule = newSchedule // assign empty schedule
+		light.Scheduled = false
 		return
 	}
 	light.Schedule = newSchedule
+	light.Scheduled = true
 	log.Printf("💡 Light %s: Activating schedule for %v (sunrise: %v, sunset: %v)", light.Name, light.Schedule.endOfDay.Format("Jan 2 2006"), light.Schedule.sunrise.Time.Format("15:04"), light.Schedule.sunset.Time.Format("15:04"))
 	light.updateInterval()
 }
 
 func (light *Light) updateInterval() {
+	if !light.Scheduled {
+		log.Debugf("💡 Light %v is not associated to any schedule. No interval to update...", light.Name)
+		return
+	}
+
 	newInterval, err := light.Schedule.currentInterval(time.Now())
 	if err != nil {
 		log.Printf("💡 Light %v has no active interval. Ignoring...", light.Name)
@@ -277,6 +290,11 @@ func (light *Light) updateInterval() {
 }
 
 func (light *Light) updateTargetLightState() {
+	if !light.Scheduled {
+		log.Debugf("💡 Light %v is not associated to any schedule. No target light state to update...", light.Name)
+		return
+	}
+
 	newLightState := light.Interval.calculateLightStateInInterval(time.Now())
 
 	// First initialization of the TargetLightState
