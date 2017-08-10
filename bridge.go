@@ -23,8 +23,12 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/stefanwichmann/go.hue"
+	"io/ioutil"
+	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -37,6 +41,7 @@ type HueBridge struct {
 	bridge   hue.Bridge
 	BridgeIP string
 	Username string
+	Version  int
 }
 
 const hueBridgeAppName = "kelvin"
@@ -44,46 +49,44 @@ const hueBridgeAppName = "kelvin"
 // InitializeBridge creates and returns an initialized HueBridge.
 // If you have a valid configuration this will be used. Otherwise a local
 // discovery will be started, followed by a user registration on your bridge.
-func InitializeBridge(configuration *Configuration) (HueBridge, error) {
-	var bridge HueBridge
-
-	if configuration.Bridge.IP != "" {
-		bridge.BridgeIP = configuration.Bridge.IP
-	} else {
-		err := bridge.discover()
-		if err != nil {
-			return bridge, err
-		}
-		configuration.Bridge.IP = bridge.BridgeIP
+func (bridge *HueBridge) InitializeBridge(configuration *Configuration) error {
+	err := bridge.discover(configuration.Bridge.IP)
+	if err != nil {
+		return err
 	}
+	configuration.Bridge.IP = bridge.BridgeIP
 
 	if configuration.Bridge.Username != "" {
+		log.Debugf("Found bridge username in configuration: %s", configuration.Bridge.Username)
 		bridge.Username = configuration.Bridge.Username
 	} else {
+		log.Debugf("No username found in bridge configuration. Starting registration...")
 		err := bridge.register()
 		if err != nil {
-			return bridge, err
+			return err
 		}
+		log.Debugf("Saving new username in bridge configuration: %s", bridge.Username)
 		configuration.Bridge.Username = bridge.Username
 	}
 
-	err := bridge.connect()
+	log.Debugf("Connecting to bridge %s with username %s", bridge.BridgeIP, bridge.Username)
+	err = bridge.connect()
 	if err != nil {
-		return bridge, err
+		return err
 	}
 	log.Println("⌘ Connection to bridge established")
 	go bridge.validateSofwareVersion()
 	err = bridge.printDevices()
 	if err != nil {
-		return bridge, err
+		return err
 	}
 
 	err = bridge.populateSchedule(configuration)
 	if err != nil {
-		return bridge, err
+		return err
 	}
 
-	return bridge, nil
+	return nil
 }
 
 // Lights return all known lights on your bridge.
@@ -107,6 +110,7 @@ func (bridge *HueBridge) Lights() ([]*Light, error) {
 		lights = append(lights, &light)
 	}
 
+	sort.Slice(lights, func(i, j int) bool { return lights[i].ID < lights[j].ID })
 	return lights, nil
 }
 
@@ -130,22 +134,35 @@ func (bridge *HueBridge) printDevices() error {
 	return nil
 }
 
-func (bridge *HueBridge) discover() error {
+func (bridge *HueBridge) discover(ip string) error {
+	if ip != "" {
+		// we have a known IP adress. Validate if it points to a reachable bridge
+		bridge.BridgeIP = ip
+		err := bridge.validateBridge()
+		if err == nil {
+			return nil
+		}
+	}
+	log.Debugf("Starting bridge discovery")
 	bridges, err := hue.DiscoverBridges(false)
 	if err != nil {
+		bridge.BridgeIP = ""
 		return err
 	}
 	if len(bridges) == 0 {
+		bridge.BridgeIP = ""
 		return errors.New("Bridge discovery failed. Please configure manually in config.json.")
 	}
-	if len(bridges) > 1 {
-		log.Printf("Found multiple bridges. Using first one.")
+	for _, candidate := range bridges {
+		bridge.BridgeIP = candidate.IpAddr
+		err := bridge.validateBridge()
+		if err == nil {
+			log.Printf("⌘ Found bridge at %s", bridge.BridgeIP)
+			return nil
+		}
 	}
-	log.Debugf("Discovery found bridges at %v", bridges)
-	hueBridge := bridges[0] // use the first locator
-	bridge.BridgeIP = hueBridge.IpAddr
-	log.Printf("⌘ Bridge discovery successful.")
-	return nil
+	bridge.BridgeIP = ""
+	return errors.New("Bridge discovery failed. Please configure manually in config.json.")
 }
 
 func (bridge *HueBridge) register() error {
@@ -167,6 +184,7 @@ func (bridge *HueBridge) register() error {
 
 		if bridge.bridge.Username != "" {
 			// registration successful
+			bridge.Username = bridge.bridge.Username
 			log.Printf("⌘ User registration successful.")
 			return nil
 		}
@@ -238,4 +256,29 @@ func (bridge *HueBridge) validateSofwareVersion() {
 	} else {
 		log.Debugf("Bridge software is up to date")
 	}
+}
+
+func (bridge *HueBridge) validateBridge() error {
+	if bridge.BridgeIP == "" {
+		return errors.New("No bridge configured. Could not validate")
+	}
+	resp, err := http.Get("http://" + bridge.BridgeIP + "/description.xml")
+	if err != nil {
+		return fmt.Errorf("Could not read bridge description: %v", err)
+	}
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("Could not read bridge description: %v", err)
+	}
+	if strings.Contains(string(data), "<modelNumber>929000226503</modelNumber>") {
+		bridge.Version = 1
+		return nil
+	}
+	if strings.Contains(string(data), "<modelNumber>BSB002</modelNumber>") {
+		bridge.Version = 2
+		return nil
+	}
+	return fmt.Errorf("Bridge validation failed.")
 }
