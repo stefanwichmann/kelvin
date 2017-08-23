@@ -42,6 +42,12 @@ type Location struct {
 	Longitude float64 `json:"longitude"`
 }
 
+// WebInterface respresents the webinterface of Kelvin.
+type WebInterface struct {
+	Enabled bool `json:"enabled"`
+	Port    int  `json:"port"`
+}
+
 // LightSchedule represents the schedule for any given day for the associated lights.
 type LightSchedule struct {
 	Name                    string                  `json:"name"`
@@ -66,6 +72,7 @@ type Configuration struct {
 	Hash              string          `json:"-"`
 	Bridge            Bridge          `json:"bridge"`
 	Location          Location        `json:"location"`
+	WebInterface      WebInterface    `json:"webinterface"`
 	Schedules         []LightSchedule `json:"schedules"`
 }
 
@@ -101,6 +108,11 @@ func (configuration *Configuration) initializeDefaults() {
 	defaultSchedule.BeforeSunrise = []TimedColorTemperature{wakeupTime}
 
 	configuration.Schedules = []LightSchedule{defaultSchedule}
+
+	var webinterface WebInterface
+	webinterface.Enabled = false
+	webinterface.Port = 8083
+	configuration.WebInterface = webinterface
 }
 
 // InitializeConfiguration creates and returns an initialized
@@ -203,6 +215,13 @@ func (configuration *Configuration) Read() error {
 				configuration.Schedules[scheduleIndex].AfterSunset[afterTimestampIndex].Time = t
 			}
 		}
+	}
+
+	// Migration: Enable webinterface
+	if configuration.WebInterface.Port == 0 {
+		log.Printf("Migrating webinterface settings...")
+		configuration.WebInterface.Enabled = false
+		configuration.WebInterface.Port = 8083
 	}
 	configuration.Write()
 

@@ -52,6 +52,9 @@ func main() {
 	}
 	configuration = &conf
 
+	// start interface
+	go startInterface()
+
 	// find bridge
 	err = bridge.InitializeBridge(configuration)
 	if err != nil {

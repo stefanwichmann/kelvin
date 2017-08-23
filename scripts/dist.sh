@@ -50,6 +50,9 @@ buildTarget() {
   # make binary executable
   chmod +x "$OUTPUT_BINARY"
 
+  # include webinterface
+  cp gui "$OUTPUT_PATH"
+
   # include license and readme
   cp README.md "$OUTPUT_PATH"/README.txt
   cp LICENSE "$OUTPUT_PATH"/LICENSE.txt
