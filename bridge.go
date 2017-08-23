@@ -132,7 +132,7 @@ func (bridge *HueBridge) printDevices() error {
 
 func (bridge *HueBridge) discover(ip string) error {
 	if ip != "" {
-		// we have a known IP adress. Validate if it points to a reachable bridge
+		// we have a known IP address. Validate if it points to a reachable bridge
 		bridge.BridgeIP = ip
 		err := bridge.validateBridge()
 		if err == nil {
