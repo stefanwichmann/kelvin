@@ -22,6 +22,7 @@
 package main
 
 import "math"
+import log "github.com/Sirupsen/logrus"
 
 // LightState represents a light configuration.
 // It can be read from or written to the physical lights.
@@ -147,9 +148,35 @@ func lightStateFromHueValues(colorTemperature int, color []float32, brightness i
 	return LightState{stateColorTemperature, stateColor, stateBrightness}
 }
 
-func (lightstate *LightState) validate() {
-	if len(lightstate.Color) != 2 {
-		x, y := colorTemperatureToXYColor(lightstate.ColorTemperature)
-		lightstate.Color = []float32{float32(x), float32(y)}
+func (lightstate *LightState) isValid() bool {
+	valid := true
+	// Validate ColorTemperature
+	if lightstate.ColorTemperature != 0 && (lightstate.ColorTemperature < 2000 || lightstate.ColorTemperature > 6500) {
+		log.Warningf("Validation: Invalid ColorTemperature in %+v", lightstate)
+		valid = false
 	}
+
+	// Validate Color
+	if len(lightstate.Color) != 2 {
+		log.Warningf("Validation: Invalid Color in %+v", lightstate)
+		valid = false
+	}
+	// TODO Validate individual color values.
+
+	// Validate Brightness
+	if lightstate.Brightness != 0 && (lightstate.Brightness < 0 || lightstate.Brightness > 100) {
+		log.Warningf("Validation: Invalid Brightness in %+v", lightstate)
+		valid = false
+	}
+
+	// ColorTemperature and Color match
+	if lightstate.ColorTemperature == 0 && (lightstate.Color[0] != 0 || lightstate.Color[1] != 0) {
+		log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
+		valid = false
+	} else if lightstate.ColorTemperature != 0 && (lightstate.Color[0] == 0 || lightstate.Color[1] == 0) {
+		log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
+		valid = false
+	}
+
+	return valid
 }

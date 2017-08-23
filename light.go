@@ -296,6 +296,7 @@ func (light *Light) updateTargetLightState() {
 	}
 
 	newLightState := light.Interval.calculateLightStateInInterval(time.Now())
+	newLightState.isValid()
 
 	// First initialization of the TargetLightState
 	if light.TargetLightState.ColorTemperature == 0 && len(light.TargetLightState.Color) == 0 && light.TargetLightState.Brightness == 0 {
