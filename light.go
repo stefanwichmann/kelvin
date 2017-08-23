@@ -210,10 +210,10 @@ func (light *Light) setLightState(state LightState) (LightState, error) {
 	// Don't send repeated "On" as this slows the bridge down (see https://developers.meethue.com/faq-page #Performance)
 	var hueLightState hue.SetLightState
 	colorTemperature, color, brightness := state.convertValuesToHue()
-	if light.SupportsColorTemperature && state.ColorTemperature != 0 {
-		hueLightState.Ct = strconv.Itoa(colorTemperature)
-	} else if light.SupportsXYColor && state.Color[0] != 0 && state.Color[1] != 0 {
+	if light.SupportsXYColor && (state.Color[0] != 0 || state.Color[1] != 0) {
 		hueLightState.Xy = []float32{color[0], color[1]}
+	} else if light.SupportsColorTemperature && state.ColorTemperature != 0 {
+		hueLightState.Ct = strconv.Itoa(colorTemperature)
 	}
 	if light.Dimmable && state.Brightness != 0 {
 		hueLightState.Bri = strconv.Itoa(brightness)
