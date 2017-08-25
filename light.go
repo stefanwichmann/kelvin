@@ -120,6 +120,7 @@ func (light *Light) updateCurrentLightState() error {
 		light.On = attr.State.On
 		light.CurrentLightState = lightStateFromHueValues(attr.State.Ct, attr.State.Xy, attr.State.Bri)
 	}
+	light.CurrentLightState.isValid()
 	return nil
 }
 
@@ -197,16 +198,17 @@ func (light *Light) update() error {
 
 	// Debug: Compare values
 	if !setLightState.equals(light.TargetLightState) {
-		log.Debugf("💡 Light %s - Target and Set state differ: %v, %v", light.Name, light.TargetLightState, setLightState)
+		log.Debugf("💡 Light %s - Target and set state differ: %v, %v", light.Name, light.TargetLightState, setLightState)
 	}
 
 	light.SavedLightState = setLightState
-	//light.TargetLightState = setLightState
 	log.Printf("💡 Light %s was updated to %vK at %v%% brightness", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 	return nil
 }
 
 func (light *Light) setLightState(state LightState) (LightState, error) {
+	state.isValid()
+
 	// Don't send repeated "On" as this slows the bridge down (see https://developers.meethue.com/faq-page #Performance)
 	var hueLightState hue.SetLightState
 	colorTemperature, color, brightness := state.convertValuesToHue()
@@ -244,6 +246,7 @@ func (light *Light) setLightState(state LightState) (LightState, error) {
 		}
 	}
 	setLightState := lightStateFromHueValues(colorTemperature, color, brightness)
+	setLightState.isValid()
 
 	// wait while the light is in transition before returning
 	time.Sleep(lightTransitionIntervalInSeconds + 1*time.Second)
