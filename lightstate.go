@@ -145,7 +145,11 @@ func lightStateFromHueValues(colorTemperature int, color []float32, brightness i
 			stateBrightness = 0
 		}
 	}
-	return LightState{stateColorTemperature, stateColor, stateBrightness}
+	state := LightState{stateColorTemperature, stateColor, stateBrightness}
+	if !state.isValid() {
+		log.Warningf("Validation failed in lightStateFromHueValues")
+	}
+	return state
 }
 
 func (lightstate *LightState) isValid() bool {
@@ -170,13 +174,15 @@ func (lightstate *LightState) isValid() bool {
 	}
 
 	// ColorTemperature and Color match
+	// Disable this validation for now because we can not calculate the color temparature from xy space...
+	/*
 	if lightstate.ColorTemperature == 0 && (lightstate.Color[0] != 0 || lightstate.Color[1] != 0) {
 		log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
 		valid = false
 	} else if lightstate.ColorTemperature != 0 && (lightstate.Color[0] == 0 || lightstate.Color[1] == 0) {
 		log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
 		valid = false
-	}
+	}*/
 
 	return valid
 }
