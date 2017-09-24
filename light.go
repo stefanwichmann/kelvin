@@ -120,7 +120,11 @@ func (light *Light) updateCurrentLightState() error {
 		light.On = attr.State.On
 		light.CurrentLightState = lightStateFromHueValues(attr.State.Ct, attr.State.Xy, attr.State.Bri)
 	}
-	light.CurrentLightState.isValid()
+
+	// validate lightstate after updating
+	if !light.CurrentLightState.isValid() {
+		log.Warningf("Validation failed in updateCurrentLightState for light %s", light.Name)
+	}
 	return nil
 }
 
@@ -207,7 +211,9 @@ func (light *Light) update() error {
 }
 
 func (light *Light) setLightState(state LightState) (LightState, error) {
-	state.isValid()
+	if !state.isValid() {
+		log.Warningf("Validation failed in setLightState for light %s", light.Name)
+	}
 
 	// Don't send repeated "On" as this slows the bridge down (see https://developers.meethue.com/faq-page #Performance)
 	var hueLightState hue.SetLightState
@@ -299,7 +305,9 @@ func (light *Light) updateTargetLightState() {
 	}
 
 	newLightState := light.Interval.calculateLightStateInInterval(time.Now())
-	newLightState.isValid()
+	if !newLightState.isValid() {
+		log.Warningf("Validation failed in updateTargetLightState for light %s", light.Name)
+	}
 
 	// First initialization of the TargetLightState
 	if light.TargetLightState.ColorTemperature == 0 && len(light.TargetLightState.Color) == 0 && light.TargetLightState.Brightness == 0 {
