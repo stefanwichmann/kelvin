@@ -176,13 +176,14 @@ func (lightstate *LightState) isValid() bool {
 	// ColorTemperature and Color match
 	// Disable this validation for now because we can not calculate the color temparature from xy space...
 	/*
-	if lightstate.ColorTemperature == 0 && (lightstate.Color[0] != 0 || lightstate.Color[1] != 0) {
-		log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
-		valid = false
-	} else if lightstate.ColorTemperature != 0 && (lightstate.Color[0] == 0 || lightstate.Color[1] == 0) {
-		log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
-		valid = false
-	}*/
+		if lightstate.ColorTemperature == 0 && (lightstate.Color[0] != 0 || lightstate.Color[1] != 0) {
+			log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
+			valid = false
+		} else if lightstate.ColorTemperature != 0 && (lightstate.Color[0] == 0 || lightstate.Color[1] == 0) {
+			log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
+			valid = false
+		}
+	*/
 
 	return valid
 }
