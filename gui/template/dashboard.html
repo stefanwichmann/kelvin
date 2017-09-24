@@ -19,6 +19,8 @@
 
   <!-- Custom styles for this template -->
   <link href="/static/css/kelvin.css" rel="stylesheet">
+  <link href="/static/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
 
   <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
   <!--[if lt IE 9]>
@@ -52,39 +54,33 @@
     <div class="text-center">
       <h1>Kelvin dashboard</h1>
     </div>
-    <div class="row well">
-      <div class="col-md-12">
-        <table class="lights">
-          <tr>
-            <th class="col-md-1">ID</th>
-            <th class="col-md-2">Name</th>
-            <th class="col-md-1">Reachable</th>
-            <th class="col-md-1">On</th>
-            <th class="col-md-1">Managed</th>
-            <th class="col-md-1">Automatic</th>
-            <th class="col-md-2">Color Temperature</th>
-            <th class="col-md-2">Brightness</th>
-            <th class="col-md-1">Actions</th>
-          </tr>
-          {{range .}}
-          <tr class="light">
-            <td class="id">{{.ID}}</td>
-            <td>{{.Name}}</td>
-            <td><span class="glyphicon {{if .Reachable}} glyphicon-ok-circle text-success {{else}} glyphicon-remove-circle text-danger{{end}}"></span></td>
-            <td><span class="glyphicon {{if .On}} glyphicon-ok-circle text-success {{else}} glyphicon-remove-circle text-danger{{end}}"></span></td>
-            <td><span class="glyphicon {{if .Tracking}} glyphicon-ok-circle text-success {{else}} glyphicon-remove-circle text-danger{{end}}"></span></td>
-            <td><span class="glyphicon {{if .Automatic}} glyphicon-ok-circle text-success {{else}} glyphicon-remove-circle text-danger{{end}}"></span></td>
-            <td>{{if .Automatic}} {{.CurrentLightState.ColorTemperature}} {{else}} {{.TargetLightState.ColorTemperature}} {{end}}<small>K</small></td>
-            <td>{{.CurrentLightState.Brightness}}<small>%</small></td>
-            <td>
-              <div class="btn-group">
-                <button type="button" class="enableKelvinButton btn btn-primary" {{if or (eq .Automatic true) (eq .Tracking false)}}disabled{{end}}>Enable Kelvin</button>
+    <div class="row">
+      {{range .}}
+      <div class="col-md-2">
+        <div class="panel panel-primary">
+          <div class="panel-heading">
+            <div class="row">
+              <div class="col-xs-3">
+                <i class="fa fa-lightbulb-o fa-5x"></i>
               </div>
-            </td>
-          </tr>
-          {{end}}
-        </table>
+              <div class="col-xs-9 text-right">
+                <div>{{.Name}}</div>
+                <div>{{.CurrentLightState.ColorTemperature}}<small>K</small></div>
+                <div>{{.CurrentLightState.Brightness}}<small>%</small></div>
+              </div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <ul class="fa-ul text-primary">
+              <li><i class="fa-li fa {{if .Reachable}} fa-check-square text-success {{else}} fa-square text-danger{{end}}"></i>Reachable</li>
+              <li><i class="fa-li fa {{if .On}} fa-check-square text-success {{else}} fa-square text-danger{{end}}"></i>On</li>
+              <li><i class="fa-li fa {{if .Automatic}} fa-check-square text-success {{else}} fa-square text-danger{{end}}"></i>Automatic</li>
+            </ul>
+            <button type="button" class="enableKelvinButton btn btn-primary btn-block {{if or (eq .Automatic true) (eq .Tracking false)}}disabled{{end}}">Enable Kelvin</button>
+          </div>
+        </div>
       </div>
+      {{end}}
     </div>
     <div class="row well">
       <div class="text-center">
