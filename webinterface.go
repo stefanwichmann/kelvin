@@ -61,15 +61,15 @@ func startInterface() {
 
 func dashboardHandler(w http.ResponseWriter, r *http.Request) {
 	log.Debugf("Serving dashboard page")
-	dashboardTemplate := template.Must(template.New("dashboard.html").ParseGlob("gui/template/dashboard.html"))
 	if configuration.Bridge.IP == "" || configuration.Bridge.Username == "" {
-		dashboardTemplate = template.Must(template.New("init.html").ParseGlob("gui/template/init.html"))
+		dashboardTemplate := template.Must(template.New("init.html").ParseGlob("gui/template/init.html"))
 		err := dashboardTemplate.Execute(w, bridge)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
+		dashboardTemplate := template.Must(template.New("dashboard.html").ParseGlob("gui/template/dashboard.html"))
 		err := dashboardTemplate.Execute(w, lights)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
