@@ -1,51 +1,21 @@
 $(document).ready(function(){
   $('#dashboard').on('click', '.enableKelvinButton', function(){
-    console.log("Activate kelvin button clicked");
-    activateKelvin($(this).parents("tr.light"));
+    activateKelvin($(this).parents(".light"));
   });
   $('#dashboard').on('click', '#restartKelvinButton', function(){
     console.log("Restart kelvin button clicked");
     restartKelvin();
   });
-  $.ajax({
-    url: "/lights",
-    type: 'GET',
-    success: function(result) {
-      $.each(result, function( index, value ) {
-        console.log( index + ": " + value );
-      });
-    }
-  });
 });
 
-function updateLight(light) {
-  var yes = '<td><span class="glyphicon glyphicon-ok-circle text-success"></span></td>'
-  var no = '<td><span class="glyphicon glyphicon-remove-circle text-danger"></span></td>'
-
-  var entry = $('<tr class="light">');
-  entry.append('<td class="id">' + light.ID + '</td>');
-  entry.append('<td>' + light.Name + '</td>');
-  if (light.Reachable) { entry.append(yes); } else { entry.append(no); }
-  if (light.On) { entry.append(yes); } else { entry.append(no); }
-  if (light.Tracking) { entry.append(yes); } else { entry.append(no); }
-  if (light.Automatic) { entry.append(yes); } else { entry.append(no); }
-  if (light.Automatic) {
-    entry.append('<td>' + light.CurrentLightState.ColorTemperature + '<small>K</small></td>');
-  } else {
-     entry.append('<td>' + light.TargetLightState.ColorTemperature + '<small>K</small></td>');
-  }
-  entry.append('<td>' + light.CurrentLightState.Brightness + '<small>%</small></td>');
-  console.log(entry);
-}
-
 function activateKelvin(entry) {
-  console.log($(entry).find(".id").html());
+  console.log("Activating kelvin for light " + $(entry).attr("id"));
   $.ajax({
-    url: "/lights/"+ $(entry).find(".id").html() +"/automatic",
+    url: "/lights/"+ $(entry).attr("id") +"/automatic",
     type: 'PUT'
   });
   $(entry).find(".enableKelvinButton").prop("disabled",true);
-  window.setTimeout(function(){location.reload(true);}, 2000);
+  window.setTimeout(function(){location.reload(true);}, 5000);
 }
 
 function restartKelvin() {

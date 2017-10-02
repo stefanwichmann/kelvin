@@ -163,8 +163,7 @@ func automateLightHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Enabling automatic mode for light %v", lightID)
 	for _, l := range lights {
 		if l.ID == lightID {
-			l.Automatic = true
-			l.SavedLightState = l.CurrentLightState
+			l.Tracking = false
 		}
 	}
 	w.Write([]byte("success"))

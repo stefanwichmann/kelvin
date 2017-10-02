@@ -57,7 +57,7 @@
     <div class="row">
       {{range .}}
       <div class="col-md-2">
-        <div class="panel panel-primary">
+        <div class="panel panel-primary light" id="{{.ID}}">
           <div class="panel-heading">
             <div class="row">
               <div class="col-xs-3">
@@ -72,7 +72,6 @@
           </div>
           <div class="panel-body">
             <ul class="fa-ul text-primary">
-              <li><i class="fa-li fa {{if .Reachable}} fa-check-square text-success {{else}} fa-square text-danger{{end}}"></i>Reachable</li>
               <li><i class="fa-li fa {{if .On}} fa-check-square text-success {{else}} fa-square text-danger{{end}}"></i>On</li>
               <li><i class="fa-li fa {{if .Automatic}} fa-check-square text-success {{else}} fa-square text-danger{{end}}"></i>Automatic</li>
             </ul>
