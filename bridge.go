@@ -243,7 +243,7 @@ func (bridge *HueBridge) validateSofwareVersion() {
 	}
 	log.Debugf("Bridge is running software version %s", configuration.SoftwareVersion)
 
-	if (bridge.Version == 1 && swversion < 1038802) || (bridge.Version == 2 && swversion < 1705121051) {
+	if (bridge.Version == 1 && swversion < 1038802) || (bridge.Version == 2 && swversion < 1707040932) {
 		log.Warningf("Your hue bridge is running an old software version. Please update using the hue app to ensure Kelvin will run smoothly.")
 	} else {
 		log.Debugf("Bridge software is up to date")
