@@ -221,7 +221,7 @@ func (configuration *Configuration) Read() error {
 	if configuration.WebInterface.Port == 0 {
 		log.Printf("Migrating webinterface settings...")
 		configuration.WebInterface.Enabled = false
-		configuration.WebInterface.Port = 8083
+		configuration.WebInterface.Port = 8080
 	}
 	configuration.Write()
 	return nil
