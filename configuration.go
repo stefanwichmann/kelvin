@@ -111,7 +111,7 @@ func (configuration *Configuration) initializeDefaults() {
 
 	var webinterface WebInterface
 	webinterface.Enabled = false
-	webinterface.Port = 8083
+	webinterface.Port = 8080
 	configuration.WebInterface = webinterface
 }
 
@@ -217,14 +217,13 @@ func (configuration *Configuration) Read() error {
 		}
 	}
 
-	// Migration: Enable webinterface
+	// Migration: Disable webinterface
 	if configuration.WebInterface.Port == 0 {
 		log.Printf("Migrating webinterface settings...")
 		configuration.WebInterface.Enabled = false
 		configuration.WebInterface.Port = 8083
 	}
 	configuration.Write()
-
 	return nil
 }
 

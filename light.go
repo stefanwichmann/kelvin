@@ -22,11 +22,12 @@
 package main
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"github.com/stefanwichmann/go.hue"
 	"strconv"
 	"strings"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/stefanwichmann/go.hue"
 )
 
 var lightsSupportingDimming = []string{"Dimmable Light", "Color Temperature Light", "Color Light", "Extended Color Light"}
@@ -164,11 +165,23 @@ func (light *Light) update() error {
 		if err != nil {
 			return err
 		}
+		if !setLightState.equals(light.TargetLightState) {
+			log.Warningf("💡 Light %s - targetLightState and set state differ: %v, %v", light.Name, light.TargetLightState, setLightState)
+		}
 		light.SavedLightState = setLightState
-		//light.TargetLightState = setLightState
 		light.Tracking = true
 		light.Automatic = true
-		log.Debugf("💡 Light %s was updated to %vK at %v%% brightness", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+		log.Debugf("💡 Light %s was updated to %vK at %v%% brightness", light.Name, light.SavedLightState.ColorTemperature, light.SavedLightState.Brightness)
+
+		// Debug: Update current state to double check SetState
+		if log.GetLevel() == log.DebugLevel {
+			light.updateCurrentLightState()
+			if !light.CurrentLightState.equals(light.SavedLightState) {
+				log.Warningf("💡 Light %s failed to update it's state from %+v to %+v", light.Name, light.CurrentLightState, light.SavedLightState)
+			} else {
+				log.Debugf("💡 Light %s was successfully updated.", light.Name)
+			}
+		}
 		return nil
 	}
 
@@ -194,19 +207,30 @@ func (light *Light) update() error {
 	}
 	log.Debugf("💡 Light %s - Target and Current state differ: %v, %v", light.Name, light.TargetLightState, light.CurrentLightState)
 
-	// Light is reachable, turned on and in automatic state. Update to new state.
-	setLightState, err := light.setLightState(light.TargetLightState)
+	// Light is reachable, turned on and in automatic state. Calculate next state and set it
+	nextLightState := calculateNextLightstate(light.CurrentLightState, light.TargetLightState)
+	setLightState, err := light.setLightState(nextLightState)
 	if err != nil {
 		return err
 	}
 
-	// Debug: Compare values
-	if !setLightState.equals(light.TargetLightState) {
-		log.Debugf("💡 Light %s - Target and set state differ: %v, %v", light.Name, light.TargetLightState, setLightState)
+	// Did the light accept the values?
+	if !setLightState.equals(nextLightState) {
+		log.Warningf("💡 Light %s - nextLightState and set state differ: %v, %v", light.Name, nextLightState, setLightState)
+	}
+	light.SavedLightState = setLightState
+	log.Printf("💡 Light %s was updated to %vK at %v%% brightness", light.Name, light.SavedLightState.ColorTemperature, light.SavedLightState.Brightness)
+
+	// Debug: Update current state to double check SetState
+	if log.GetLevel() == log.DebugLevel {
+		light.updateCurrentLightState()
+		if !light.CurrentLightState.equals(light.SavedLightState) {
+			log.Warningf("💡 Light %s failed to update it's state from %+v to %+v", light.Name, light.CurrentLightState, light.SavedLightState)
+		} else {
+			log.Debugf("💡 Light %s was successfully updated.", light.Name)
+		}
 	}
 
-	light.SavedLightState = setLightState
-	log.Printf("💡 Light %s was updated to %vK at %v%% brightness", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 	return nil
 }
 
@@ -215,30 +239,45 @@ func (light *Light) setLightState(state LightState) (LightState, error) {
 		log.Warningf("Validation failed in setLightState for light %s", light.Name)
 	}
 
-	// Don't send repeated "On" as this slows the bridge down (see https://developers.meethue.com/faq-page #Performance)
 	var hueLightState hue.SetLightState
 	colorTemperature, color, brightness := state.convertValuesToHue()
-	if light.SupportsXYColor && (state.Color[0] != 0 || state.Color[1] != 0) {
-		hueLightState.Xy = []float32{color[0], color[1]}
-	} else if light.SupportsColorTemperature && state.ColorTemperature != 0 {
-		hueLightState.Ct = strconv.Itoa(colorTemperature)
+
+	// Should change colortemperature?
+	if state.ColorTemperature != -1 {
+		// Set supported colormodes. If both are, the brigde will choose xy
+		if light.SupportsXYColor {
+			hueLightState.Xy = []float32{color[0], color[1]}
+		}
+		if light.SupportsColorTemperature {
+			hueLightState.Ct = strconv.Itoa(colorTemperature)
+		}
 	}
-	if light.Dimmable && state.Brightness != 0 {
-		hueLightState.Bri = strconv.Itoa(brightness)
+
+	// Should change brightness?
+	if state.Brightness != -1 {
+		if state.Brightness == 0 {
+			// target brightness zero should turn the light off.
+			hueLightState.On = "Off"
+		} else if light.Dimmable {
+			hueLightState.Bri = strconv.Itoa(brightness)
+		}
 	}
 	hueLightState.TransitionTime = strconv.Itoa(lightTransitionIntervalInSeconds * 10) // conversion to 100ms-value
 
-	results, err := light.HueLight.SetState(hueLightState)
+	// Send new state to the light
+	hueResults, err := light.HueLight.SetState(hueLightState)
 	if err != nil {
 		return LightState{0, []float32{0, 0}, 0}, err
 	}
 
 	// iterate over result to acquire set values
-	for _, result := range results {
+	for _, result := range hueResults {
 		for key, value := range result.Success {
 			path := strings.Split(key, "/")
 
 			switch path[len(path)-1] {
+			case "ct":
+				colorTemperature = int(value.(float64))
 			case "xy":
 				color = []float32{} // clear old color values
 				for _, elem := range value.([]interface{}) {
@@ -246,17 +285,47 @@ func (light *Light) setLightState(state LightState) (LightState, error) {
 				}
 			case "bri":
 				brightness = int(value.(float64))
-			case "ct":
-				colorTemperature = int(value.(float64))
+			case "on":
+				brightness = 0
 			}
 		}
 	}
 	setLightState := lightStateFromHueValues(colorTemperature, color, brightness)
-	setLightState.isValid()
+	//log.Debugf("Parsed SetLightState from %+v to %+v", hueResults, setLightState)
+	if !setLightState.isValid() {
+		log.Warningf("Validation failed in setLightState for light %s", light.Name)
+	}
 
 	// wait while the light is in transition before returning
 	time.Sleep(lightTransitionIntervalInSeconds + 1*time.Second)
 	return setLightState, nil
+}
+
+func calculateNextLightstate(currentLightState LightState, targetLightState LightState) LightState {
+	nextLightState := LightState{-1, []float32{-1, -1}, -1}
+
+	if targetLightState.ColorTemperature != -1 {
+		if currentLightState.ColorTemperature < targetLightState.ColorTemperature {
+			nextLightState.ColorTemperature = currentLightState.ColorTemperature + 5
+		} else {
+			nextLightState.ColorTemperature = currentLightState.ColorTemperature - 5
+		}
+		x, y := colorTemperatureToXYColor(nextLightState.ColorTemperature)
+		nextLightState.Color = []float32{float32(x), float32(y)}
+	}
+
+	if targetLightState.Brightness != -1 {
+		if currentLightState.Brightness < targetLightState.Brightness {
+			nextLightState.Brightness = currentLightState.Brightness + 5
+		} else {
+			nextLightState.Brightness = currentLightState.Brightness - 5
+		}
+	}
+
+	if !nextLightState.isValid() {
+		log.Debugf("Validation failed in calculateNextLightstate")
+	}
+	return nextLightState
 }
 
 func (light *Light) updateConfiguration(configuration *Configuration) {
@@ -304,7 +373,7 @@ func (light *Light) updateTargetLightState() {
 		return
 	}
 
-	newLightState := light.Interval.calculateLightStateInInterval(time.Now())
+	newLightState := light.Interval.getTargetLightState(time.Now())
 	if !newLightState.isValid() {
 		log.Warningf("Validation failed in updateTargetLightState for light %s", light.Name)
 	}

@@ -40,8 +40,8 @@ func (lightstate *LightState) equals(state LightState) bool {
 	// compare color values
 	currentX := lightstate.Color[0]
 	currentY := lightstate.Color[1]
-	if currentX == 0 && currentY == 0 {
-		// zero value implies ignore color
+	if (currentX == -1 && currentY == -1) || (state.Color[0] == -1 && state.Color[1] == -1) {
+		// negative value implies ignore color
 		sameColor = true
 	} else {
 		diffx := math.Abs(float64(currentX - state.Color[0]))
@@ -52,8 +52,8 @@ func (lightstate *LightState) equals(state LightState) bool {
 	}
 
 	// compare color temperature
-	if lightstate.ColorTemperature == 0 {
-		// zero value implies ignore color temperature
+	if lightstate.ColorTemperature == -1 || state.ColorTemperature == -1 {
+		// negative value implies ignore color temperature
 		sameColorTemperature = true
 	} else {
 		diffTemperature := math.Abs(float64(lightstate.ColorTemperature - state.ColorTemperature))
@@ -63,8 +63,8 @@ func (lightstate *LightState) equals(state LightState) bool {
 	}
 
 	// compare brightness
-	if lightstate.Brightness == 0 {
-		// zero value implies ignore brightness
+	if lightstate.Brightness == -1 || state.Brightness == -1 {
+		// negative value implies ignore brightness
 		sameBrightness = true
 	} else {
 		diffBrightness := math.Abs(float64(lightstate.Brightness - state.Brightness))
@@ -84,11 +84,11 @@ func (lightstate *LightState) equals(state LightState) bool {
 }
 
 func (lightstate *LightState) convertValuesToHue() (int, []float32, int) {
-	var hueColorTemperature = 0
-	var hueBrightness = 0
+	var hueColorTemperature = -1
+	var hueBrightness = -1
 
 	// color temperature
-	if lightstate.ColorTemperature != 0 {
+	if lightstate.ColorTemperature != -1 {
 		if lightstate.ColorTemperature > 6500 {
 			lightstate.ColorTemperature = 6500
 		} else if lightstate.ColorTemperature < 2000 {
@@ -98,7 +98,7 @@ func (lightstate *LightState) convertValuesToHue() (int, []float32, int) {
 	}
 
 	// brightness
-	if lightstate.Brightness != 0 {
+	if lightstate.Brightness != -1 {
 		if lightstate.Brightness > 100 {
 			lightstate.Brightness = 100
 		} else if lightstate.Brightness < 0 {
@@ -112,12 +112,12 @@ func (lightstate *LightState) convertValuesToHue() (int, []float32, int) {
 }
 
 func lightStateFromHueValues(colorTemperature int, color []float32, brightness int) LightState {
-	var stateColorTemperature = 0
-	var stateColor = []float32{0, 0}
-	var stateBrightness = 0
+	var stateColorTemperature = -1
+	var stateColor = []float32{-1, -1}
+	var stateBrightness = -1
 
 	// color temperature
-	if colorTemperature != 0 {
+	if colorTemperature != -1 {
 		stateColorTemperature = int(float64(1000000) / float64(colorTemperature))
 		if stateColorTemperature > 6500 {
 			stateColorTemperature = 6500
@@ -137,7 +137,7 @@ func lightStateFromHueValues(colorTemperature int, color []float32, brightness i
 	}
 
 	// brightness
-	if brightness != 0 {
+	if brightness != -1 {
 		stateBrightness = int((float64(brightness) / float64(254)) * float64(100))
 		if stateBrightness > 100 {
 			stateBrightness = 100
@@ -154,8 +154,14 @@ func lightStateFromHueValues(colorTemperature int, color []float32, brightness i
 
 func (lightstate *LightState) isValid() bool {
 	valid := true
+	// Validate Brightness
+	if lightstate.Brightness != 0 && lightstate.Brightness != -1 && (lightstate.Brightness < 0 || lightstate.Brightness > 100) {
+		log.Warningf("Validation: Invalid Brightness in %+v", lightstate)
+		valid = false
+	}
+
 	// Validate ColorTemperature
-	if lightstate.ColorTemperature != 0 && (lightstate.ColorTemperature < 2000 || lightstate.ColorTemperature > 6500) {
+	if lightstate.ColorTemperature != 0 && lightstate.ColorTemperature != -1 && (lightstate.ColorTemperature < 2000 || lightstate.ColorTemperature > 6500) {
 		log.Warningf("Validation: Invalid ColorTemperature in %+v", lightstate)
 		valid = false
 	}
@@ -163,27 +169,25 @@ func (lightstate *LightState) isValid() bool {
 	// Validate Color
 	if len(lightstate.Color) != 2 {
 		log.Warningf("Validation: Invalid Color in %+v", lightstate)
-		valid = false
-	}
-	// TODO Validate individual color values.
-
-	// Validate Brightness
-	if lightstate.Brightness != 0 && (lightstate.Brightness < 0 || lightstate.Brightness > 100) {
-		log.Warningf("Validation: Invalid Brightness in %+v", lightstate)
-		valid = false
+		return false // early return because the color value is corrupt. Other checks will fail too.
 	}
 
 	// ColorTemperature and Color match
-	// Disable this validation for now because we can not calculate the color temparature from xy space...
-	/*
-		if lightstate.ColorTemperature == 0 && (lightstate.Color[0] != 0 || lightstate.Color[1] != 0) {
-			log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
-			valid = false
-		} else if lightstate.ColorTemperature != 0 && (lightstate.Color[0] == 0 || lightstate.Color[1] == 0) {
-			log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
-			valid = false
-		}
-	*/
+	if lightstate.ColorTemperature == -1 && (lightstate.Color[0] != -1 || lightstate.Color[1] != -1) {
+		log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
+		valid = false
+	} else if lightstate.ColorTemperature != -1 && (lightstate.Color[0] == -1 || lightstate.Color[1] == -1) {
+		log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
+		valid = false
+	}
+
+	// Validate color mapping from temperature to XY
+	x, y := colorTemperatureToXYColor(lightstate.ColorTemperature)
+	newState := LightState{lightstate.ColorTemperature, []float32{float32(x), float32(y)}, lightstate.Brightness}
+	if !lightstate.equals(newState) {
+		log.Warningf("Validation: XY colors don't match: %+v vs %+v", lightstate, newState)
+		valid = false
+	}
 
 	return valid
 }

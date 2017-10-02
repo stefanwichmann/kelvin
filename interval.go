@@ -30,6 +30,11 @@ type Interval struct {
 	End   TimeStamp
 }
 
+func (interval *Interval) getTargetLightState(timestamp time.Time) LightState {
+	x, y := colorTemperatureToXYColor(interval.End.ColorTemperature)
+	return LightState{interval.End.ColorTemperature, []float32{float32(x), float32(y)}, interval.End.Brightness}
+}
+
 func (interval *Interval) calculateLightStateInInterval(timestamp time.Time) LightState {
 	// Timestamp before interval
 	if timestamp.Before(interval.Start.Time) {
