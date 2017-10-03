@@ -22,17 +22,13 @@
 package main
 
 import "time"
+import log "github.com/Sirupsen/logrus"
 
 // Interval represents a time range of one day with
 // the given start and end configurations.
 type Interval struct {
 	Start TimeStamp
 	End   TimeStamp
-}
-
-func (interval *Interval) getTargetLightState(timestamp time.Time) LightState {
-	x, y := colorTemperatureToXYColor(interval.End.ColorTemperature)
-	return LightState{interval.End.ColorTemperature, []float32{float32(x), float32(y)}, interval.End.Brightness}
 }
 
 func (interval *Interval) calculateLightStateInInterval(timestamp time.Time) LightState {
@@ -53,14 +49,24 @@ func (interval *Interval) calculateLightStateInInterval(timestamp time.Time) Lig
 	intervalProgress := timestamp.Sub(interval.Start.Time)
 	percentProgress := intervalProgress.Minutes() / intervalDuration.Minutes()
 
-	colorTemperatureDiff := interval.End.ColorTemperature - interval.Start.ColorTemperature
-	colorTemperaturePercentageValue := float64(colorTemperatureDiff) * percentProgress
-	targetColorTemperature := interval.Start.ColorTemperature + int(colorTemperaturePercentageValue)
+	targetColorTemperature := interval.End.ColorTemperature
+	if interval.Start.ColorTemperature != -1 {
+		colorTemperatureDiff := interval.End.ColorTemperature - interval.Start.ColorTemperature
+		colorTemperaturePercentageValue := float64(colorTemperatureDiff) * percentProgress
+		targetColorTemperature = interval.Start.ColorTemperature + int(colorTemperaturePercentageValue)
+	}
 
-	brightnessDiff := interval.End.Brightness - interval.Start.Brightness
-	brightnessPercentageValue := float64(brightnessDiff) * percentProgress
-	targetBrightness := interval.Start.Brightness + int(brightnessPercentageValue)
+	targetBrightness := interval.End.Brightness
+	if interval.Start.Brightness != -1 {
+		brightnessDiff := interval.End.Brightness - interval.Start.Brightness
+		brightnessPercentageValue := float64(brightnessDiff) * percentProgress
+		targetBrightness = interval.Start.Brightness + int(brightnessPercentageValue)
+	}
 
 	x, y := colorTemperatureToXYColor(targetColorTemperature)
-	return LightState{targetColorTemperature, []float32{float32(x), float32(y)}, targetBrightness}
+	lightstate := LightState{targetColorTemperature, []float32{float32(x), float32(y)}, targetBrightness}
+	if !lightstate.isValid() {
+		log.Warningf("Validation failed in calculateLightStateInInterval")
+	}
+	return lightstate
 }
