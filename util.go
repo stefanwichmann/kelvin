@@ -43,6 +43,13 @@ func containsInt(slice []int, element int) bool {
 	return false
 }
 
+func abs(value int) int {
+	if value < 0 {
+		return value * -1
+	}
+	return value
+}
+
 // Restart the running binary.
 // All arguments, pipes and environment variables will
 // be preserved.
