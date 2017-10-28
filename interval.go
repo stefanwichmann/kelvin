@@ -50,14 +50,14 @@ func (interval *Interval) calculateLightStateInInterval(timestamp time.Time) Lig
 	percentProgress := intervalProgress.Minutes() / intervalDuration.Minutes()
 
 	targetColorTemperature := interval.End.ColorTemperature
-	if interval.Start.ColorTemperature != -1 {
+	if interval.Start.ColorTemperature != -1 && interval.End.ColorTemperature != -1 {
 		colorTemperatureDiff := interval.End.ColorTemperature - interval.Start.ColorTemperature
 		colorTemperaturePercentageValue := float64(colorTemperatureDiff) * percentProgress
 		targetColorTemperature = interval.Start.ColorTemperature + int(colorTemperaturePercentageValue)
 	}
 
 	targetBrightness := interval.End.Brightness
-	if interval.Start.Brightness != -1 {
+	if interval.Start.Brightness != -1 && interval.End.Brightness != -1 {
 		brightnessDiff := interval.End.Brightness - interval.Start.Brightness
 		brightnessPercentageValue := float64(brightnessDiff) * percentProgress
 		targetBrightness = interval.Start.Brightness + int(brightnessPercentageValue)
