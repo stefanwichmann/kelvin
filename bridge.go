@@ -57,19 +57,19 @@ func (bridge *HueBridge) InitializeBridge(configuration *Configuration) error {
 	configuration.Bridge.IP = bridge.BridgeIP
 
 	if configuration.Bridge.Username != "" {
-		log.Debugf("Found bridge username in configuration: %s", configuration.Bridge.Username)
+		log.Debugf("⌘ Found bridge username in configuration: %s", configuration.Bridge.Username)
 		bridge.Username = configuration.Bridge.Username
 	} else {
-		log.Debugf("No username found in bridge configuration. Starting registration...")
+		log.Debugf("⌘ No username found in bridge configuration. Starting registration...")
 		err := bridge.register()
 		if err != nil {
 			return err
 		}
-		log.Debugf("Saving new username in bridge configuration: %s", bridge.Username)
+		log.Debugf("⌘ Saving new username in bridge configuration: %s", bridge.Username)
 		configuration.Bridge.Username = bridge.Username
 	}
 
-	log.Debugf("Connecting to bridge %s with username %s", bridge.BridgeIP, bridge.Username)
+	log.Debugf("⌘ Connecting to bridge %s with username %s", bridge.BridgeIP, bridge.Username)
 	err = bridge.connect()
 	if err != nil {
 		return err
@@ -116,7 +116,7 @@ func (bridge *HueBridge) printDevices() error {
 		return err
 	}
 
-	log.Printf("💡 Devices found on current bridge:")
+	log.Printf("⌘ Devices found on current bridge:")
 	log.Printf("| %-20s | %3v | %-9v | %-5v | %-8v | %-11v | %-5v | %-9v | %-8v |", "Name", "ID", "Reachable", "On", "Dimmable", "Temperature", "Color", "Cur. Temp", "Cur. Bri")
 	for _, light := range lights {
 		var temp string
@@ -139,7 +139,7 @@ func (bridge *HueBridge) discover(ip string) error {
 			return nil
 		}
 	}
-	log.Debugf("Starting bridge discovery")
+	log.Debugf("⌘ Starting bridge discovery")
 	bridges, err := hue.DiscoverBridges(false)
 	if err != nil {
 		bridge.BridgeIP = ""
@@ -168,7 +168,7 @@ func (bridge *HueBridge) register() error {
 
 	bridge.bridge = *hue.NewBridge(bridge.BridgeIP, "")
 	log.Printf("⌘ Starting user registration.")
-	log.Warningf("PLEASE PUSH THE BLUE BUTTON ON YOUR HUE BRIDGE")
+	log.Warningf("⌘ PLEASE PUSH THE BLUE BUTTON ON YOUR HUE BRIDGE")
 	for {
 		time.Sleep(5 * time.Second)
 
@@ -210,13 +210,13 @@ func (bridge *HueBridge) populateSchedule(configuration *Configuration) error {
 	// Do we have associated lights?
 	for _, schedule := range configuration.Schedules {
 		if len(schedule.AssociatedDeviceIDs) > 0 {
-			log.Debugf("Configuration contains at least one schedule with associated lights.")
+			log.Debugf("⌘ Configuration contains at least one schedule with associated lights.")
 			return nil // At least one schedule is configured
 		}
 	}
 
 	// No schedule has associated lights
-	log.Debugf("Configuration contains no schedule with associated lights. Initializing first schedule with all lights.")
+	log.Debugf("⌘ Configuration contains no schedule with associated lights. Initializing first schedule with all lights.")
 	lights, err := bridge.Lights()
 	if err != nil {
 		return err
@@ -232,21 +232,21 @@ func (bridge *HueBridge) populateSchedule(configuration *Configuration) error {
 func (bridge *HueBridge) validateSofwareVersion() {
 	configuration, err := bridge.bridge.Configuration()
 	if err != nil {
-		log.Warningf("Could not validate bridge software version: %v", err)
+		log.Warningf("⌘ Could not validate bridge software version: %v", err)
 		return
 	}
 
 	swversion, err := strconv.Atoi(configuration.SoftwareVersion)
 	if err != nil {
-		log.Warningf("Could not validate bridge software version: %v", err)
+		log.Warningf("⌘ Could not validate bridge software version: %v", err)
 		return
 	}
-	log.Debugf("Bridge is running software version %s", configuration.SoftwareVersion)
+	log.Debugf("⌘ Bridge is running software version %s", configuration.SoftwareVersion)
 
-	if (bridge.Version == 1 && swversion < 1038802) || (bridge.Version == 2 && swversion < 1707040932) {
-		log.Warningf("Your hue bridge is running an old software version. Please update using the hue app to ensure Kelvin will run smoothly.")
+	if (bridge.Version == 1 && swversion < 1038802) || (bridge.Version == 2 && swversion < 1709131301) {
+		log.Warningf("⌘ Your hue bridge is running an old software version. Please update using the hue app to ensure Kelvin will run smoothly.")
 	} else {
-		log.Debugf("Bridge software is up to date")
+		log.Debugf("⌘ Bridge software is up to date")
 	}
 }
 

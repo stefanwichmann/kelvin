@@ -147,10 +147,10 @@ func (configuration *Configuration) Write() error {
 	}
 
 	if !configuration.HasChanged() {
-		log.Debugf("Configuration hasn't changed. Omitting write.")
+		log.Debugf("⚙ Configuration hasn't changed. Omitting write.")
 		return nil
 	}
-	log.Debugf("Configuration changed. Saving...")
+	log.Debugf("⚙ Configuration changed. Saving...")
 	json, err := json.MarshalIndent(configuration, "", "  ")
 	if err != nil {
 		return err
@@ -162,7 +162,7 @@ func (configuration *Configuration) Write() error {
 	}
 
 	configuration.Hash = configuration.HashValue()
-	log.Debugf("Updated configuration hash")
+	log.Debugf("⚙ Updated configuration hash")
 	return nil
 }
 
@@ -186,16 +186,16 @@ func (configuration *Configuration) Read() error {
 		log.Warningf("⚙ Your current configuration doesn't contain any schedules! Generating default schedule...")
 		err := configuration.backup()
 		if err != nil {
-			log.Warningf("Could not create backup: %v", err)
+			log.Warningf("⚙ Could not create backup: %v", err)
 		} else {
-			log.Printf("Configuration backup created.")
+			log.Printf("⚙ Configuration backup created.")
 			configuration.initializeDefaults()
-			log.Printf("Default schedule created.")
+			log.Printf("⚙ Default schedule created.")
 			configuration.Write()
 		}
 	}
 	configuration.Hash = configuration.HashValue()
-	log.Debugf("Updated configuration hash.")
+	log.Debugf("⚙ Updated configuration hash.")
 
 	// Migrate to new timestamp format
 	for scheduleIndex := range configuration.Schedules {
@@ -219,7 +219,7 @@ func (configuration *Configuration) Read() error {
 
 	// Migration: Disable webinterface
 	if configuration.WebInterface.Port == 0 {
-		log.Printf("Migrating webinterface settings...")
+		log.Printf("⚙ Migrating webinterface settings...")
 		configuration.WebInterface.Enabled = false
 		configuration.WebInterface.Port = 8080
 	}
@@ -318,7 +318,7 @@ func (color *TimedColorTemperature) AsTimestamp(referenceTime time.Time) (TimeSt
 
 func (configuration *Configuration) backup() error {
 	backupFilename := configuration.ConfigurationFile + "_" + time.Now().Format("01022006")
-	log.Debugf("Moving configuration to %s.", backupFilename)
+	log.Debugf("⚙ Moving configuration to %s.", backupFilename)
 	return os.Rename(configuration.ConfigurationFile, backupFilename)
 }
 
@@ -327,7 +327,7 @@ func migrateTimestampFormat(timestamp string) (string, error) {
 	layout := "3:04PM"
 	t, err := time.Parse(layout, timestamp)
 	if err == nil {
-		log.Debugf("Migrating old timestamp %s to %s", timestamp, t.Format("15:04"))
+		log.Debugf("⚙ Migrating old timestamp %s to %s", timestamp, t.Format("15:04"))
 		return t.Format("15:04"), nil
 	}
 
