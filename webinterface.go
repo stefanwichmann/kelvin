@@ -56,11 +56,11 @@ func startInterface() {
 	http.Handle("/", handlers.CompressHandler(r))
 	port := configuration.WebInterface.Port
 	log.Printf("Webinterface started on port %d", port)
-	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	log.Warning(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
 
 func dashboardHandler(w http.ResponseWriter, r *http.Request) {
-	log.Debugf("Serving dashboard page")
+	log.Debugf("Serving dashboard page to %s", r.RemoteAddr)
 	if configuration.Bridge.IP == "" || configuration.Bridge.Username == "" {
 		dashboardTemplate := template.Must(template.New("init.html").ParseGlob("gui/template/init.html"))
 		err := dashboardTemplate.Execute(w, bridge)
@@ -79,7 +79,7 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func configurationHandler(w http.ResponseWriter, r *http.Request) {
-	log.Debugf("Serving configuration page")
+	log.Debugf("Serving configuration page to %s", r.RemoteAddr)
 	configurationTemplate := template.Must(template.New("configuration.html").ParseGlob("gui/template/configuration.html"))
 	err := configurationTemplate.Execute(w, configuration)
 	if err != nil {
@@ -89,7 +89,7 @@ func configurationHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func schedulesHandler(w http.ResponseWriter, r *http.Request) {
-	log.Debugf("Serving schedules page")
+	log.Debugf("Serving schedules page to %s", r.RemoteAddr)
 	schedulesTemplate := template.Must(template.New("schedules.html").Funcs(template.FuncMap{"lightsToString": lightsToString}).ParseGlob("gui/template/schedules.html"))
 	err := schedulesTemplate.Execute(w, configuration.Schedules)
 	if err != nil {
@@ -121,7 +121,7 @@ func updateSchedulesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	log.Debugf("Received schedule update: %+v", t)
+	log.Debugf("Received schedule update from %s: %+v", r.RemoteAddr, t)
 	configuration.Schedules = t
 	err = configuration.Write()
 	if err != nil {
@@ -145,12 +145,12 @@ func updateConfigurationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	log.Debugf("Received configuration update: %+v", t)
+	log.Debugf("Received configuration update from %s: %+v", r.RemoteAddr, t)
 	configuration.Bridge = t.Bridge
 	configuration.Location = t.Location
 	configuration.WebInterface = t.WebInterface
-	log.Debugf("Updated configuration to: %+v", configuration)
 	configuration.Write()
+	log.Debugf("Updated configuration to: %+v", configuration)
 	w.Write([]byte("success"))
 }
 
@@ -160,9 +160,9 @@ func automateLightHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	log.Printf("Enabling automatic mode for light %v", lightID)
 	for _, l := range lights {
 		if l.ID == lightID {
+			log.Printf("💡 Light %s - Enabling automatic mode as requested by %s", l.Name, r.RemoteAddr)
 			l.Tracking = false
 		}
 	}
@@ -170,6 +170,7 @@ func automateLightHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func activateLightHandler(w http.ResponseWriter, r *http.Request) {
+	log.Debugf("Received new light state by %s", r.RemoteAddr)
 	defer r.Body.Close()
 	lightID, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
@@ -183,10 +184,15 @@ func activateLightHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	t.isValid()
-	log.Printf("Activating light %d: %+v", lightID, t)
+	if !t.isValid() {
+		log.Warningf("Received invalid light state from %s: %+v", r.RemoteAddr, t)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	for _, l := range lights {
 		if l.ID == lightID {
+			log.Printf("💡 Light %s - Activating light state %+v as requested by %s", l.Name, t, r.RemoteAddr)
 			l.Automatic = false
 			l.setLightState(t)
 		}
@@ -195,7 +201,7 @@ func activateLightHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func lightsHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Serving lights")
+	log.Printf("Serving lights to %s", r.RemoteAddr)
 	ls := []Light{}
 	for _, l := range lights {
 		ls = append(ls, *l)
@@ -209,6 +215,7 @@ func lightsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func restartHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Restart requested by %s", r.RemoteAddr)
 	r.Body.Close()
 	w.Write([]byte("success"))
 	Restart()
