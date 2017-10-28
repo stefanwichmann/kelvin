@@ -1,5 +1,6 @@
-#!/usr/bin/env sh
-set -euv
+#!/bin/bash
+set -euo pipefail
+IFS=$"\\n\\t"
 
 # constants
 BINARY_NAME="kelvin"
@@ -41,8 +42,8 @@ buildTarget() {
   echo Output binary:   "$OUTPUT_BINARY"
   echo Output archive:  "$ARCHIVE_NAME"
 
-  export GOOS=$OS
-  export GOARCH=$ARCH
+  export GOOS="$OS"
+  export GOARCH="$ARCH"
   export GOARM=5
   export CGO_ENABLED=0
   go build -ldflags "-X main.applicationVersion=${GIT_TAG}" -v -o "$OUTPUT_BINARY"
@@ -51,7 +52,7 @@ buildTarget() {
   chmod +x "$OUTPUT_BINARY"
 
   # include webinterface
-  cp gui "$OUTPUT_PATH"
+  cp -R gui "$OUTPUT_PATH"
 
   # include license and readme
   cp README.md "$OUTPUT_PATH"/README.txt
