@@ -74,7 +74,13 @@ Got all these? Great, let's get started!
 6. Wohoo! Kelvin is up and running! Well done!
 7. Kelvin is now managing your lights and will gradually adjust the color temperature and brightness for you. Give it a try by switching lights on and off to see how Kelvin reacts. If you want to adjust the default schedule to your needs, just read on and edit the configuration.
 
-As an alternative to manual installation you can also pull the official [docker image](https://hub.docker.com/r/stefanwichmann/kelvin/) from docker hub. Just run ```docker pull stefanwichmann/kelvin```
+# Docker
+As an alternative to manual installation you can also pull the official [docker image](https://hub.docker.com/r/stefanwichmann/kelvin/) from docker hub.
+
+- Get the image by running ```docker pull stefanwichmann/kelvin```
+- Start a container via ```docker run -d -e TZ=Europe/Berlin stefanwichmann/kelvin``` (replace Europe/Berlin with your local [timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones))
+- ```docker ps``` should now report your running container
+- Run ```docker logs {CONTAINER_ID}``` to see the kelvin output (You can get the valid ID from ```docker ps```)
 
 # Configuration
 Kelvin will create it's configuration file `config.json` in the current directory and store all necessary information to operate in it. By default it is fully usable and looks like this:
@@ -134,8 +140,8 @@ Each schedule must be configured in the following format:
 | ---- | ----------- |
 | name | The name of this schedule. This is only used for better readability. |
 | associatedDeviceIDs | A list of all devices/lights that should be managed according to this schedule. Kelvin will print an overview of all your devices on startup. You should use this to associated your lights with the right schedule. *ATTENTION: Every light should be associated to only one schedule. If you skip an ID this device will be ignored.* |
-| defaultColorTemperature | This default color temperature will be used between sunrise and sunset. Valid values are between 2000K and 6500K. See [Wikipedia](https://en.wikipedia.org/wiki/Color_temperature) for reference values. If you set this value to 0 Kelvin will ignore the color temperature and you can change it manually.|
-| defaultBrightness | This default brightness value will be used between sunrise and sunset. Valid values are between 0% and 100%. If you set this value to 0 Kelvin will ignore the brightness and you can change it manually.|
+| defaultColorTemperature | This default color temperature will be used between sunrise and sunset. Valid values are between 2000K and 6500K. See [Wikipedia](https://en.wikipedia.org/wiki/Color_temperature) for reference values. If you set this value to -1 Kelvin will ignore the color temperature and you can change it manually.|
+| defaultBrightness | This default brightness value will be used between sunrise and sunset. Valid values are between 0% and 100%. If you set this value to -1 Kelvin will ignore the brightness and you can change it manually.|
 | beforeSunrise | This element contains a list of timestamps and their configuration you want to set between midnight and sunrise of any given day. The *time* value must follow the `hh:mm` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
 | afterSunset | This element contains a list of timestamps and their configuration you want to set between sunset and midnight of any given day. The *time* value must follow the `hh:mm` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
 
