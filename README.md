@@ -9,7 +9,7 @@
 # Meet Kelvin
 Kelvin is a little helper bot who will automate the lights in your house. Its job is to adjust the color temperature and brightness in your home based on your local sunrise and sunset times and custom intervals defined by you. Think of it as [f.lux](https://justgetflux.com/) or Apple's Night Shift for your home.
 
-Imagine your lights shine in an energetic but not to bright blue color to get you started in the early morning. On sunrise your lights will change to a more natural color temperature to reflect the sunlight outside. On sunset they will slowly fade to a warmer and softer color scheme perfectly suited to Netflix and chill. When it's time to go to bed Kelvin will reduce the intensity even more to get you into a sleepy mood. It will keep this reduced setting through the night so you don't get blinded by bright lights if you have to get up at night...
+Imagine your lights shine in an energetic but not too bright blue color to get you started in the early morning. On sunrise your lights will change to a more natural color temperature to reflect the sunlight outside. On sunset they will slowly fade to a warmer and softer color scheme perfectly suited to Netflix and chill. When it's time to go to bed Kelvin will reduce the intensity even more to get you into a sleepy mood. It will keep this reduced setting through the night so you don't get blinded by bright lights if you have to get up at night...
 
 # Features
 - Adjust the color temperature and brightness of your lights based on the local sunrise and sunset times
@@ -139,7 +139,7 @@ Each schedule must be configured in the following format:
 | Name | Description |
 | ---- | ----------- |
 | name | The name of this schedule. This is only used for better readability. |
-| associatedDeviceIDs | A list of all devices/lights that should be managed according to this schedule. Kelvin will print an overview of all your devices on startup. You should use this to associated your lights with the right schedule. *ATTENTION: Every light should be associated to only one schedule. If you skip an ID this device will be ignored.* |
+| associatedDeviceIDs | A list of all devices/lights that should be managed according to this schedule. Kelvin will print an overview of all your devices on startup. You should use this to associate your lights with the right schedule. *ATTENTION: Every light should be associated to only one schedule. If you skip an ID this device will be ignored.* |
 | defaultColorTemperature | This default color temperature will be used between sunrise and sunset. Valid values are between 2000K and 6500K. See [Wikipedia](https://en.wikipedia.org/wiki/Color_temperature) for reference values. If you set this value to -1 Kelvin will ignore the color temperature and you can change it manually.|
 | defaultBrightness | This default brightness value will be used between sunrise and sunset. Valid values are between 0% and 100%. If you set this value to -1 Kelvin will ignore the brightness and you can change it manually.|
 | beforeSunrise | This element contains a list of timestamps and their configuration you want to set between midnight and sunrise of any given day. The *time* value must follow the `hh:mm` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
@@ -152,12 +152,12 @@ A [Raspberry Pi](https://www.raspberrypi.org/) is the **perfect** device to run 
 
 ![Raspberry Pi Zero W](https://www.raspberrypi.org/wp-content/uploads/2017/02/zero-wireless.png)
 
-But any other model of the Raspberry Pi will be sufficient. To setup Kelvin on a Raspberry Pi follow the installation guide [here](https://www.raspberrypi.org/documentation/installation/). Once your Pi is up and running (booting, connected to your network and the internet) just download the latest `linux-arm` release and follow the steps in [Installation](#installation).
+But any other model of the Raspberry Pi will be sufficient. To set up Kelvin on a Raspberry Pi follow the installation guide [here](https://www.raspberrypi.org/documentation/installation/). Once your Pi is up and running (booting, connected to your network and the internet) just download the latest `linux-arm` release and follow the steps in [Installation](#installation).
 
 # Troubleshooting
 If anything goes wrong keep calm and follow these steps:
 
-1. Make sure the Philips Hue bridge is configured and working in your network. Kelvin will need it to communicate with your lights. If you got the hue app running on your smartphone you should be fine. Otherwise follow the Philips Hue manual to configure your lights.
+1. Make sure the Philips Hue bridge is configured and working in your network. Kelvin will need it to communicate with your lights. If you got the Hue app running on your smartphone you should be fine. Otherwise follow the Philips Hue manual to configure your lights.
 
 2. To identify the IP address of your bridge open [this](https://www.meethue.com/api/nupnp) link in your browser. After you got the IP address enter `http://<bridge IP address>/debug/clip.html` into your browser. You should see the debug page of you hue bridge. If this fails please follow the Philips Hue manual to configure your bridge.
 
