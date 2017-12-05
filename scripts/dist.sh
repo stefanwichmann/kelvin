@@ -6,8 +6,8 @@ IFS=$"\\n\\t"
 BINARY_NAME="kelvin"
 
 buildTarget() {
-  OS=$1
-  ARCH=$2
+  OS="$1"
+  ARCH="$2"
   TARGET="$OS-$ARCH"
 
   # Read latest git tag
@@ -21,8 +21,8 @@ buildTarget() {
   DIST_PATH="dist"
   ARCHIVE_PATH="archives"
   OUTPUT_FOLDER="$BINARY_NAME-$TARGET-$GIT_TAG"
-  OUTPUT_PATH=$DIST_PATH/$OUTPUT_FOLDER
-  OUTPUT_BINARY=$OUTPUT_PATH/$BINARY_NAME
+  OUTPUT_PATH="$DIST_PATH/$OUTPUT_FOLDER"
+  OUTPUT_BINARY="$OUTPUT_PATH/$BINARY_NAME"
   if [ "$OS" = "windows" ]; then
     OUTPUT_BINARY="$OUTPUT_BINARY.exe"
   fi
