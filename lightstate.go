@@ -21,7 +21,6 @@
 // SOFTWARE.
 package main
 
-import "math"
 import log "github.com/Sirupsen/logrus"
 
 // LightState represents a light configuration.
@@ -30,125 +29,6 @@ type LightState struct {
 	ColorTemperature int       `json:"colorTemperature"`
 	Color            []float32 `json:"-"`
 	Brightness       int       `json:"brightness"`
-}
-
-func (lightstate *LightState) equals(state LightState) bool {
-	var sameColor = false
-	var sameColorTemperature = false
-	var sameBrightness = false
-
-	// compare color values
-	currentX := lightstate.Color[0]
-	currentY := lightstate.Color[1]
-	if (currentX == -1 && currentY == -1) || (state.Color[0] == -1 && state.Color[1] == -1) {
-		// negative value implies ignore color
-		sameColor = true
-	} else {
-		diffx := math.Abs(float64(currentX - state.Color[0]))
-		diffy := math.Abs(float64(currentY - state.Color[1]))
-		if diffx < 0.001 && diffy < 0.001 {
-			sameColor = true
-		}
-	}
-
-	// compare color temperature
-	if lightstate.ColorTemperature == -1 || state.ColorTemperature == -1 {
-		// negative value implies ignore color temperature
-		sameColorTemperature = true
-	} else {
-		diffTemperature := math.Abs(float64(lightstate.ColorTemperature - state.ColorTemperature))
-		if diffTemperature < 5 {
-			sameColorTemperature = true
-		}
-	}
-
-	// compare brightness
-	if lightstate.Brightness == -1 || state.Brightness == -1 {
-		// negative value implies ignore brightness
-		sameBrightness = true
-	} else {
-		diffBrightness := math.Abs(float64(lightstate.Brightness - state.Brightness))
-		if diffBrightness < 3 {
-			sameBrightness = true
-		}
-	}
-
-	// check if equal and prefer same color over same color temperature
-	if sameColor && sameBrightness {
-		return true
-	}
-	if sameColorTemperature && sameBrightness {
-		return true
-	}
-	return false
-}
-
-func (lightstate *LightState) convertValuesToHue() (int, []float32, int) {
-	var hueColorTemperature = -1
-	var hueBrightness = -1
-
-	// color temperature
-	if lightstate.ColorTemperature != -1 {
-		if lightstate.ColorTemperature > 6500 {
-			lightstate.ColorTemperature = 6500
-		} else if lightstate.ColorTemperature < 2000 {
-			lightstate.ColorTemperature = 2000
-		}
-		hueColorTemperature = int((float64(1) / float64(lightstate.ColorTemperature)) * float64(1000000))
-	}
-
-	// brightness
-	if lightstate.Brightness != -1 {
-		if lightstate.Brightness > 100 {
-			lightstate.Brightness = 100
-		} else if lightstate.Brightness < 0 {
-			lightstate.Brightness = 0
-		}
-		hueBrightness = int((float64(lightstate.Brightness) / float64(100)) * float64(254))
-	}
-
-	// xy color should not need a mapping
-	return hueColorTemperature, lightstate.Color, hueBrightness
-}
-
-func lightStateFromHueValues(colorTemperature int, color []float32, brightness int) LightState {
-	var stateColorTemperature = -1
-	var stateColor = []float32{-1, -1}
-	var stateBrightness = -1
-
-	// color temperature
-	if colorTemperature != -1 {
-		stateColorTemperature = int(float64(1000000) / float64(colorTemperature))
-		if stateColorTemperature > 6500 {
-			stateColorTemperature = 6500
-		} else if stateColorTemperature < 2000 {
-			stateColorTemperature = 2000
-		}
-	}
-
-	// color
-	if len(color) != 2 {
-		// color is not properly initialized. Since we need it
-		// for state comparison we need to provide a valid state
-		stateColor = colorTemperatureToXYColor(stateColorTemperature)
-	} else {
-		stateColor = color
-	}
-
-	// brightness
-	if brightness != -1 {
-		stateBrightness = int((float64(brightness) / float64(254)) * float64(100))
-		if stateBrightness > 100 {
-			stateBrightness = 100
-		} else if stateBrightness < 0 {
-			stateBrightness = 0
-		}
-	}
-	state := LightState{stateColorTemperature, stateColor, stateBrightness}
-	if !state.isValid() {
-		log.Warningf("Validation failed in lightStateFromHueValues")
-	}
-	return state
 }
 
 func (lightstate *LightState) isValid() bool {
@@ -177,13 +57,6 @@ func (lightstate *LightState) isValid() bool {
 		valid = false
 	} else if lightstate.ColorTemperature != -1 && (lightstate.Color[0] == -1 || lightstate.Color[1] == -1) {
 		log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
-		valid = false
-	}
-
-	// Validate color mapping from temperature to XY
-	newState := LightState{lightstate.ColorTemperature, colorTemperatureToXYColor(lightstate.ColorTemperature), lightstate.Brightness}
-	if !lightstate.equals(newState) {
-		log.Warningf("Validation: XY colors don't match: %+v vs %+v", lightstate, newState)
 		valid = false
 	}
 
