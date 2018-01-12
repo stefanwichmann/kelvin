@@ -70,6 +70,7 @@ type TimedColorTemperature struct {
 type Configuration struct {
 	ConfigurationFile string          `json:"-"`
 	Hash              string          `json:"-"`
+	Version           int             `json:"version"`
 	Bridge            Bridge          `json:"bridge"`
 	Location          Location        `json:"location"`
 	WebInterface      WebInterface    `json:"webinterface"`
@@ -83,7 +84,11 @@ type TimeStamp struct {
 	Brightness       int
 }
 
+var latestConfigurationVersion = 0
+
 func (configuration *Configuration) initializeDefaults() {
+	configuration.Version = latestConfigurationVersion
+
 	var bedTime TimedColorTemperature
 	bedTime.Time = "22:00"
 	bedTime.ColorTemperature = 2000
@@ -223,6 +228,7 @@ func (configuration *Configuration) Read() error {
 		configuration.WebInterface.Enabled = false
 		configuration.WebInterface.Port = 8080
 	}
+
 	configuration.Write()
 	return nil
 }
