@@ -174,7 +174,7 @@ func (light *HueLight) HasChanged() bool {
 		log.Warningf("💡 HueLight %s - Unknown color mode in HasChanged method! Current light state: %+v", light.Name, light)
 	}
 
-	if light.Dimmable && light.TargetBrightness != -1 && light.TargetBrightness != light.CurrentBrightness {
+	if light.Dimmable && light.TargetBrightness != -1 && !equalsInt(light.TargetBrightness, light.CurrentBrightness, 2) {
 		log.Debugf("💡 HueLight %s - Brightness has changed! Current light state: %+v", light.Name, light)
 		return true
 	}
@@ -221,7 +221,7 @@ func (light *HueLight) HasBrightness(brightness int) bool {
 	if !light.Dimmable {
 		return true
 	}
-	if light.CurrentBrightness != mapBrightness(brightness) {
+	if !equalsInt(light.CurrentBrightness, mapBrightness(brightness), 2) {
 		return false
 	}
 	return true
