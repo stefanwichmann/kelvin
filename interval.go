@@ -34,14 +34,12 @@ type Interval struct {
 func (interval *Interval) calculateLightStateInInterval(timestamp time.Time) LightState {
 	// Timestamp before interval
 	if timestamp.Before(interval.Start.Time) {
-		x, y := colorTemperatureToXYColor(interval.Start.ColorTemperature)
-		return LightState{interval.Start.ColorTemperature, []float32{float32(x), float32(y)}, interval.Start.Brightness}
+		return LightState{interval.Start.ColorTemperature, colorTemperatureToXYColor(interval.Start.ColorTemperature), interval.Start.Brightness}
 	}
 
 	// Timestamp after interval
 	if timestamp.After(interval.End.Time) {
-		x, y := colorTemperatureToXYColor(interval.End.ColorTemperature)
-		return LightState{interval.End.ColorTemperature, []float32{float32(x), float32(y)}, interval.End.Brightness}
+		return LightState{interval.End.ColorTemperature, colorTemperatureToXYColor(interval.End.ColorTemperature), interval.End.Brightness}
 	}
 
 	// Calculate regular progress inside interval
@@ -63,8 +61,7 @@ func (interval *Interval) calculateLightStateInInterval(timestamp time.Time) Lig
 		targetBrightness = interval.Start.Brightness + int(brightnessPercentageValue)
 	}
 
-	x, y := colorTemperatureToXYColor(targetColorTemperature)
-	lightstate := LightState{targetColorTemperature, []float32{float32(x), float32(y)}, targetBrightness}
+	lightstate := LightState{targetColorTemperature, colorTemperatureToXYColor(targetColorTemperature), targetBrightness}
 	if !lightstate.isValid() {
 		log.Warningf("Validation failed in calculateLightStateInInterval")
 	}
