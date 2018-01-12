@@ -28,7 +28,7 @@ import log "github.com/Sirupsen/logrus"
 // It can be read from or written to the physical lights.
 type LightState struct {
 	ColorTemperature int       `json:"colorTemperature"`
-	Color            []float32 `json:"color"`
+	Color            []float32 `json:"-"`
 	Brightness       int       `json:"brightness"`
 }
 
@@ -130,8 +130,7 @@ func lightStateFromHueValues(colorTemperature int, color []float32, brightness i
 	if len(color) != 2 {
 		// color is not properly initialized. Since we need it
 		// for state comparison we need to provide a valid state
-		x, y := colorTemperatureToXYColor(stateColorTemperature)
-		stateColor = []float32{float32(x), float32(y)}
+		stateColor = colorTemperatureToXYColor(stateColorTemperature)
 	} else {
 		stateColor = color
 	}
@@ -182,8 +181,7 @@ func (lightstate *LightState) isValid() bool {
 	}
 
 	// Validate color mapping from temperature to XY
-	x, y := colorTemperatureToXYColor(lightstate.ColorTemperature)
-	newState := LightState{lightstate.ColorTemperature, []float32{float32(x), float32(y)}, lightstate.Brightness}
+	newState := LightState{lightstate.ColorTemperature, colorTemperatureToXYColor(lightstate.ColorTemperature), lightstate.Brightness}
 	if !lightstate.equals(newState) {
 		log.Warningf("Validation: XY colors don't match: %+v vs %+v", lightstate, newState)
 		valid = false
