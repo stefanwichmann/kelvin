@@ -24,6 +24,8 @@ package main
 import "strings"
 import "os/exec"
 import "os"
+import "fmt"
+import "math"
 
 func containsString(slice []string, element string) bool {
 	for _, current := range slice {
@@ -48,6 +50,38 @@ func abs(value int) int {
 		return value * -1
 	}
 	return value
+}
+
+func toStringArray(data []int) []string {
+	var stringArray []string
+	for _, elem := range data {
+		stringArray = append(stringArray, fmt.Sprintf("%d", elem))
+	}
+	return stringArray
+}
+
+func roundFloat(f float32, precision int) float32 {
+	shift := math.Pow(10, float64(precision))
+	return float32(math.Floor((float64(f)*shift)+.5) / shift)
+}
+
+func equalsFloat(a []float32, b []float32, maxDiff float32) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for index := 0; index < len(a); index++ {
+		if math.Abs(float64(a[index]-b[index])) > float64(maxDiff) {
+			return false
+		}
+	}
+	return true
+}
+
+func equalsInt(a int, b int, maxDiff int) bool {
+	if abs(a - b) > maxDiff {
+			return false
+	}
+	return true
 }
 
 // Restart the running binary.

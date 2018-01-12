@@ -23,27 +23,30 @@ package main
 
 import "math"
 
-func colorTemperatureToXYColor(t int) (float32, float32) {
+func colorTemperatureToXYColor(t int) []float32 {
 	// -1 indicates values to ignore. Map these to {-1,-1}
 	if t == -1 {
-		return -1, -1
+		return []float32{-1, -1}
 	}
 
 	// http://www.brucelindbloom.com/index.html?Eqn_T_to_xy.html
-	var x float64
+	var x, y float64
 	if t < 2000 {
 		t = 2000
 	}
 	if t < 4000 {
 		l := lookupTable[t]
-		return float32(l[0]), float32(l[1])
+		x = l[0]
+		y = l[1]
 	} else if t <= 7000 {
 		x = ((-4.6070 * math.Pow(10, 9)) / math.Pow(float64(t), 3)) + ((2.9678 * math.Pow(10, 6)) / math.Pow(float64(t), 2)) + ((0.09911 * math.Pow(10, 3)) / float64(t)) + 0.244063
 	} else {
 		x = ((-2.0064 * math.Pow(10, 9)) / math.Pow(float64(t), 3)) + ((1.9018 * math.Pow(10, 6)) / math.Pow(float64(t), 2)) + ((0.24748 * math.Pow(10, 3)) / float64(t)) + 0.237040
 	}
-	y := -3.000*math.Pow(x, 2) + 2.870*x - 0.275
-	return float32(x), float32(y)
+	y = -3.000*math.Pow(x, 2) + 2.870*x - 0.275
+
+	// Round values to match hue precision
+	return []float32{roundFloat(float32(x), 3), roundFloat(float32(y), 3)}
 }
 
 var lookupTable = map[int][]float64{
