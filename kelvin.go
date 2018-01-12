@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2017 Stefan Wichmann
+// Copyright (c) 2018 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -72,6 +72,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// start routine for the scenes
+	go updateScenesCyclic()
 
 	// start routine for every light
 	lights, err = bridge.Lights()

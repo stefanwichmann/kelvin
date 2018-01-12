@@ -1,0 +1,254 @@
+// MIT License
+//
+// Copyright (c) 2018 Stefan Wichmann
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+package main
+
+import log "github.com/Sirupsen/logrus"
+import "github.com/stefanwichmann/go.hue"
+import "strconv"
+import "time"
+
+var lightsSupportingDimming = []string{"Dimmable Light", "Color Temperature Light", "Color Light", "Extended Color Light"}
+var lightsSupportingColorTemperature = []string{"Color Temperature Light", "Extended Color Light"}
+var lightsSupportingXYColor = []string{"Color Light", "Extended Color Light"}
+
+type HueLight struct {
+	Name                     string
+	HueLight                 hue.Light
+	TargetColorTemperature   int
+	TargetColor              []float32
+	TargetBrightness         int
+	CurrentColorTemperature  int
+	CurrentColor             []float32
+	CurrentBrightness        int
+	CurrentColorMode         string
+	SupportsColorTemperature bool
+	SupportsXYColor          bool
+	Dimmable                 bool
+	On                       bool
+}
+
+const lightTransitionIntervalInSeconds = 1
+
+func (light *HueLight) initialize() error {
+	attr, err := light.HueLight.GetLightAttributes()
+	if err != nil {
+		return err
+	}
+
+	// initialize non changing values
+	light.Name = attr.Name
+	light.Dimmable = containsString(lightsSupportingDimming, attr.Type)
+	light.SupportsColorTemperature = containsString(lightsSupportingColorTemperature, attr.Type)
+	light.SupportsXYColor = containsString(lightsSupportingXYColor, attr.Type)
+	log.Debugf("💡 Light %s - Initialization complete. Identified as %s (ModelID: %s, Version: %s)", light.Name, attr.Type, attr.ModelId, attr.SoftwareVersion)
+
+	light.UpdateCurrentLightState()
+	return nil
+}
+
+func (light *HueLight) SupportsKelvin() bool {
+	if !light.Dimmable && !light.SupportsXYColor && !light.SupportsColorTemperature {
+		return false
+	}
+	return true
+}
+
+func (light *HueLight) UpdateCurrentLightState() error {
+	attr, err := light.HueLight.GetLightAttributes()
+	if err != nil {
+		return err
+	}
+
+	light.CurrentColorTemperature = attr.State.Ct
+
+	var color []float32
+	for _, value := range attr.State.Xy {
+		color = append(color, roundFloat(value, 3))
+	}
+	light.CurrentColor = color
+	light.CurrentBrightness = attr.State.Bri
+	light.CurrentColorMode = attr.State.ColorMode
+
+	if !attr.State.Reachable {
+		light.On = false
+	} else {
+		light.On = attr.State.On
+	}
+
+	log.Debugf("💡 HueLight %s - Updated light state. Color: %v, Color temperature: %d, Brightness: %d", light.Name, light.CurrentColor, light.CurrentColorTemperature, light.CurrentBrightness)
+	return nil
+}
+
+func (light *HueLight) SetLightState(colorTemperature int, brightness int) error {
+	if colorTemperature != -1 && (colorTemperature < 2000 || colorTemperature > 6500) {
+		log.Warningf("💡 Light %s - Invalid color temperature %d", light.Name, colorTemperature)
+	}
+	if brightness < -1 || brightness > 100 {
+		log.Warningf("💡 Light %s - Invalid brightness %d", light.Name, brightness)
+	}
+
+	log.Debugf("💡 HueLight %s - Setting light state to %dK and %d%% brightness.", light.Name, colorTemperature, brightness)
+
+	// map parameters to target values
+	light.TargetColorTemperature = mapColorTemperature(colorTemperature)
+	light.TargetColor = colorTemperatureToXYColor(colorTemperature)
+	light.TargetBrightness = mapBrightness(brightness)
+
+	// Send new state to light bulb
+	var hueLightState hue.SetLightState
+
+	if colorTemperature != -1 {
+		// Set supported colormodes. If both are, the brigde will prefer xy colors
+		if light.SupportsXYColor {
+			hueLightState.Xy = light.TargetColor
+		}
+		if light.SupportsColorTemperature {
+			hueLightState.Ct = strconv.Itoa(light.TargetColorTemperature)
+		}
+	}
+
+	if brightness != -1 {
+		if brightness == 0 {
+			// Target brightness zero should turn the light off.
+			hueLightState.On = "Off"
+		} else if light.Dimmable {
+			hueLightState.Bri = strconv.Itoa(light.TargetBrightness)
+		}
+	}
+	hueLightState.TransitionTime = strconv.Itoa(lightTransitionIntervalInSeconds * 10) // Conversion to 100ms-value
+
+	// Send new state to the light
+	_, err := light.HueLight.SetState(hueLightState)
+	if err != nil {
+		return err
+	}
+
+	// Wait while the light is in transition before returning
+	time.Sleep(lightTransitionIntervalInSeconds + 1*time.Second)
+
+	// Debug: Update current state to double check
+	if log.GetLevel() == log.DebugLevel {
+		light.UpdateCurrentLightState()
+		if light.HasChanged() {
+			log.Warningf("💡 HueLight %s - Failed to update light state: %+v", light.Name, light)
+		} else {
+			log.Debugf("💡 HueLight %s - Light was successfully updated.", light.Name)
+		}
+	}
+
+	return nil
+}
+
+func (light *HueLight) HasChanged() bool {
+	if light.SupportsXYColor && light.CurrentColorMode == "xy" {
+		if !equalsFloat(light.TargetColor, []float32{-1, -1}, 0) && !equalsFloat(light.TargetColor, light.CurrentColor, 0.001) {
+			log.Debugf("💡 HueLight %s - Color has changed! Current light state: %+v", light.Name, light)
+			return true
+		}
+	} else if light.SupportsColorTemperature && light.CurrentColorMode == "ct" {
+		if light.TargetColorTemperature != -1 && !equalsInt(light.TargetColorTemperature, light.CurrentColorTemperature, 2) {
+			log.Debugf("💡 HueLight %s - Color temperature has changed! Current light state: %+v", light.Name, light)
+			return true
+		}
+	} else {
+		// Missmatch in color modes? Log warning for debug purposes and assume unchanged
+		log.Warningf("💡 HueLight %s - Unknown color mode in HasChanged method! Current light state: %+v", light.Name, light)
+	}
+
+	if light.Dimmable && light.TargetBrightness != -1 && light.TargetBrightness != light.CurrentBrightness {
+		log.Debugf("💡 HueLight %s - Brightness has changed! Current light state: %+v", light.Name, light)
+		return true
+	}
+
+	return false
+}
+
+func (light *HueLight) HasState(colorTemperature int, brightness int) bool {
+	return light.HasColorTemperature(colorTemperature) && light.HasBrightness(brightness)
+}
+
+func (light *HueLight) HasColorTemperature(colorTemperature int) bool {
+	if colorTemperature == -1 || light.TargetColorTemperature == -1 {
+		return true
+	}
+	if !light.SupportsXYColor && !light.SupportsColorTemperature {
+		return true
+	}
+
+	if light.SupportsXYColor && light.CurrentColorMode == "xy" {
+		if equalsFloat(colorTemperatureToXYColor(colorTemperature), light.CurrentColor, 0.001) {
+			return true
+		} else {
+			return false
+		}
+	} else if light.SupportsColorTemperature && light.CurrentColorMode == "ct" {
+		if equalsInt(light.CurrentColorTemperature, mapColorTemperature(colorTemperature), 2) {
+			return true
+		} else {
+			return false
+		}
+	}
+
+	// Missmatch in color modes? Log warning for debug purposes and assume unchanged
+	log.Warningf("💡 HueLight %s - Unknown color mode in HasColorTemperature method! Current light state: %+v", light.Name, light)
+
+	return true
+}
+
+func (light *HueLight) HasBrightness(brightness int) bool {
+	if brightness == -1 || light.TargetBrightness == -1 {
+		return true
+	}
+	if !light.Dimmable {
+		return true
+	}
+	if light.CurrentBrightness != mapBrightness(brightness) {
+		return false
+	}
+	return true
+}
+
+func mapColorTemperature(colorTemperature int) int {
+	if colorTemperature == -1 {
+		return -1
+	}
+
+	if colorTemperature > 6500 {
+		colorTemperature = 6500
+	} else if colorTemperature < 2000 {
+		colorTemperature = 2000
+	}
+	return int((float64(1) / float64(colorTemperature)) * float64(1000000))
+}
+
+func mapBrightness(brightness int) int {
+	if brightness == -1 {
+		return -1
+	}
+
+	if brightness > 100 {
+		brightness = 100
+	} else if brightness < 0 {
+		brightness = 0
+	}
+	return int((float64(brightness) / float64(100)) * float64(254))
+}

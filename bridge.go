@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2017 Stefan Wichmann
+// Copyright (c) 2018 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -100,7 +100,7 @@ func (bridge *HueBridge) Lights() ([]*Light, error) {
 			return lights, err
 		}
 
-		light.HueLight = *hueLight
+		light.HueLight.HueLight = *hueLight
 		light.initialize()
 
 		lights = append(lights, &light)
@@ -117,15 +117,9 @@ func (bridge *HueBridge) printDevices() error {
 	}
 
 	log.Printf("⌘ Devices found on current bridge:")
-	log.Printf("| %-20s | %3v | %-9v | %-5v | %-8v | %-11v | %-5v | %-9v | %-8v |", "Name", "ID", "Reachable", "On", "Dimmable", "Temperature", "Color", "Cur. Temp", "Cur. Bri")
+	log.Printf("| %-20s | %3v | %-5v | %-8v | %-11v | %-5v |", "Name", "ID", "On", "Dimmable", "Temperature", "Color")
 	for _, light := range lights {
-		var temp string
-		if !light.SupportsColorTemperature && !light.SupportsXYColor {
-			temp = "-"
-		} else {
-			temp = strings.Join([]string{strconv.Itoa(light.CurrentLightState.ColorTemperature), "K"}, "")
-		}
-		log.Printf("| %-20s | %3v | %-9v | %-5v | %-8v | %-11v | %-5v | %9v | %8v |", light.Name, light.ID, light.Reachable, light.On, light.Dimmable, light.SupportsColorTemperature, light.SupportsXYColor, temp, light.CurrentLightState.Brightness)
+		log.Printf("| %-20s | %3v | %-5v | %-8v | %-11v | %-5v |", light.Name, light.ID, light.On, light.HueLight.Dimmable, light.HueLight.SupportsColorTemperature, light.HueLight.SupportsXYColor)
 	}
 	return nil
 }
@@ -255,10 +249,12 @@ func (bridge *HueBridge) validateBridge() error {
 		return errors.New("No bridge configured. Could not validate")
 	}
 	resp, err := http.Get("http://" + bridge.BridgeIP + "/description.xml")
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return fmt.Errorf("Could not read bridge description: %v", err)
 	}
-	defer resp.Body.Close()
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

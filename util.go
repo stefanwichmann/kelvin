@@ -78,8 +78,8 @@ func equalsFloat(a []float32, b []float32, maxDiff float32) bool {
 }
 
 func equalsInt(a int, b int, maxDiff int) bool {
-	if abs(a - b) > maxDiff {
-			return false
+	if abs(a-b) > maxDiff {
+		return false
 	}
 	return true
 }

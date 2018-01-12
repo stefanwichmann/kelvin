@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2017 Stefan Wichmann
+// Copyright (c) 2018 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -129,6 +129,9 @@ func updateSchedulesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Update scenes
+	updateScenes()
+
 	// Update lights
 	for _, light := range lights {
 		light.updateConfiguration(configuration)
@@ -194,7 +197,7 @@ func activateLightHandler(w http.ResponseWriter, r *http.Request) {
 		if l.ID == lightID {
 			log.Printf("💡 Light %s - Activating light state %+v as requested by %s", l.Name, t, r.RemoteAddr)
 			l.Automatic = false
-			l.setLightState(t)
+			l.HueLight.SetLightState(t.ColorTemperature, t.Brightness)
 		}
 	}
 	w.Write([]byte("success"))
