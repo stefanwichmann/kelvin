@@ -49,7 +49,7 @@ func (light *Light) updateCyclic(configuration *Configuration) {
 	light.Configuration = configuration
 
 	// Filter devices we can't control
-	if !light.HueLight.SupportsKelvin() {
+	if !light.HueLight.supportsColorTemperature() && !light.HueLight.supportsBrightness() {
 		log.Printf("💡 Light %s - This device doesn't support any functionality Kelvin uses. Ignoring...", light.Name)
 		return
 	}
@@ -123,22 +123,27 @@ func (light *Light) update() error {
 
 	// Did the light just appear?
 	if !light.Tracking {
-		log.Printf("💡 Light %s - Light just appeared. Initializing state to %vK at %v%% brightness.", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
-
-		// For initialization we set the state again and again for 10 seconds
-		// because during startup the zigbee communication might be unstable
-		for index := 0; index < 10; index++ {
-			err := light.HueLight.SetLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
-			if err != nil {
-				return err
-			}
-		}
-
+		log.Printf("💡 Light %s - Light just appeared.", light.Name)
 		light.Tracking = true
-		light.Automatic = true
-		log.Debugf("💡 Light %s - Light was updated to %vK at %v%% brightness", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 
-		return nil
+		// Should we auto-enable Kelvin?
+		if light.Schedule.enableWhenLightsAppear {
+			log.Printf("💡 Light %s - Initializing state to %vK at %v%% brightness.", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+
+			// For initialization we set the state again and again for 10 seconds
+			// because during startup the zigbee communication might be unstable
+			for index := 0; index < 10; index++ {
+				err := light.HueLight.SetLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+				if err != nil {
+					return err
+				}
+			}
+
+			light.Automatic = true
+			log.Debugf("💡 Light %s - Light was updated to %vK at %v%% brightness", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+
+			return nil
+		}
 	}
 
 	// Ignore light if it was changed manually

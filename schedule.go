@@ -29,11 +29,12 @@ import "errors"
 // Kelvin will calculate all light states based on the intervals
 // between this timestamps.
 type Schedule struct {
-	endOfDay      time.Time
-	beforeSunrise []TimeStamp
-	sunrise       TimeStamp
-	sunset        TimeStamp
-	afterSunset   []TimeStamp
+	endOfDay               time.Time
+	beforeSunrise          []TimeStamp
+	sunrise                TimeStamp
+	sunset                 TimeStamp
+	afterSunset            []TimeStamp
+	enableWhenLightsAppear bool
 }
 
 func (schedule *Schedule) currentInterval(timestamp time.Time) (Interval, error) {

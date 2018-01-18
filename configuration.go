@@ -52,6 +52,7 @@ type WebInterface struct {
 type LightSchedule struct {
 	Name                    string                  `json:"name"`
 	AssociatedDeviceIDs     []int                   `json:"associatedDeviceIDs"`
+	EnableWhenLightsAppear  bool                    `json:"enableWhenLightsAppear"`
 	DefaultColorTemperature int                     `json:"defaultColorTemperature"`
 	DefaultBrightness       int                     `json:"defaultBrightness"`
 	BeforeSunrise           []TimedColorTemperature `json:"beforeSunrise"`
@@ -202,33 +203,7 @@ func (configuration *Configuration) Read() error {
 	configuration.Hash = configuration.HashValue()
 	log.Debugf("⚙ Updated configuration hash.")
 
-	// Migrate to new timestamp format
-	for scheduleIndex := range configuration.Schedules {
-		for beforeTimestampIndex := range configuration.Schedules[scheduleIndex].BeforeSunrise {
-			t, err := migrateTimestampFormat(configuration.Schedules[scheduleIndex].BeforeSunrise[beforeTimestampIndex].Time)
-			if err != nil {
-				log.Warningf(err.Error())
-			} else {
-				configuration.Schedules[scheduleIndex].BeforeSunrise[beforeTimestampIndex].Time = t
-			}
-		}
-		for afterTimestampIndex := range configuration.Schedules[scheduleIndex].AfterSunset {
-			t, err := migrateTimestampFormat(configuration.Schedules[scheduleIndex].AfterSunset[afterTimestampIndex].Time)
-			if err != nil {
-				log.Warningf(err.Error())
-			} else {
-				configuration.Schedules[scheduleIndex].AfterSunset[afterTimestampIndex].Time = t
-			}
-		}
-	}
-
-	// Migration: Disable webinterface
-	if configuration.WebInterface.Port == 0 {
-		log.Printf("⚙ Migrating webinterface settings...")
-		configuration.WebInterface.Enabled = false
-		configuration.WebInterface.Port = 8080
-	}
-
+	configuration.migrateToLatestVersion()
 	configuration.Write()
 	return nil
 }
@@ -278,6 +253,7 @@ func (configuration *Configuration) lightScheduleForDay(light int, date time.Tim
 		schedule.afterSunset = append(schedule.afterSunset, timestamp)
 	}
 
+	schedule.enableWhenLightsAppear = lightSchedule.EnableWhenLightsAppear
 	return schedule, nil
 }
 
@@ -326,23 +302,4 @@ func (configuration *Configuration) backup() error {
 	backupFilename := configuration.ConfigurationFile + "_" + time.Now().Format("01022006")
 	log.Debugf("⚙ Moving configuration to %s.", backupFilename)
 	return os.Rename(configuration.ConfigurationFile, backupFilename)
-}
-
-func migrateTimestampFormat(timestamp string) (string, error) {
-	// Check for old format and convert
-	layout := "3:04PM"
-	t, err := time.Parse(layout, timestamp)
-	if err == nil {
-		log.Debugf("⚙ Migrating old timestamp %s to %s", timestamp, t.Format("15:04"))
-		return t.Format("15:04"), nil
-	}
-
-	// Already new format? Return unchanged
-	layout = "15:04"
-	t, err = time.Parse(layout, timestamp)
-	if err == nil {
-		return timestamp, nil
-	}
-
-	return "", fmt.Errorf("Invalid timestamp format: %s", timestamp)
 }

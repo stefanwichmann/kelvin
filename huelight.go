@@ -25,6 +25,7 @@ import log "github.com/Sirupsen/logrus"
 import "github.com/stefanwichmann/go.hue"
 import "strconv"
 import "time"
+import "errors"
 
 var lightsSupportingDimming = []string{"Dimmable Light", "Color Temperature Light", "Color Light", "Extended Color Light"}
 var lightsSupportingColorTemperature = []string{"Color Temperature Light", "Extended Color Light"}
@@ -33,6 +34,8 @@ var lightsSupportingXYColor = []string{"Color Light", "Extended Color Light"}
 type HueLight struct {
 	Name                     string
 	HueLight                 hue.Light
+	SetColorTemperature      int
+	SetBrightness            int
 	TargetColorTemperature   int
 	TargetColor              []float32
 	TargetBrightness         int
@@ -65,11 +68,18 @@ func (light *HueLight) initialize() error {
 	return nil
 }
 
-func (light *HueLight) SupportsKelvin() bool {
-	if !light.Dimmable && !light.SupportsXYColor && !light.SupportsColorTemperature {
-		return false
+func (light *HueLight) supportsColorTemperature() bool {
+	if light.SupportsXYColor || light.SupportsColorTemperature {
+		return true
 	}
-	return true
+	return false
+}
+
+func (light *HueLight) supportsBrightness() bool {
+	if light.Dimmable {
+		return true
+	}
+	return false
 }
 
 func (light *HueLight) UpdateCurrentLightState() error {
@@ -94,7 +104,6 @@ func (light *HueLight) UpdateCurrentLightState() error {
 		light.On = attr.State.On
 	}
 
-	log.Debugf("💡 HueLight %s - Updated light state. Color: %v, Color temperature: %d, Brightness: %d", light.Name, light.CurrentColor, light.CurrentColorTemperature, light.CurrentBrightness)
 	return nil
 }
 
@@ -107,6 +116,8 @@ func (light *HueLight) SetLightState(colorTemperature int, brightness int) error
 	}
 
 	log.Debugf("💡 HueLight %s - Setting light state to %dK and %d%% brightness.", light.Name, colorTemperature, brightness)
+	light.SetColorTemperature = colorTemperature
+	light.SetBrightness = brightness
 
 	// map parameters to target values
 	light.TargetColorTemperature = mapColorTemperature(colorTemperature)
@@ -225,6 +236,30 @@ func (light *HueLight) HasBrightness(brightness int) bool {
 		return false
 	}
 	return true
+}
+
+func (light *HueLight) getCurrentColorTemperature() (int, error) {
+	if !light.HasChanged() {
+		return light.SetColorTemperature, nil
+	}
+
+	if light.CurrentColorTemperature >= 153 && light.CurrentColorTemperature <= 500 {
+		return int(float64(1000000) / float64(light.CurrentColorTemperature)), nil
+	}
+
+	return 0, errors.New("Could not determine current color temperature")
+}
+
+func (light *HueLight) getCurrentBrightness() (int, error) {
+	if !light.HasChanged() {
+		return light.SetBrightness, nil
+	}
+
+	if light.CurrentBrightness >= 1 && light.CurrentBrightness <= 254 {
+		return int((float64(light.CurrentBrightness) / float64(254)) * float64(100)), nil
+	}
+
+	return 0, errors.New("Could not determine current brightness")
 }
 
 func mapColorTemperature(colorTemperature int) int {
