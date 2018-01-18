@@ -31,6 +31,7 @@ var lightsSupportingDimming = []string{"Dimmable Light", "Color Temperature Ligh
 var lightsSupportingColorTemperature = []string{"Color Temperature Light", "Extended Color Light"}
 var lightsSupportingXYColor = []string{"Color Light", "Extended Color Light"}
 
+// HueLight represents a physical hue light.
 type HueLight struct {
 	Name                     string
 	HueLight                 hue.Light
@@ -64,7 +65,7 @@ func (light *HueLight) initialize() error {
 	light.SupportsXYColor = containsString(lightsSupportingXYColor, attr.Type)
 	log.Debugf("💡 Light %s - Initialization complete. Identified as %s (ModelID: %s, Version: %s)", light.Name, attr.Type, attr.ModelId, attr.SoftwareVersion)
 
-	light.UpdateCurrentLightState()
+	light.updateCurrentLightState()
 	return nil
 }
 
@@ -82,7 +83,7 @@ func (light *HueLight) supportsBrightness() bool {
 	return false
 }
 
-func (light *HueLight) UpdateCurrentLightState() error {
+func (light *HueLight) updateCurrentLightState() error {
 	attr, err := light.HueLight.GetLightAttributes()
 	if err != nil {
 		return err
@@ -107,7 +108,7 @@ func (light *HueLight) UpdateCurrentLightState() error {
 	return nil
 }
 
-func (light *HueLight) SetLightState(colorTemperature int, brightness int) error {
+func (light *HueLight) setLightState(colorTemperature int, brightness int) error {
 	if colorTemperature != -1 && (colorTemperature < 2000 || colorTemperature > 6500) {
 		log.Warningf("💡 Light %s - Invalid color temperature %d", light.Name, colorTemperature)
 	}
@@ -158,8 +159,8 @@ func (light *HueLight) SetLightState(colorTemperature int, brightness int) error
 
 	// Debug: Update current state to double check
 	if log.GetLevel() == log.DebugLevel {
-		light.UpdateCurrentLightState()
-		if light.HasChanged() {
+		light.updateCurrentLightState()
+		if light.hasChanged() {
 			log.Warningf("💡 HueLight %s - Failed to update light state: %+v", light.Name, light)
 		} else {
 			log.Debugf("💡 HueLight %s - Light was successfully updated.", light.Name)
@@ -169,7 +170,7 @@ func (light *HueLight) SetLightState(colorTemperature int, brightness int) error
 	return nil
 }
 
-func (light *HueLight) HasChanged() bool {
+func (light *HueLight) hasChanged() bool {
 	if light.SupportsXYColor && light.CurrentColorMode == "xy" {
 		if !equalsFloat(light.TargetColor, []float32{-1, -1}, 0) && !equalsFloat(light.TargetColor, light.CurrentColor, 0.001) {
 			log.Debugf("💡 HueLight %s - Color has changed! Current light state: %+v", light.Name, light)
@@ -193,11 +194,11 @@ func (light *HueLight) HasChanged() bool {
 	return false
 }
 
-func (light *HueLight) HasState(colorTemperature int, brightness int) bool {
-	return light.HasColorTemperature(colorTemperature) && light.HasBrightness(brightness)
+func (light *HueLight) hasState(colorTemperature int, brightness int) bool {
+	return light.hasColorTemperature(colorTemperature) && light.hasBrightness(brightness)
 }
 
-func (light *HueLight) HasColorTemperature(colorTemperature int) bool {
+func (light *HueLight) hasColorTemperature(colorTemperature int) bool {
 	if colorTemperature == -1 || light.TargetColorTemperature == -1 {
 		return true
 	}
@@ -208,15 +209,13 @@ func (light *HueLight) HasColorTemperature(colorTemperature int) bool {
 	if light.SupportsXYColor && light.CurrentColorMode == "xy" {
 		if equalsFloat(colorTemperatureToXYColor(colorTemperature), light.CurrentColor, 0.001) {
 			return true
-		} else {
-			return false
 		}
+		return false
 	} else if light.SupportsColorTemperature && light.CurrentColorMode == "ct" {
 		if equalsInt(light.CurrentColorTemperature, mapColorTemperature(colorTemperature), 2) {
 			return true
-		} else {
-			return false
 		}
+		return false
 	}
 
 	// Missmatch in color modes? Log warning for debug purposes and assume unchanged
@@ -225,7 +224,7 @@ func (light *HueLight) HasColorTemperature(colorTemperature int) bool {
 	return true
 }
 
-func (light *HueLight) HasBrightness(brightness int) bool {
+func (light *HueLight) hasBrightness(brightness int) bool {
 	if brightness == -1 || light.TargetBrightness == -1 {
 		return true
 	}
@@ -239,7 +238,7 @@ func (light *HueLight) HasBrightness(brightness int) bool {
 }
 
 func (light *HueLight) getCurrentColorTemperature() (int, error) {
-	if !light.HasChanged() {
+	if !light.hasChanged() {
 		return light.SetColorTemperature, nil
 	}
 
@@ -251,7 +250,7 @@ func (light *HueLight) getCurrentColorTemperature() (int, error) {
 }
 
 func (light *HueLight) getCurrentBrightness() (int, error) {
-	if !light.HasChanged() {
+	if !light.hasChanged() {
 		return light.SetBrightness, nil
 	}
 

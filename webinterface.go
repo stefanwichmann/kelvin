@@ -197,7 +197,7 @@ func activateLightHandler(w http.ResponseWriter, r *http.Request) {
 		if l.ID == lightID {
 			log.Printf("💡 Light %s - Activating light state %+v as requested by %s", l.Name, t, r.RemoteAddr)
 			l.Automatic = false
-			l.HueLight.SetLightState(t.ColorTemperature, t.Brightness)
+			l.HueLight.setLightState(t.ColorTemperature, t.Brightness)
 		}
 	}
 	w.Write([]byte("success"))

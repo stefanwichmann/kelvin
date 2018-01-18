@@ -26,8 +26,7 @@ import (
 	"time"
 )
 
-// Light represents a single physical hue light in your system.
-// It is used to read and write it's state.
+// Light represents a light kelvin can automate in your system.
 type Light struct {
 	ID               int            `json:"id"`
 	Name             string         `json:"name"`
@@ -90,8 +89,8 @@ func (light *Light) initialize() error {
 	return nil
 }
 
-func (light *Light) UpdateCurrentLightState() error {
-	err := light.HueLight.UpdateCurrentLightState()
+func (light *Light) updateCurrentLightState() error {
+	err := light.HueLight.updateCurrentLightState()
 	if err != nil {
 		return err
 	}
@@ -106,7 +105,7 @@ func (light *Light) update() error {
 	}
 
 	// Refresh current light state from bridge
-	light.UpdateCurrentLightState()
+	light.updateCurrentLightState()
 
 	// If the light is turned off clean up and do nothing
 	if !light.HueLight.On {
@@ -133,7 +132,7 @@ func (light *Light) update() error {
 			// For initialization we set the state again and again for 10 seconds
 			// because during startup the zigbee communication might be unstable
 			for index := 0; index < 10; index++ {
-				err := light.HueLight.SetLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+				err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 				if err != nil {
 					return err
 				}
@@ -149,7 +148,7 @@ func (light *Light) update() error {
 	// Ignore light if it was changed manually
 	if !light.Automatic {
 		// if status == scene state --> Activate Kelvin
-		if light.HueLight.HasState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness) {
+		if light.HueLight.hasState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness) {
 			log.Printf("💡 Light %s - Detected matching target state. Activating Kelvin...", light.Name)
 			light.Automatic = true
 		}
@@ -157,7 +156,7 @@ func (light *Light) update() error {
 	}
 
 	// Did the user manually change the light state?
-	if light.HueLight.HasChanged() {
+	if light.HueLight.hasChanged() {
 		if log.GetLevel() == log.DebugLevel {
 			log.Debugf("💡 Light %s - Light state has been changed manually: %+v", light.Name, light.HueLight)
 		} else {
@@ -168,12 +167,12 @@ func (light *Light) update() error {
 	}
 
 	// Update of lightstate needed?
-	if light.HueLight.HasState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness) {
+	if light.HueLight.hasState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness) {
 		return nil
 	}
 
 	// Light is turned on and in automatic state. Set target lightstate.
-	err := light.HueLight.SetLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+	err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 	if err != nil {
 		return err
 	}
