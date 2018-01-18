@@ -85,7 +85,7 @@ func updateSceneForSchedule(scene *hue.Scene, lightSchedule LightSchedule) {
 	var modifyState hue.ModifyLightState
 	if state.ColorTemperature != -1 {
 		modifyState.ColorTemperature = uint16(mapColorTemperature(state.ColorTemperature))
-		modifyState.Xy = state.Color
+		modifyState.Xy = colorTemperatureToXYColor(state.ColorTemperature)
 	}
 	if state.Brightness != -1 {
 		modifyState.Brightness = uint8(mapBrightness(state.Brightness))

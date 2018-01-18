@@ -231,7 +231,7 @@ func (light *Light) updateTargetLightState() {
 	log.Debugf("💡 Light %s - The calculated lightstate for the interval %v - %v is %+v", light.Name, light.Interval.Start.Time.Format("15:04"), light.Interval.End.Time.Format("15:04"), newLightState)
 
 	// First initialization of the TargetLightState?
-	if light.TargetLightState.ColorTemperature == 0 && len(light.TargetLightState.Color) == 0 && light.TargetLightState.Brightness == 0 {
+	if light.TargetLightState.ColorTemperature == 0 && light.TargetLightState.Brightness == 0 {
 		light.TargetLightState = newLightState
 		log.Debugf("💡 Light %s - Initialized target light state to %+v", light.Name, light.TargetLightState)
 		return

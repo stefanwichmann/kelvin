@@ -26,9 +26,8 @@ import log "github.com/Sirupsen/logrus"
 // LightState represents a light configuration.
 // It can be read from or written to the physical lights.
 type LightState struct {
-	ColorTemperature int       `json:"colorTemperature"`
-	Color            []float32 `json:"-"`
-	Brightness       int       `json:"brightness"`
+	ColorTemperature int `json:"colorTemperature"`
+	Brightness       int `json:"brightness"`
 }
 
 func (lightstate *LightState) isValid() bool {
@@ -42,21 +41,6 @@ func (lightstate *LightState) isValid() bool {
 	// Validate ColorTemperature
 	if lightstate.ColorTemperature != 0 && lightstate.ColorTemperature != -1 && (lightstate.ColorTemperature < 2000 || lightstate.ColorTemperature > 6500) {
 		log.Warningf("Validation: Invalid ColorTemperature in %+v", lightstate)
-		valid = false
-	}
-
-	// Validate Color
-	if len(lightstate.Color) != 2 {
-		log.Warningf("Validation: Invalid Color in %+v", lightstate)
-		return false // early return because the color value is corrupt. Other checks will fail too.
-	}
-
-	// ColorTemperature and Color match
-	if lightstate.ColorTemperature == -1 && (lightstate.Color[0] != -1 || lightstate.Color[1] != -1) {
-		log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
-		valid = false
-	} else if lightstate.ColorTemperature != -1 && (lightstate.Color[0] == -1 || lightstate.Color[1] == -1) {
-		log.Warningf("Validation: ColorTemperature and Color don't match in %+v", lightstate)
 		valid = false
 	}
 
