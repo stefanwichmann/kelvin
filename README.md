@@ -17,6 +17,7 @@ Imagine your lights shine in an energetic but not too bright blue color to get y
 - Define a default startup color and brightness for your lights
 - Gradual light transitions you won't even notice
 - Works with smart switches as well as conventional switches
+- Activate via Hue Scene or automatically for every light you turn on
 - Respects manual light changes until a light is switched off and on again
 - Auto upgrade to seamlessly deliver improvements to you
 - Small, self contained binary with sane defaults and no dependencies to get you started right away
@@ -36,7 +37,7 @@ Got all these? Great, let's get started!
 3. Start Kelvin by double-clicking `kelvin.exe` on windows or by typing `./kelvin` in your terminal on macOS, Linux and other Unix-based systems.
    You should see an output similar to the following snippet:
    ```
-   2017/03/22 10:45:41 Kelvin v1.0.0 starting up... 🚀
+   2017/03/22 10:45:41 Kelvin v1.1.0 starting up... 🚀
    2017/03/22 10:45:41 Looking for updates...
    2017/03/22 10:45:41 ⚙ Default configuration generated
    2017/03/22 10:45:41 ⌘ No bridge configuration found. Starting local discovery...
@@ -46,20 +47,20 @@ Got all these? Great, let's get started!
 4. Now you have to allow Kelvin to talk to your bridge by pushing the blue button on top of your physical Hue bridge. Kelvin will wait one minute for you to push the button. If you didn't make it in time just start it again with step 3.
 5. Once you pushed the button you should see something like:
    ```
-   2017/03/22 10:45:41 Kelvin v1.0.0 starting up... 🚀
+   2017/03/22 10:45:41 Kelvin v1.1.0 starting up... 🚀
    2017/03/22 10:45:41 Looking for updates...
    2017/03/22 10:45:41 ⚙ Default configuration generated
    2017/03/22 10:45:41 ⌘ No bridge configuration found. Starting local discovery...
    2017/03/22 10:45:44 ⌘ Found bridge. Starting user registration.
    PLEASE PUSH THE BLUE BUTTON ON YOUR HUE BRIDGE... Success!
    2017/03/22 10:45:59 💡 Devices found on current bridge:
-   2017/03/22 10:45:59 | Name                 |  ID | Reachable | On    | Dimmable | Temperature | Color | Cur. Temp | Cur. Bri |
-   2017/03/22 10:45:59 | Dining table         |   5 | false     | false | true     | true        | true  |     2638K |       92 |
-   2017/03/22 10:45:59 | Power outlet         |   6 | true      | false | false    | false       | false |         - |        0 |
-   2017/03/22 10:45:59 | Window               |   1 | false     | false | true     | true        | true  |     2197K |       72 |
-   2017/03/22 10:45:59 | Kitchen              |   2 | false     | false | true     | true        | true  |     2012K |       60 |
-   2017/03/22 10:45:59 | Couch                |   3 | false     | false | true     | true        | true  |     2012K |       59 |
-   2017/03/22 10:45:59 | Desk                 |   4 | true      | false | true     | false       | true  |     6500K |        0 |
+   2017/03/22 10:45:59 | Name                 |  ID | On    | Dimmable | Temperature | Color |
+   2017/03/22 10:45:59 | Dining table         |   5 | false | true     | true        | true  |
+   2017/03/22 10:45:59 | Power outlet         |   6 | false | false    | false       | false |
+   2017/03/22 10:45:59 | Window               |   1 | false | true     | true        | true  |
+   2017/03/22 10:45:59 | Kitchen              |   2 | false | true     | true        | true  |
+   2017/03/22 10:45:59 | Couch                |   3 | false | true     | true        | true  |
+   2017/03/22 10:45:59 | Desk                 |   4 | false | true     | false       | true  |
    2017/03/22 10:45:59 Device Power outlet doesn't support any functionality we use. Exclude it from unnecessary polling.
    2017/03/22 10:45:59 🌍 Location not configured. Detecting by IP
    2017/03/22 10:45:59 🌍 Detected location: Hamburg, Germany (53.5553, 9.995).
@@ -99,6 +100,7 @@ Kelvin will create it's configuration file `config.json` in the current director
     {
       "name": "default",
       "associatedDeviceIDs": [1,2,3,4,5,6],
+      "enableWhenLightsAppear": true,
       "defaultColorTemperature": 2750,
       "defaultBrightness": 100,
       "beforeSunrise": [
@@ -140,12 +142,25 @@ Each schedule must be configured in the following format:
 | ---- | ----------- |
 | name | The name of this schedule. This is only used for better readability. |
 | associatedDeviceIDs | A list of all devices/lights that should be managed according to this schedule. Kelvin will print an overview of all your devices on startup. You should use this to associate your lights with the right schedule. *ATTENTION: Every light should be associated to only one schedule. If you skip an ID this device will be ignored.* |
+| enableWhenLightsAppear | If this element is set to `true` Kelvin will be activated automatically whenever you switch an associated light on. If set to `false` Kelvin won't take over until you enable a [Kelvin Scene](#kelvin-scenes) or activate it via web interface. |
 | defaultColorTemperature | This default color temperature will be used between sunrise and sunset. Valid values are between 2000K and 6500K. See [Wikipedia](https://en.wikipedia.org/wiki/Color_temperature) for reference values. If you set this value to -1 Kelvin will ignore the color temperature and you can change it manually.|
 | defaultBrightness | This default brightness value will be used between sunrise and sunset. Valid values are between 0% and 100%. If you set this value to -1 Kelvin will ignore the brightness and you can change it manually.|
 | beforeSunrise | This element contains a list of timestamps and their configuration you want to set between midnight and sunrise of any given day. The *time* value must follow the `hh:mm` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
 | afterSunset | This element contains a list of timestamps and their configuration you want to set between sunset and midnight of any given day. The *time* value must follow the `hh:mm` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
 
 After altering the configuration you have to restart Kelvin. Just kill the running instance (`Ctrl+C` or `kill $PID`) or send a HUP signal (`kill -s HUP $PID`) to the process to restart (unix only).
+
+# Kelvin Scenes
+Kelvin has the ability to detect certain light scenes you have programmed in your hue system. If you activate one of these Kelvin scenes it will take control of the light and manage it for you. You can use this feature to reactivate Kelvin after manually changing the light state or to associate Kelvin with a certain button on your Hue Tap for example.
+
+In order to use this feature you have to create a scene in your Hue System via a Hue app. The name of this new scene has to contain the word `kelvin` and the name of the schedule you want to control. Once you saved this scene Kelvin will associate all relevant lights to it and update the state every minute to fit your schedule. Now you can simple activate this scene whenever you want to active Kelvin.
+
+Let's look at an example:
+- Let's assume you have a schedule called `livingroom` which should be activated only on the second tap of your Hue Tap.
+- Start a Hue app on your smartphone and create a new scene called `Activate Kelvin in Livingroom` or `Livingroom (Kelvin)`. The exact name doesn't matter as long as the words `kelvin` and the name of the schedule are part of this scene name.
+- Associate the new scene to the second tap on your Hue Tap and set the configuration value `enableWhenLightsAppear` to `false` in the schedule `livingroom`.
+- Restart Kelvin to activate the new configuration.
+- From now on Kelvin will only take control of the lights in the schedule `livingroom` if you activate the scene on the second tap.
 
 # Raspberry Pi
 A [Raspberry Pi](https://www.raspberrypi.org/) is the **perfect** device to run Kelvin on. It's cheap, it's small and it consumes very little energy. Recently the [Raspberry Pi Zero W](https://www.raspberrypi.org/products/pi-zero-w/) was released which makes your Kelvin hardware look like this (plus a power cord):
@@ -173,12 +188,6 @@ In order to decide if Kelvin suits your needs and works in your setup, it helps 
 1. ***The light is turned on:*** Kelvin will calculate the appropriate color temperature and brightness, send it to the light and safe this state.
 2. ***The light is turned on but it's state was changed since the last update:*** Kelvin detects that you have manually changed the state (for example by activating a custom scene) and will stop managing the state for you.
 3. ***The light is turned off:*** Kelvin will clear the last known state and do nothing.
-
-By following this scenarios you can expect these behaviors
-
-- Kelvin will automatically take control of every light you turn on.
-- Once you manually changed a light it will be ignored by Kelvin until it is turned off and on again.
-- If you have a Hue Tap to control your lights, the first tap will always trigger Kelvin. Any following tap will disable it.
 
 # Development & Participation
 If you want to tinker with Kelvin and it's inner workings, feel free to do so. To get started you can simple clone the main repository into your `GOPATH` by executing the following commands:
