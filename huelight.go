@@ -181,9 +181,6 @@ func (light *HueLight) hasChanged() bool {
 			log.Debugf("💡 HueLight %s - Color temperature has changed! Current light state: %+v", light.Name, light)
 			return true
 		}
-	} else {
-		// Missmatch in color modes? Log warning for debug purposes and assume unchanged
-		log.Warningf("💡 HueLight %s - Unknown color mode in HasChanged method! Current light state: %+v", light.Name, light)
 	}
 
 	if light.Dimmable && light.TargetBrightness != -1 && !equalsInt(light.TargetBrightness, light.CurrentBrightness, 2) {
