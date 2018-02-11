@@ -48,6 +48,7 @@ type HueLight struct {
 	SupportsXYColor          bool
 	Dimmable                 bool
 	On                       bool
+	MinimumColorTemperature  int
 }
 
 const lightTransitionIntervalInSeconds = 1
@@ -63,6 +64,16 @@ func (light *HueLight) initialize() error {
 	light.Dimmable = containsString(lightsSupportingDimming, attr.Type)
 	light.SupportsColorTemperature = containsString(lightsSupportingColorTemperature, attr.Type)
 	light.SupportsXYColor = containsString(lightsSupportingXYColor, attr.Type)
+
+	// set minimum color temperature depending on type
+	if attr.Type == "Color Temperature Light" {
+		light.MinimumColorTemperature = 2200
+	} else if light.SupportsXYColor || light.SupportsColorTemperature {
+		light.MinimumColorTemperature = 2000
+	} else {
+		light.MinimumColorTemperature = 0
+	}
+
 	log.Debugf("💡 Light %s - Initialization complete. Identified as %s (ModelID: %s, Version: %s)", light.Name, attr.Type, attr.ModelId, attr.SoftwareVersion)
 
 	light.updateCurrentLightState()
@@ -114,6 +125,11 @@ func (light *HueLight) setLightState(colorTemperature int, brightness int) error
 	}
 	if brightness < -1 || brightness > 100 {
 		log.Warningf("💡 Light %s - Invalid brightness %d", light.Name, brightness)
+	}
+
+	if colorTemperature < light.MinimumColorTemperature {
+		colorTemperature = light.MinimumColorTemperature
+		log.Debugf("💡 Light %s - Adjusted color temperature to light capability of %dK", light.Name, colorTemperature)
 	}
 
 	log.Debugf("💡 HueLight %s - Setting light state to %dK and %d%% brightness.", light.Name, colorTemperature, brightness)
@@ -201,6 +217,11 @@ func (light *HueLight) hasColorTemperature(colorTemperature int) bool {
 	}
 	if !light.SupportsXYColor && !light.SupportsColorTemperature {
 		return true
+	}
+
+	if colorTemperature < light.MinimumColorTemperature {
+		colorTemperature = light.MinimumColorTemperature
+		log.Debugf("💡 Light %s - Adjusted color temperature to light capability of %dK", light.Name, colorTemperature)
 	}
 
 	if light.SupportsXYColor && light.CurrentColorMode == "xy" {
