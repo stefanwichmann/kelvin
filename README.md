@@ -175,7 +175,7 @@ Running Kelvin as a systemd process provides an easily managed background proces
 There are a couple assumptions made:
 * [Raspberry Pi](https://www.raspberrypi.org/) is the hardware
 * Running [Rasbian OS](https://www.raspberrypi.org/downloads/raspbian/) installed with defaults
-* Install path for Kelvin binary is `\home\pi\kelvin\kelvin`
+* Install path for Kelvin binary is `/home/pi/kelvin/kelvin`
 * Logged in as `pi` user, and have `sudo` user permissions
 
 ### Setup
