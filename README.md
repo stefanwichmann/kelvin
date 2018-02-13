@@ -170,7 +170,7 @@ A [Raspberry Pi](https://www.raspberrypi.org/) is the **perfect** device to run 
 But any other model of the Raspberry Pi will be sufficient. To set up Kelvin on a Raspberry Pi follow the installation guide [here](https://www.raspberrypi.org/documentation/installation/). Once your Pi is up and running (booting, connected to your network and the internet) just download the latest `linux-arm` release and follow the steps in [Installation](#installation).
 
 # Systemd Setup on a RaspberryPi
-Using systemd will enabled a simple way to run Kelvin in the background.
+Running Kelvin as a systemd process provides an easily managed background process.
 
 There are a couple assumptions made:
 * [Raspberry Pi](https://www.raspberrypi.org/) is the hardware
