@@ -169,6 +169,38 @@ A [Raspberry Pi](https://www.raspberrypi.org/) is the **perfect** device to run 
 
 But any other model of the Raspberry Pi will be sufficient. To set up Kelvin on a Raspberry Pi follow the installation guide [here](https://www.raspberrypi.org/documentation/installation/). Once your Pi is up and running (booting, connected to your network and the internet) just download the latest `linux-arm` release and follow the steps in [Installation](#installation).
 
+# Systemd Setup on a RaspberryPi
+Running Kelvin as a systemd process provides an easily managed background process.
+
+There are a couple assumptions made:
+* [Raspberry Pi](https://www.raspberrypi.org/) is the hardware
+* Running [Rasbian OS](https://www.raspberrypi.org/downloads/raspbian/) installed with defaults
+* Install path for Kelvin binary is `/home/pi/kelvin/kelvin`
+* Logged in as `pi` user, and have `sudo` user permissions
+
+### Setup
+1. Copy `etc\kelvin.service` to `\etc\systemd\system\kelvin.service`
+2. Run: `systemctl daemon-reload`
+
+#### Stopping Kelvin
+* `sudo systemctl stop kelvin`
+
+#### Starting Kelvin
+* `sudo systemctl start kelvin`
+
+#### Restart Kelvin (Pickup new configs)
+* `sudo systemctl restart kelvin`
+
+#### Viewing runtime logs and tail
+* `journalctl -fu kelvin`
+
+#### Enable/Disable Kelvin at boot
+Kelvin can automatically start when the RaspberryPi reboots:
+* `sudo systemctl enable kelvin`
+
+To prevent Kelvin from starting at boot. (if you ran the previous command)
+* `sudo systemctl disable kelvin`
+
 # Troubleshooting
 If anything goes wrong keep calm and follow these steps:
 

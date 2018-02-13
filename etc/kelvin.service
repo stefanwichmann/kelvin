@@ -1,0 +1,17 @@
+# /etc/systemd/system/kelvin.service
+# service file for Kelvin - The hue bot
+# https://github.com/stefanwichmann/kelvin
+
+[Unit]
+Description=Kelvin
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/kelvin
+ExecStart=/home/pi/kelvin/kelvin
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
