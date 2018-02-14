@@ -54,6 +54,9 @@ buildTarget() {
   # include webinterface
   cp -R gui "$OUTPUT_PATH"
 
+  # include etc folder
+  cp -R etc "$OUTPUT_PATH"
+
   # include license and readme
   cp README.md "$OUTPUT_PATH"/README.txt
   cp LICENSE "$OUTPUT_PATH"/LICENSE.txt
