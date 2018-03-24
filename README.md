@@ -82,6 +82,7 @@ As an alternative to manual installation you can also pull the official [docker 
 - Start a container via ```docker run -d -e TZ=Europe/Berlin -p 8080:8080 stefanwichmann/kelvin``` (replace Europe/Berlin with your local [timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones))
 - ```docker ps``` should now report your running container
 - Run ```docker logs {CONTAINER_ID}``` to see the kelvin output (You can get the valid ID from ```docker ps```)
+- To adjust the configuration log into your container via ```docker exec -it {CONTAINER_ID} /bin/sh``` followed by ```vi /opt/kelvin/config.json```. After chaning the config you have to restart Kelvin by ```docker restart {CONTAINER_ID}```.
 
 # Configuration
 Kelvin will create it's configuration file `config.json` in the current directory and store all necessary information to operate in it. By default it is fully usable and looks like this:
