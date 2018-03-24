@@ -1,4 +1,4 @@
-# **Kelvin** - The hue bot
+# ![Kelvin](https://user-images.githubusercontent.com/512174/37403613-b56e883a-278f-11e8-848c-5366515e920d.png)
 [![GitHub release](https://img.shields.io/github/release/stefanwichmann/kelvin.svg)](https://github.com/stefanwichmann/kelvin/releases)
 [![Github All Releases](https://img.shields.io/github/downloads/stefanwichmann/kelvin/total.svg)](https://github.com/stefanwichmann/kelvin/releases)
 [![Build Status](https://travis-ci.org/stefanwichmann/kelvin.svg?branch=master)](https://travis-ci.org/stefanwichmann/kelvin)
@@ -79,7 +79,7 @@ Got all these? Great, let's get started!
 As an alternative to manual installation you can also pull the official [docker image](https://hub.docker.com/r/stefanwichmann/kelvin/) from docker hub.
 
 - Get the image by running ```docker pull stefanwichmann/kelvin```
-- Start a container via ```docker run -d -e TZ=Europe/Berlin stefanwichmann/kelvin``` (replace Europe/Berlin with your local [timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones))
+- Start a container via ```docker run -d -e TZ=Europe/Berlin -p 8080:8080 stefanwichmann/kelvin``` (replace Europe/Berlin with your local [timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones))
 - ```docker ps``` should now report your running container
 - Run ```docker logs {CONTAINER_ID}``` to see the kelvin output (You can get the valid ID from ```docker ps```)
 
@@ -178,28 +178,29 @@ There are a couple assumptions made:
 * Install path for Kelvin binary is `/home/pi/kelvin/kelvin`
 * Logged in as `pi` user, and have `sudo` user permissions
 
-### Setup
-1. Copy `etc/kelvin.service` to `/etc/systemd/system/kelvin.service`
-2. Run: `systemctl daemon-reload`
+## Setup
+* Copy `etc/kelvin.service` to `/etc/systemd/system/kelvin.service`
+* Run `systemctl daemon-reload`
 
-#### Stopping Kelvin
-* `sudo systemctl stop kelvin`
+## Controlling Kelvin
+```
+sudo systemctl start kelvin
+sudo systemctl stop kelvin
+sudo systemctl restart kelvin
+```
 
-#### Starting Kelvin
-* `sudo systemctl start kelvin`
+## Enable/Disable Kelvin at boot
+```
+sudo systemctl enable kelvin
+sudo systemctl disable kelvin
+```
 
-#### Restart Kelvin (Pickup new configs)
-* `sudo systemctl restart kelvin`
+## View Kelvin logs
+```
+journalctl -fu kelvin
+```
 
-#### Viewing runtime logs and tail
-* `journalctl -fu kelvin`
-
-#### Enable/Disable Kelvin at boot
-Kelvin can automatically start when the RaspberryPi reboots:
-* `sudo systemctl enable kelvin`
-
-To prevent Kelvin from starting at boot. (if you ran the previous command)
-* `sudo systemctl disable kelvin`
+If you are using Kelvin on a different system with Systemd you have to adjust the `kelvin.service` file according to your needs.
 
 # Troubleshooting
 If anything goes wrong keep calm and follow these steps:

@@ -1,6 +1,6 @@
 FROM alpine:latest
-WORKDIR /etc/opt/kelvin
-VOLUME /etc/opt/kelvin
+WORKDIR /opt/kelvin
+VOLUME /opt/kelvin
 
 RUN apk --no-cache add ca-certificates tzdata && update-ca-certificates
 COPY dist/kelvin-linux-amd64-v* /opt/kelvin/
