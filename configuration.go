@@ -125,7 +125,7 @@ func (configuration *Configuration) initializeDefaults() {
 // configuration.
 // If no configuration can be found on disk, one with default values
 // will be created.
-func InitializeConfiguration() (Configuration, error) {
+func InitializeConfiguration(enableWebInterface bool) (Configuration, error) {
 	var configuration Configuration
 	configuration.ConfigurationFile = "config.json"
 	if configuration.Exists() {
@@ -142,6 +142,15 @@ func InitializeConfiguration() (Configuration, error) {
 			return configuration, err
 		}
 		log.Println("⚙ Default configuration generated")
+	}
+
+	// Overwrite interface configuration with startup parameter
+	if enableWebInterface {
+		configuration.WebInterface.Enabled = true
+		err := configuration.Write()
+		if err != nil {
+			return configuration, err
+		}
 	}
 	return configuration, nil
 }

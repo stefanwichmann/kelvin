@@ -32,6 +32,7 @@ var applicationVersion = "development"
 var debug = flag.Bool("debug", false, "Enable debug logging")
 var logfile = flag.String("log", "", "Redirect log output to specified file")
 var forceUpdate = flag.Bool("forceUpdate", false, "Update to new major version")
+var enableWebInterface = flag.Bool("enableWebInterface", false, "Enable the web interface at startup")
 
 var configuration *Configuration
 var bridge = &HueBridge{}
@@ -46,7 +47,7 @@ func main() {
 	go handleSIGHUP()
 
 	// load configuration or create a new one
-	conf, err := InitializeConfiguration()
+	conf, err := InitializeConfiguration(*enableWebInterface)
 	if err != nil {
 		log.Fatal(err)
 	}
