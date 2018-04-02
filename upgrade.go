@@ -70,7 +70,7 @@ func updateAvailable(currentVersion *semver.Version, url string, forceUpdate boo
 	// parse name and compare
 	version, err := semver.NewVersion(releaseName)
 	if err != nil {
-		log.Debugf("Could not parse release name: %v", err)
+		log.Debugf("Could not parse release name: %s", releaseName)
 		return false, "", err
 	}
 

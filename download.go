@@ -52,10 +52,10 @@ func downloadLatestReleaseInfo(url string) (releaseName string, assetURL string,
 
 	releaseInfo := data.(map[string]interface{})
 	var name string
-	if releaseInfo["name"] != nil {
-		name = releaseInfo["name"].(string)
-	} else if releaseInfo["tag_name"] != nil {
+	if releaseInfo["tag_name"] != nil {
 		name = releaseInfo["tag_name"].(string)
+	} else if releaseInfo["name"] != nil {
+		name = releaseInfo["name"].(string)
 	} else {
 		return "", "", errors.New("No releases available")
 	}
