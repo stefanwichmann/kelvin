@@ -47,6 +47,7 @@ type HueLight struct {
 	SupportsColorTemperature bool
 	SupportsXYColor          bool
 	Dimmable                 bool
+	Reachable                bool
 	On                       bool
 	MinimumColorTemperature  int
 }
@@ -111,8 +112,10 @@ func (light *HueLight) updateCurrentLightState() error {
 	light.CurrentColorMode = attr.State.ColorMode
 
 	if !attr.State.Reachable {
+		light.Reachable = false
 		light.On = false
 	} else {
+		light.Reachable = true
 		light.On = attr.State.On
 	}
 

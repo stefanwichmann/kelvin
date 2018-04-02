@@ -33,6 +33,7 @@ type Light struct {
 	HueLight         HueLight       `json:"-"`
 	TargetLightState LightState     `json:"targetLightState,omitempty"`
 	Scheduled        bool           `json:"scheduled"`
+	Reachable        bool           `json:"reachable"`
 	On               bool           `json:"on"`
 	Tracking         bool           `json:"-"`
 	Automatic        bool           `json:"automatic"`
@@ -82,8 +83,9 @@ func (light *Light) initialize() error {
 		return err
 	}
 
-	// initialize non changing values
+	// initialize values
 	light.Name = light.HueLight.Name
+	light.Reachable = light.HueLight.Reachable
 	light.On = light.HueLight.On
 
 	return nil
@@ -94,6 +96,7 @@ func (light *Light) updateCurrentLightState() error {
 	if err != nil {
 		return err
 	}
+	light.Reachable = light.HueLight.Reachable
 	light.On = light.HueLight.On
 	return nil
 }
@@ -107,8 +110,21 @@ func (light *Light) update() error {
 	// Refresh current light state from bridge
 	light.updateCurrentLightState()
 
-	// If the light is turned off clean up and do nothing
-	if !light.HueLight.On {
+	// If the light is not reachable anymore clean up
+	if !light.Reachable {
+		if light.Tracking {
+			log.Printf("💡 Light %s - Light is no longer reachable. Clearing state...", light.Name)
+			light.Tracking = false
+			light.Automatic = false
+			return nil
+		}
+
+		// Ignore light because we are not tracking it.
+		return nil
+	}
+
+	// If the light was turned off clean up
+	if !light.On {
 		if light.Tracking {
 			log.Printf("💡 Light %s - Light was turned off. Clearing state...", light.Name)
 			light.Tracking = false
