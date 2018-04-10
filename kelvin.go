@@ -30,7 +30,8 @@ import "flag"
 
 var applicationVersion = "development"
 var debug = flag.Bool("debug", false, "Enable debug logging")
-var logfile = flag.String("log", "", "Redirect log output to specified file")
+var logFile = flag.String("log", "", "Redirect log output to specified file")
+var configurationFile = flag.String("configuration", "config.json", "Specify the filename of the configuration to load")
 var forceUpdate = flag.Bool("forceUpdate", false, "Update to new major version")
 var enableWebInterface = flag.Bool("enableWebInterface", false, "Enable the web interface at startup")
 
@@ -47,7 +48,7 @@ func main() {
 	go handleSIGHUP()
 
 	// load configuration or create a new one
-	conf, err := InitializeConfiguration(*enableWebInterface)
+	conf, err := InitializeConfiguration(*configurationFile, *enableWebInterface)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -107,8 +108,8 @@ func configureLogging() {
 	if *debug {
 		log.SetLevel(log.DebugLevel)
 	}
-	if logfile != nil && *logfile != "" {
-		file, err := os.OpenFile(*logfile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if logFile != nil && *logFile != "" {
+		file, err := os.OpenFile(*logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err == nil {
 			log.SetOutput(file)
 		} else {
