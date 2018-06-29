@@ -32,20 +32,22 @@ import "time"
 // calculate sunrise and sunset times.
 // If no location is configured Kelvin will try a geo IP lookup.
 type Geolocation struct {
-	IP          string  `json:"ip"`
-	CountryCode string  `json:"country_code"`
-	CountryName string  `json:"country_name"`
-	RegionCode  string  `json:"region_code"`
-	RegionName  string  `json:"region_name"`
-	City        string  `json:"city"`
-	ZipCode     string  `json:"zip_code"`
-	TimeZone    string  `json:"time_zone"`
-	Latitude    float64 `json:"latitude"`
-	Longitude   float64 `json:"longitude"`
-	MetroCode   float64 `json:"metro_code"`
+	City      string
+	Latitude  float64
+	Longitude float64
 }
 
-const geolocationURL = "https://freegeoip.net/json/"
+type GeoApiResponse struct {
+	City     string                 `json:"city"`
+	Location GeoApiLocationResponse `json:"location"`
+}
+
+type GeoApiLocationResponse struct {
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+}
+
+const geolocationApiURL = "https://geoip.nekudo.com/api/"
 
 // InitializeLocation creates and return a geolocation for the current system.
 func InitializeLocation(configuration *Configuration) (Geolocation, error) {
@@ -67,26 +69,28 @@ func InitializeLocation(configuration *Configuration) (Geolocation, error) {
 }
 
 func (location *Geolocation) updateByIP() error {
-	resp, err := http.Get(geolocationURL)
-	if err != nil {
-		return err
+	response, err := http.Get(geolocationApiURL)
+	if response != nil {
+		defer response.Body.Close()
 	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
 
-	var data Geolocation
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+
+	var data GeoApiResponse
 	err = json.Unmarshal(body, &data)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("🌍 Detected location: %s, %s (%v, %v).", data.City, data.CountryName, data.Latitude, data.Longitude)
-	location.Latitude = data.Latitude
-	location.Longitude = data.Longitude
+	log.Printf("🌍 Detected location: %s (%v, %v).", data.City, data.Location.Latitude, data.Location.Longitude)
+	location.Latitude = data.Location.Latitude
+	location.Longitude = data.Location.Longitude
 	return nil
 }
 
