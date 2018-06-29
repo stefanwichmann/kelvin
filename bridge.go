@@ -117,9 +117,9 @@ func (bridge *HueBridge) printDevices() error {
 	}
 
 	log.Printf("⌘ Devices found on current bridge:")
-	log.Printf("| %-20s | %3v | %-5v | %-8v | %-11v | %-5v |", "Name", "ID", "On", "Dimmable", "Temperature", "Color")
+	log.Printf("| %-32s | %3v | %-5v | %-8v | %-11v | %-5v |", "Name", "ID", "On", "Dimmable", "Temperature", "Color")
 	for _, light := range lights {
-		log.Printf("| %-20s | %3v | %-5v | %-8v | %-11v | %-5v |", light.Name, light.ID, light.On, light.HueLight.Dimmable, light.HueLight.SupportsColorTemperature, light.HueLight.SupportsXYColor)
+		log.Printf("| %-32s | %3v | %-5v | %-8v | %-11v | %-5v |", light.Name, light.ID, light.On, light.HueLight.Dimmable, light.HueLight.SupportsColorTemperature, light.HueLight.SupportsXYColor)
 	}
 	return nil
 }
