@@ -192,8 +192,22 @@ func (bridge *HueBridge) connect() error {
 	bridge.bridge = *hue.NewBridge(bridge.BridgeIP, bridge.Username)
 
 	// Test bridge
-	_, err := bridge.bridge.Search()
-	return err
+	configuration, err := bridge.bridge.Configuration()
+	if err != nil {
+		return err
+	}
+
+	// Enable HTTPS if supported
+	// TODO HTTPS supported on Model BSB001?
+	swversion, err := strconv.Atoi(configuration.SoftwareVersion)
+	if err != nil {
+		return err
+	}
+	if configuration.ModelId == "BSB002" && swversion >= 1802201122 {
+		bridge.bridge.EnableHTTPS(true)
+	}
+
+	return nil
 }
 
 func (bridge *HueBridge) populateSchedule(configuration *Configuration) error {
