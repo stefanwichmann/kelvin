@@ -43,6 +43,7 @@ func main() {
 	flag.Parse()
 	configureLogging()
 	log.Printf("Kelvin %v starting up... 🚀", applicationVersion)
+	log.Debugf("Current working directory: %v", getWorkingDirectory())
 	go CheckForUpdate(applicationVersion, *forceUpdate)
 	go validateSystemTime()
 	go handleSIGHUP()

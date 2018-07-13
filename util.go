@@ -26,6 +26,7 @@ import "os/exec"
 import "os"
 import "fmt"
 import "math"
+import "path/filepath"
 
 func containsString(slice []string, element string) bool {
 	for _, current := range slice {
@@ -101,4 +102,12 @@ func Restart() {
 
 	cmd.Start()
 	os.Exit(0)
+}
+
+func getWorkingDirectory() string {
+	ex, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	return filepath.Dir(ex)
 }
