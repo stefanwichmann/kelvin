@@ -167,6 +167,12 @@ func (light *Light) update() error {
 		if light.HueLight.hasState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness) {
 			log.Printf("💡 Light %s - Detected matching target state. Activating Kelvin...", light.Name)
 			light.Automatic = true
+
+			// set correct target lightstate on HueLight
+			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	}
