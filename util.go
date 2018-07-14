@@ -104,7 +104,7 @@ func Restart() {
 	os.Exit(0)
 }
 
-func getWorkingDirectory() string {
+func workingDirectory() string {
 	ex, err := os.Executable()
 	if err != nil {
 		return ""

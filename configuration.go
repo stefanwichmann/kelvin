@@ -133,7 +133,7 @@ func InitializeConfiguration(configurationFile string, enableWebInterface bool) 
 		if err != nil {
 			return configuration, err
 		}
-		log.Printf("⚙ Configuration %v/%v loaded", getWorkingDirectory(), configuration.ConfigurationFile)
+		log.Printf("⚙ Configuration %v loaded", configuration.ConfigurationFile)
 	} else {
 		// write default config to disk
 		configuration.initializeDefaults()
@@ -165,7 +165,7 @@ func (configuration *Configuration) Write() error {
 		log.Debugf("⚙ Configuration hasn't changed. Omitting write.")
 		return nil
 	}
-	log.Debugf("⚙ Configuration changed. Saving to %v/%v", getWorkingDirectory(), configuration.ConfigurationFile)
+	log.Debugf("⚙ Configuration changed. Saving to %v", configuration.ConfigurationFile)
 	json, err := json.MarshalIndent(configuration, "", "  ")
 	if err != nil {
 		return err
