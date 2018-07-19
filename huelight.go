@@ -130,7 +130,7 @@ func (light *HueLight) setLightState(colorTemperature int, brightness int) error
 		log.Warningf("💡 Light %s - Invalid brightness %d", light.Name, brightness)
 	}
 
-	if colorTemperature < light.MinimumColorTemperature {
+	if colorTemperature != -1 && colorTemperature < light.MinimumColorTemperature {
 		colorTemperature = light.MinimumColorTemperature
 		log.Debugf("💡 Light %s - Adjusted color temperature to light capability of %dK", light.Name, colorTemperature)
 	}

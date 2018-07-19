@@ -163,6 +163,11 @@ func (light *Light) update() error {
 
 	// Ignore light if it was changed manually
 	if !light.Automatic {
+		// return if we should ignore color temperature and brightness
+		if light.TargetLightState.ColorTemperature == -1 && light.TargetLightState.Brightness == -1 {
+			return nil
+		}
+
 		// if status == scene state --> Activate Kelvin
 		if light.HueLight.hasState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness) {
 			log.Printf("💡 Light %s - Detected matching target state. Activating Kelvin...", light.Name)
