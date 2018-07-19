@@ -11,7 +11,8 @@ Type=simple
 User=pi
 WorkingDirectory=/home/pi/kelvin
 ExecStart=/home/pi/kelvin/kelvin
-Restart=on-abort
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
