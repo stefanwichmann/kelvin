@@ -111,3 +111,11 @@ func workingDirectory() string {
 	}
 	return filepath.Dir(ex)
 }
+
+func absolutePath(filename string) string {
+	abs, err := filepath.Abs(filename)
+	if err != nil {
+		return filename
+	}
+	return abs
+}
