@@ -37,17 +37,19 @@ type Geolocation struct {
 	Longitude float64
 }
 
-type GeoApiResponse struct {
+// GeoAPIResponse respresents the result of a request to geolocationAPIURL.
+type GeoAPIResponse struct {
 	City     string                 `json:"city"`
-	Location GeoApiLocationResponse `json:"location"`
+	Location GeoAPILocationResponse `json:"location"`
 }
 
-type GeoApiLocationResponse struct {
+// GeoAPILocationResponse respresents the actual coordinates inside a GeoAPIResponse.
+type GeoAPILocationResponse struct {
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
 }
 
-const geolocationApiURL = "https://geoip.nekudo.com/api/"
+const geolocationAPIURL = "https://geoip.nekudo.com/api/"
 
 // InitializeLocation creates and return a geolocation for the current system.
 func InitializeLocation(configuration *Configuration) (Geolocation, error) {
@@ -69,7 +71,7 @@ func InitializeLocation(configuration *Configuration) (Geolocation, error) {
 }
 
 func (location *Geolocation) updateByIP() error {
-	response, err := http.Get(geolocationApiURL)
+	response, err := http.Get(geolocationAPIURL)
 	if response != nil {
 		defer response.Body.Close()
 	}
@@ -82,7 +84,7 @@ func (location *Geolocation) updateByIP() error {
 		return err
 	}
 
-	var data GeoApiResponse
+	var data GeoAPIResponse
 	err = json.Unmarshal(body, &data)
 	if err != nil {
 		return err

@@ -24,14 +24,15 @@ package main
 import (
 	"errors"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
-	"github.com/stefanwichmann/go.hue"
 	"io/ioutil"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/stefanwichmann/go.hue"
 )
 
 // HueBridge represents the Philips Hue bridge in
@@ -141,7 +142,7 @@ func (bridge *HueBridge) discover(ip string) error {
 	}
 	if len(bridges) == 0 {
 		bridge.BridgeIP = ""
-		return errors.New("Bridge discovery failed. Please configure manually in config.json.")
+		return errors.New("Bridge discovery failed. Please configure manually in config.json")
 	}
 	for _, candidate := range bridges {
 		bridge.BridgeIP = candidate.IpAddr
@@ -152,12 +153,12 @@ func (bridge *HueBridge) discover(ip string) error {
 		}
 	}
 	bridge.BridgeIP = ""
-	return errors.New("Bridge discovery failed. Please configure manually in config.json.")
+	return errors.New("Bridge discovery failed. Please configure manually in config.json")
 }
 
 func (bridge *HueBridge) register() error {
 	if bridge.BridgeIP == "" {
-		return errors.New("Registration at bridge not possible because no IP is configured. Start discovery first or enter manually.")
+		return errors.New("Registration at bridge not possible because no IP is configured. Start discovery first or enter manually")
 	}
 
 	bridge.bridge = *hue.NewBridge(bridge.BridgeIP, "")
@@ -282,5 +283,5 @@ func (bridge *HueBridge) validateBridge() error {
 		bridge.Version = 2
 		return nil
 	}
-	return fmt.Errorf("Bridge validation failed.")
+	return fmt.Errorf("Bridge validation failed")
 }
