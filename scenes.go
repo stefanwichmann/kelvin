@@ -83,6 +83,8 @@ func updateSceneForSchedule(scene *hue.Scene, lightSchedule LightSchedule) {
 	state := interval.calculateLightStateInInterval(time.Now())
 
 	var modifyState hue.ModifyLightState
+	modifyState.On = true // turn lights on when the scene is activated
+
 	if state.ColorTemperature != -1 {
 		modifyState.ColorTemperature = uint16(mapColorTemperature(state.ColorTemperature))
 		modifyState.Xy = colorTemperatureToXYColor(state.ColorTemperature)
