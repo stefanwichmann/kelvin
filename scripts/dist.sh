@@ -46,6 +46,7 @@ buildTarget() {
   export GOARCH="$ARCH"
   export GOARM=5
   export CGO_ENABLED=0
+  go get
   go build -ldflags "-X main.applicationVersion=${GIT_TAG}" -v -o "$OUTPUT_BINARY"
 
   # make binary executable
