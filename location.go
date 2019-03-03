@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Stefan Wichmann
+// Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,14 +32,12 @@ import "time"
 // calculate sunrise and sunset times.
 // If no location is configured Kelvin will try a geo IP lookup.
 type Geolocation struct {
-	City      string
 	Latitude  float64
 	Longitude float64
 }
 
 // GeoAPIResponse respresents the result of a request to geolocationAPIURL.
 type GeoAPIResponse struct {
-	City     string                 `json:"city"`
 	Location GeoAPILocationResponse `json:"location"`
 }
 
@@ -49,7 +47,7 @@ type GeoAPILocationResponse struct {
 	Longitude float64 `json:"longitude"`
 }
 
-const geolocationAPIURL = "https://geoip.nekudo.com/api/"
+const geolocationAPIURL = "https://geoip.cdnservice.eu/api"
 
 // InitializeLocation creates and return a geolocation for the current system.
 func InitializeLocation(configuration *Configuration) (Geolocation, error) {
@@ -90,7 +88,12 @@ func (location *Geolocation) updateByIP() error {
 		return err
 	}
 
-	log.Printf("🌍 Detected location: %s (%v, %v).", data.City, data.Location.Latitude, data.Location.Longitude)
+	if data.Location.Latitude == 0 || data.Location.Longitude == 0 {
+		log.Warningf("🌍 Detection of geolocation seems to have failed... Please configure manually")
+		return nil
+	}
+
+	log.Printf("🌍 Detected geolocation: %v, %v", data.Location.Latitude, data.Location.Longitude)
 	location.Latitude = data.Location.Latitude
 	location.Longitude = data.Location.Longitude
 	return nil
