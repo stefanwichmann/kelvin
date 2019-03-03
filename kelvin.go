@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Stefan Wichmann
+// Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,12 +21,15 @@
 // SOFTWARE.
 package main
 
-import log "github.com/Sirupsen/logrus"
-import "os/signal"
-import "syscall"
-import "os"
-import "runtime"
-import "flag"
+import (
+	"flag"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	log "github.com/Sirupsen/logrus"
+)
 
 var applicationVersion = "development"
 var debug = flag.Bool("debug", false, "Enable debug logging")
@@ -38,6 +41,9 @@ var enableWebInterface = flag.Bool("enableWebInterface", false, "Enable the web 
 var configuration *Configuration
 var bridge = &HueBridge{}
 var lights []*Light
+
+const lightUpdateIntervalInSeconds = 1
+const stateUpdateIntervalInSeconds = 60
 
 func main() {
 	flag.Parse()
@@ -79,20 +85,68 @@ func main() {
 	// start routine for the scenes
 	go updateScenesCyclic()
 
-	// start routine for every light
+	// initialize all lights
 	lights, err = bridge.Lights()
 	if err != nil {
 		log.Warning(err)
 	}
 
+	// implicit schedule, target and interval
 	for _, light := range lights {
 		light := light
-		go light.updateCyclic(configuration)
+		updateScheduleForLight(light)
 	}
-	runtime.Goexit()
-	log.Debugf("All routines ended...")
+
+	// start cyclic update for all lights
+	log.Debugf("💡 Starting cyclic update...")
+	lightUpdateTick := time.Tick(lightUpdateIntervalInSeconds * time.Second)
+	stateUpdateTick := time.Tick(stateUpdateIntervalInSeconds * time.Second)
+	for {
+		select {
+		case <-time.After(durationUntilEndOfDay()):
+			// Day has ended, calculate new schedule
+			for _, light := range lights {
+				light := light
+				updateScheduleForLight(light)
+			}
+		case <-stateUpdateTick:
+			// update interval and color every minute
+			for _, light := range lights {
+				light := light
+				light.updateInterval()
+				light.updateTargetLightState()
+			}
+		case <-lightUpdateTick:
+			states, err := bridge.LightStates()
+			if err != nil {
+				log.Warning(err)
+			}
+			for _, light := range lights {
+				light := light
+				currentLightState, found := states[light.ID]
+				if found {
+					light.updateCurrentLightState(currentLightState)
+					light.update()
+				} else {
+					log.Warningf("No current light state found for light %d", light.ID)
+				}
+			}
+		}
+	}
 }
 
+func updateScheduleForLight(light *Light) {
+	schedule, err := configuration.lightScheduleForDay(light.ID, time.Now())
+	if err != nil {
+		log.Printf("💡 Light %s - Light is not associated to any schedule. Ignoring...", light.Name)
+		light.Schedule = schedule // Assign empty schedule
+		light.Scheduled = false
+	} else {
+		light.updateSchedule(schedule)
+		light.updateInterval()
+		light.updateTargetLightState()
+	}
+}
 func handleSIGHUP() {
 	sighup := make(chan os.Signal, 1)
 	signal.Notify(sighup, syscall.SIGHUP)

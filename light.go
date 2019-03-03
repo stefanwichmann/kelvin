@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Stefan Wichmann
+// Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,80 +22,29 @@
 package main
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
+	hue "github.com/stefanwichmann/go.hue"
 )
 
 // Light represents a light kelvin can automate in your system.
 type Light struct {
-	ID               int            `json:"id"`
-	Name             string         `json:"name"`
-	HueLight         HueLight       `json:"-"`
-	TargetLightState LightState     `json:"targetLightState,omitempty"`
-	Scheduled        bool           `json:"scheduled"`
-	Reachable        bool           `json:"reachable"`
-	On               bool           `json:"on"`
-	Tracking         bool           `json:"-"`
-	Automatic        bool           `json:"automatic"`
-	Configuration    *Configuration `json:"-"`
-	Schedule         Schedule       `json:"-"`
-	Interval         Interval       `json:"interval"`
+	ID               int        `json:"id"`
+	Name             string     `json:"name"`
+	HueLight         HueLight   `json:"-"`
+	TargetLightState LightState `json:"targetLightState,omitempty"`
+	Scheduled        bool       `json:"scheduled"`
+	Reachable        bool       `json:"reachable"`
+	On               bool       `json:"on"`
+	Tracking         bool       `json:"-"`
+	Automatic        bool       `json:"automatic"`
+	Schedule         Schedule   `json:"-"`
+	Interval         Interval   `json:"interval"`
 }
 
-const lightUpdateIntervalInSeconds = 1
-const stateUpdateIntervalInSeconds = 60
-
-func (light *Light) updateCyclic(configuration *Configuration) {
-	light.Configuration = configuration
-
-	// Filter devices we can't control
-	if !light.HueLight.supportsColorTemperature() && !light.HueLight.supportsBrightness() {
-		log.Printf("💡 Light %s - This device doesn't support any functionality Kelvin uses. Ignoring...", light.Name)
-		return
-	}
-
-	light.updateSchedule()
-	light.updateInterval()
-	light.updateTargetLightState()
-
-	// Start cyclic polling
-	log.Debugf("💡 Light %s - Starting cyclic update...", light.Name)
-	lightUpdateTick := time.Tick(lightUpdateIntervalInSeconds * time.Second)
-	stateUpdateTick := time.Tick(stateUpdateIntervalInSeconds * time.Second)
-	for {
-		select {
-		case <-time.After(time.Until(light.Schedule.endOfDay) + 1*time.Second):
-			// Day has ended, calculate new schedule
-			light.updateSchedule()
-		case <-stateUpdateTick:
-			// update interval and color every minute
-			light.updateInterval()
-			light.updateTargetLightState()
-		case <-lightUpdateTick:
-			light.update()
-		}
-	}
-}
-
-func (light *Light) initialize() error {
-	err := light.HueLight.initialize()
-	if err != nil {
-		return err
-	}
-
-	// initialize values
-	light.Name = light.HueLight.Name
-	light.Reachable = light.HueLight.Reachable
-	light.On = light.HueLight.On
-
-	return nil
-}
-
-func (light *Light) updateCurrentLightState() error {
-	err := light.HueLight.updateCurrentLightState()
-	if err != nil {
-		return err
-	}
+func (light *Light) updateCurrentLightState(attr hue.LightAttributes) error {
+	light.HueLight.updateCurrentLightState(attr)
 	light.Reachable = light.HueLight.Reachable
 	light.On = light.HueLight.On
 	return nil
@@ -106,9 +55,6 @@ func (light *Light) update() error {
 	if !light.Scheduled {
 		return nil
 	}
-
-	// Refresh current light state from bridge
-	light.updateCurrentLightState()
 
 	// If the light is not reachable anymore clean up
 	if !light.Reachable {
@@ -145,13 +91,9 @@ func (light *Light) update() error {
 		if light.Schedule.enableWhenLightsAppear {
 			log.Printf("💡 Light %s - Initializing state to %vK at %v%% brightness.", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 
-			// For initialization we set the state again and again for 10 seconds
-			// because during startup the zigbee communication might be unstable
-			for index := 0; index < 10; index++ {
-				err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
-				if err != nil {
-					return err
-				}
+			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+			if err != nil {
+				return err
 			}
 
 			light.Automatic = true
@@ -208,22 +150,8 @@ func (light *Light) update() error {
 	return nil
 }
 
-func (light *Light) updateConfiguration(configuration *Configuration) {
-	light.Configuration = configuration
-	light.updateSchedule()
-	light.updateInterval()
-	light.updateTargetLightState()
-}
-
-func (light *Light) updateSchedule() {
-	newSchedule, err := light.Configuration.lightScheduleForDay(light.ID, time.Now())
-	if err != nil {
-		log.Printf("💡 Light %s - Light is not associated to any schedule. Ignoring...", light.Name)
-		light.Schedule = newSchedule // Assign empty schedule
-		light.Scheduled = false
-		return
-	}
-	light.Schedule = newSchedule
+func (light *Light) updateSchedule(schedule Schedule) {
+	light.Schedule = schedule
 	light.Scheduled = true
 	log.Printf("💡 Light %s - Activating schedule for %v (Sunrise: %v, Sunset: %v)", light.Name, light.Schedule.endOfDay.Format("Jan 2 2006"), light.Schedule.sunrise.Time.Format("15:04"), light.Schedule.sunset.Time.Format("15:04"))
 	light.updateInterval()

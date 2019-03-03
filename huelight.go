@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Stefan Wichmann
+// Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 package main
 
 import log "github.com/Sirupsen/logrus"
-import "github.com/stefanwichmann/go.hue"
+import hue "github.com/stefanwichmann/go.hue"
 import "strconv"
 import "time"
 import "errors"
@@ -54,12 +54,7 @@ type HueLight struct {
 
 const lightTransitionIntervalInSeconds = 1
 
-func (light *HueLight) initialize() error {
-	attr, err := light.HueLight.GetLightAttributes()
-	if err != nil {
-		return err
-	}
-
+func (light *HueLight) initialize(attr hue.LightAttributes) {
 	// initialize non changing values
 	light.Name = attr.Name
 	light.Dimmable = containsString(lightsSupportingDimming, attr.Type)
@@ -77,8 +72,7 @@ func (light *HueLight) initialize() error {
 
 	log.Debugf("💡 Light %s - Initialization complete. Identified as %s (ModelID: %s, Version: %s)", light.Name, attr.Type, attr.ModelId, attr.SoftwareVersion)
 
-	light.updateCurrentLightState()
-	return nil
+	light.updateCurrentLightState(attr)
 }
 
 func (light *HueLight) supportsColorTemperature() bool {
@@ -95,12 +89,7 @@ func (light *HueLight) supportsBrightness() bool {
 	return false
 }
 
-func (light *HueLight) updateCurrentLightState() error {
-	attr, err := light.HueLight.GetLightAttributes()
-	if err != nil {
-		return err
-	}
-
+func (light *HueLight) updateCurrentLightState(attr hue.LightAttributes) {
 	light.CurrentColorTemperature = attr.State.Ct
 
 	var color []float32
@@ -118,8 +107,6 @@ func (light *HueLight) updateCurrentLightState() error {
 		light.Reachable = true
 		light.On = attr.State.On
 	}
-
-	return nil
 }
 
 func (light *HueLight) setLightState(colorTemperature int, brightness int) error {
@@ -173,12 +160,16 @@ func (light *HueLight) setLightState(colorTemperature int, brightness int) error
 		return err
 	}
 
-	// Wait while the light is in transition before returning
-	time.Sleep(lightTransitionIntervalInSeconds + 1*time.Second)
-
 	// Debug: Update current state to double check
 	if log.GetLevel() == log.DebugLevel {
-		light.updateCurrentLightState()
+		// Wait while the light is in transition before checking again
+		time.Sleep(lightTransitionIntervalInSeconds + 1*time.Second)
+
+		attr, err := light.HueLight.GetLightAttributes()
+		if err != nil {
+			return err
+		}
+		light.updateCurrentLightState(*attr)
 		if light.hasChanged() {
 			log.Warningf("💡 HueLight %s - Failed to update light state: %+v", light.Name, light)
 		} else {

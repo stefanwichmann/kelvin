@@ -21,12 +21,15 @@
 // SOFTWARE.
 package main
 
-import "strings"
-import "os/exec"
-import "os"
-import "fmt"
-import "math"
-import "path/filepath"
+import (
+	"fmt"
+	"math"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"time"
+)
 
 func containsString(slice []string, element string) bool {
 	for _, current := range slice {
@@ -118,4 +121,10 @@ func absolutePath(filename string) string {
 		return filename
 	}
 	return abs
+}
+
+func durationUntilEndOfDay() time.Duration {
+	now := time.Now()
+	endOfDay := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 0, now.Location())
+	return time.Until(endOfDay)
 }

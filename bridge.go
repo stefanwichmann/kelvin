@@ -102,13 +102,36 @@ func (bridge *HueBridge) Lights() ([]*Light, error) {
 		}
 
 		light.HueLight.HueLight = *hueLight
-		light.initialize()
+		light.HueLight.initialize(hueLight.Attributes)
+		light.Name = light.HueLight.Name
+		light.Reachable = light.HueLight.Reachable
+		light.On = light.HueLight.On
 
 		lights = append(lights, &light)
 	}
 
 	sort.Slice(lights, func(i, j int) bool { return lights[i].ID < lights[j].ID })
 	return lights, nil
+}
+
+// LightStates returns the current state for lights on the bridge
+func (bridge *HueBridge) LightStates() (map[int]hue.LightAttributes, error) {
+	var states = make(map[int]hue.LightAttributes)
+	hueLights, err := bridge.bridge.GetAllLights()
+	if err != nil {
+		return states, err
+	}
+
+	for _, hueLight := range hueLights {
+		lightID, err := strconv.Atoi(hueLight.Id)
+		if err != nil {
+			return states, err
+		}
+
+		states[lightID] = hueLight.Attributes
+	}
+
+	return states, nil
 }
 
 func (bridge *HueBridge) printDevices() error {

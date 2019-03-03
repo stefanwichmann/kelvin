@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Stefan Wichmann
+// Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -134,7 +134,8 @@ func updateSchedulesHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Update lights
 	for _, light := range lights {
-		light.updateConfiguration(configuration)
+		light := light
+		updateScheduleForLight(light)
 	}
 	w.Write([]byte("success"))
 }
