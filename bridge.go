@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Stefan Wichmann
+// Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/stefanwichmann/go.hue"
+	hue "github.com/stefanwichmann/go.hue"
 )
 
 // HueBridge represents the Philips Hue bridge in
@@ -252,7 +252,7 @@ func (bridge *HueBridge) validateSofwareVersion() {
 	}
 	log.Debugf("⌘ Bridge is running software version %s", configuration.SoftwareVersion)
 
-	if (bridge.Version == 1 && swversion < 1041302) || (bridge.Version == 2 && swversion < 1809121051) {
+	if (bridge.Version == 1 && swversion < 1041302) || (bridge.Version == 2 && swversion < 1901181309) {
 		log.Warningf("⌘ Your hue bridge is running an old software version. Please update using the hue app to ensure Kelvin will run smoothly.")
 	} else {
 		log.Debugf("⌘ Bridge software is up to date")
