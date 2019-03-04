@@ -76,11 +76,7 @@ func (bridge *HueBridge) InitializeBridge(configuration *Configuration) error {
 		return err
 	}
 	log.Println("⌘ Connection to bridge established")
-	go bridge.validateSofwareVersion()
-	err = bridge.printDevices()
-	if err != nil {
-		return err
-	}
+	bridge.validateSofwareVersion()
 
 	err = bridge.populateSchedule(configuration)
 	return err
@@ -132,20 +128,6 @@ func (bridge *HueBridge) LightStates() (map[int]hue.LightAttributes, error) {
 	}
 
 	return states, nil
-}
-
-func (bridge *HueBridge) printDevices() error {
-	lights, err := bridge.Lights()
-	if err != nil {
-		return err
-	}
-
-	log.Printf("⌘ Devices found on current bridge:")
-	log.Printf("| %-32s | %3v | %-5v | %-8v | %-11v | %-5v |", "Name", "ID", "On", "Dimmable", "Temperature", "Color")
-	for _, light := range lights {
-		log.Printf("| %-32s | %3v | %-5v | %-8v | %-11v | %-5v |", light.Name, light.ID, light.On, light.HueLight.Dimmable, light.HueLight.SupportsColorTemperature, light.HueLight.SupportsXYColor)
-	}
-	return nil
 }
 
 func (bridge *HueBridge) discover(ip string) error {

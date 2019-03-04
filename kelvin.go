@@ -54,51 +54,57 @@ func main() {
 	go validateSystemTime()
 	go handleSIGHUP()
 
-	// load configuration or create a new one
+	// Load configuration or create a new one
 	conf, err := InitializeConfiguration(*configurationFile, *enableWebInterface)
 	if err != nil {
 		log.Fatal(err)
 	}
 	configuration = &conf
 
-	// start interface
+	// Start web interface
 	go startInterface()
 
-	// find bridge
+	// Find Hue bridge
 	err = bridge.InitializeBridge(configuration)
 	if err != nil {
 		log.Warning(err)
 	}
 
-	// find location
+	// Find geo location
 	_, err = InitializeLocation(configuration)
 	if err != nil {
 		log.Warning(err)
 	}
 
-	// save configuration
+	// Save configuration
 	err = configuration.Write()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// start routine for the scenes
-	go updateScenesCyclic()
-
-	// initialize all lights
-	lights, err = bridge.Lights()
+	// Initialize lights
+	l, err := bridge.Lights()
 	if err != nil {
 		log.Warning(err)
 	}
-
-	// implicit schedule, target and interval
-	for _, light := range lights {
+	printDevices(l)
+	for _, light := range l {
 		light := light
-		updateScheduleForLight(light)
+
+		// Filter devices we can't control
+		if !light.HueLight.supportsColorTemperature() && !light.HueLight.supportsBrightness() {
+			log.Printf("💡 Light %s - This device doesn't support any functionality Kelvin uses. Ignoring...", light.Name)
+		} else {
+			lights = append(lights, light)
+			updateScheduleForLight(light)
+		}
 	}
 
-	// start cyclic update for all lights
-	log.Debugf("💡 Starting cyclic update...")
+	// Initialize scenes
+	updateScenes()
+
+	// Start cyclic update for all lights and scenes
+	log.Debugf("🤖 Starting cyclic update...")
 	lightUpdateTick := time.Tick(lightUpdateIntervalInSeconds * time.Second)
 	stateUpdateTick := time.Tick(stateUpdateIntervalInSeconds * time.Second)
 	for {
@@ -116,6 +122,8 @@ func main() {
 				light.updateInterval()
 				light.updateTargetLightState()
 			}
+			// update scenes
+			updateScenes()
 		case <-lightUpdateTick:
 			states, err := bridge.LightStates()
 			if err != nil {
@@ -147,6 +155,15 @@ func updateScheduleForLight(light *Light) {
 		light.updateTargetLightState()
 	}
 }
+
+func printDevices(l []*Light) {
+	log.Printf("⌘ Devices found on current bridge:")
+	log.Printf("| %-32s | %3v | %-5v | %-8v | %-11v | %-5v |", "Name", "ID", "On", "Dimmable", "Temperature", "Color")
+	for _, light := range l {
+		log.Printf("| %-32s | %3v | %-5v | %-8v | %-11v | %-5v |", light.Name, light.ID, light.On, light.HueLight.Dimmable, light.HueLight.SupportsColorTemperature, light.HueLight.SupportsXYColor)
+	}
+}
+
 func handleSIGHUP() {
 	sighup := make(chan os.Signal, 1)
 	signal.Notify(sighup, syscall.SIGHUP)
