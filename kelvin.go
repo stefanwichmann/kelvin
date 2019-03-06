@@ -48,8 +48,8 @@ const stateUpdateIntervalInSeconds = 60
 func main() {
 	flag.Parse()
 	configureLogging()
-	log.Printf("Kelvin %v starting up... 🚀", applicationVersion)
-	log.Debugf("Current working directory: %v", workingDirectory())
+	log.Printf("🤖 Kelvin %v starting up... 🚀", applicationVersion)
+	log.Debugf("🤖 Current working directory: %v", workingDirectory())
 	go CheckForUpdate(applicationVersion, *forceUpdate)
 	go validateSystemTime()
 	go handleSIGHUP()
@@ -109,8 +109,8 @@ func main() {
 	stateUpdateTick := time.Tick(stateUpdateIntervalInSeconds * time.Second)
 	for {
 		select {
-		case <-time.After(durationUntilEndOfDay()):
-			// Day has ended, calculate new schedule
+		case <-time.After(durationUntilNextDay()):
+			// A new day has begun, calculate new schedule
 			for _, light := range lights {
 				light := light
 				updateScheduleForLight(light)
@@ -136,7 +136,7 @@ func main() {
 					light.updateCurrentLightState(currentLightState)
 					light.update()
 				} else {
-					log.Warningf("No current light state found for light %d", light.ID)
+					log.Warningf("💡 No current light state found for light %d", light.ID)
 				}
 			}
 		}
@@ -157,7 +157,7 @@ func updateScheduleForLight(light *Light) {
 }
 
 func printDevices(l []*Light) {
-	log.Printf("⌘ Devices found on current bridge:")
+	log.Printf("🤖 Devices found on current bridge:")
 	log.Printf("| %-32s | %3v | %-5v | %-8v | %-11v | %-5v |", "Name", "ID", "On", "Dimmable", "Temperature", "Color")
 	for _, light := range l {
 		log.Printf("| %-32s | %3v | %-5v | %-8v | %-11v | %-5v |", light.Name, light.ID, light.On, light.HueLight.Dimmable, light.HueLight.SupportsColorTemperature, light.HueLight.SupportsXYColor)
@@ -168,7 +168,7 @@ func handleSIGHUP() {
 	sighup := make(chan os.Signal, 1)
 	signal.Notify(sighup, syscall.SIGHUP)
 	<-sighup // wait for signal
-	log.Printf("Received signal SIGHUP. Restarting...")
+	log.Printf("🤖 Received signal SIGHUP. Restarting...")
 	Restart()
 }
 
@@ -185,7 +185,7 @@ func configureLogging() {
 		if err == nil {
 			log.SetOutput(file)
 		} else {
-			log.Info("Failed to log to file, using default stderr")
+			log.Info("🤖 Failed to log to file, using default stderr")
 		}
 	}
 }
@@ -197,8 +197,8 @@ func validateSystemTime() {
 		log.Fatal(err)
 	}
 	if !valid {
-		log.Warningf("WARNING: Your local system time seems to be more than one minute off. Timings may be inaccurate.")
+		log.Warningf("🤖 WARNING: Your local system time seems to be more than one minute off. Timings may be inaccurate.")
 	} else {
-		log.Debugf("Local system time validated.")
+		log.Debugf("🤖 Local system time validated.")
 	}
 }

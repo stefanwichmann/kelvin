@@ -123,8 +123,8 @@ func absolutePath(filename string) string {
 	return abs
 }
 
-func durationUntilEndOfDay() time.Duration {
+func durationUntilNextDay() time.Duration {
 	now := time.Now()
 	endOfDay := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 0, now.Location())
-	return time.Until(endOfDay)
+	return time.Until(endOfDay) + 2*time.Second
 }
