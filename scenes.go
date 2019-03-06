@@ -27,13 +27,13 @@ import "time"
 import "strings"
 
 func updateScenes() {
-	log.Debugf("🎨 Scenes - Updating scenes...")
+	log.Debugf("🎨 Updating scenes...")
 	scenes, _ := bridge.bridge.AllScenes()
 	for _, scene := range scenes {
 		if strings.Contains(strings.ToLower(scene.Name), "kelvin") {
 			for _, schedule := range configuration.Schedules {
 				if strings.Contains(strings.ToLower(scene.Name), strings.ToLower(schedule.Name)) {
-					log.Debugf("🎨 Scenes - Updating scene %s for schedule %s...", scene.Name, schedule.Name)
+					log.Debugf("🎨 Updating scene \"%s\" for schedule \"%s\"...", scene.Name, schedule.Name)
 					updateSceneForSchedule(scene, schedule)
 				}
 			}
@@ -48,7 +48,7 @@ func updateSceneForSchedule(scene *hue.Scene, lightSchedule LightSchedule) {
 
 	_, err := scene.Modify(modifyScene)
 	if err != nil {
-		log.Warningf("%v", err)
+		log.Warningf("🎨 %v", err)
 		return
 	}
 
@@ -56,13 +56,13 @@ func updateSceneForSchedule(scene *hue.Scene, lightSchedule LightSchedule) {
 	light := lightSchedule.AssociatedDeviceIDs[0]
 	schedule, err := configuration.lightScheduleForDay(light, time.Now())
 	if err != nil {
-		log.Warningf("%v", err)
+		log.Warningf("🎨 %v", err)
 		return
 	}
 
 	interval, err := schedule.currentInterval(time.Now())
 	if err != nil {
-		log.Warningf("%v", err)
+		log.Warningf("🎨 %v", err)
 		return
 	}
 
@@ -79,10 +79,10 @@ func updateSceneForSchedule(scene *hue.Scene, lightSchedule LightSchedule) {
 		modifyState.Brightness = uint8(mapBrightness(state.Brightness))
 	}
 
-	result, err := scene.ModifyLightStates(modifyState)
+	_, err = scene.ModifyLightStates(modifyState)
 	if err != nil {
-		log.Warningf("%v", err)
+		log.Warningf("🎨 %v", err)
 	}
 
-	log.Debugf("🎨 Scenes - Successfully updated scene %s to %+v. Result: %+v", scene.Name, modifyState, result)
+	log.Debugf("🎨 Successfully updated scene \"%s\"", scene.Name)
 }
