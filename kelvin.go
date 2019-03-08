@@ -107,14 +107,17 @@ func main() {
 	log.Debugf("🤖 Starting cyclic update...")
 	lightUpdateTick := time.Tick(lightUpdateIntervalInSeconds * time.Second)
 	stateUpdateTick := time.Tick(stateUpdateIntervalInSeconds * time.Second)
+	newDayTimer := time.After(durationUntilNextDay())
 	for {
 		select {
-		case <-time.After(durationUntilNextDay()):
+		case <-newDayTimer:
 			// A new day has begun, calculate new schedule
+			log.Printf("🤖 Calculating schedule for %v", time.Now().Format("Jan 2 2006"))
 			for _, light := range lights {
 				light := light
 				updateScheduleForLight(light)
 			}
+			newDayTimer = time.After(durationUntilNextDay())
 		case <-stateUpdateTick:
 			// update interval and color every minute
 			for _, light := range lights {

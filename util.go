@@ -125,6 +125,7 @@ func absolutePath(filename string) string {
 
 func durationUntilNextDay() time.Duration {
 	now := time.Now()
-	endOfDay := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 0, now.Location())
-	return time.Until(endOfDay) + 2*time.Second
+	endOfDay := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 1, now.Location())
+	endOfDay = endOfDay.Add(1 * time.Second)
+	return time.Until(endOfDay)
 }
