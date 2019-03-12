@@ -173,7 +173,7 @@ func (light *HueLight) setLightState(colorTemperature int, brightness int) error
 		if light.hasChanged() {
 			log.Warningf("💡 HueLight %s - Failed to update light state: %+v", light.Name, light)
 		} else {
-			log.Debugf("💡 HueLight %s - Light was successfully updated.", light.Name)
+			log.Debugf("💡 HueLight %s - Light was successfully updated (TargetColorTemperature: %d, CurrentColorTemperature: %d, TargetColor: %v, CurrentColor: %v, TargetBrightness: %d, CurrentBrightness: %d)", light.Name, light.TargetColorTemperature, light.CurrentColorTemperature, light.TargetColor, light.CurrentColor, light.TargetBrightness, light.CurrentBrightness)
 		}
 	}
 
@@ -183,18 +183,18 @@ func (light *HueLight) setLightState(colorTemperature int, brightness int) error
 func (light *HueLight) hasChanged() bool {
 	if light.SupportsXYColor && light.CurrentColorMode == "xy" {
 		if !equalsFloat(light.TargetColor, []float32{-1, -1}, 0) && !equalsFloat(light.TargetColor, light.CurrentColor, 0.001) {
-			log.Debugf("💡 HueLight %s - Color has changed! Current light state: %+v", light.Name, light)
+			log.Debugf("💡 HueLight %s - Color has changed! CurrentColor: %v, TargetColor: %v (%dK)", light.Name, light.CurrentColor, light.TargetColor, light.SetColorTemperature)
 			return true
 		}
 	} else if light.SupportsColorTemperature && light.CurrentColorMode == "ct" {
 		if light.TargetColorTemperature != -1 && !equalsInt(light.TargetColorTemperature, light.CurrentColorTemperature, 2) {
-			log.Debugf("💡 HueLight %s - Color temperature has changed! Current light state: %+v", light.Name, light)
+			log.Debugf("💡 HueLight %s - Color temperature has changed! CurrentColorTemperature: %d, TargetColorTemperatur: %d (%dK)", light.Name, light.CurrentColorTemperature, light.TargetColorTemperature, light.SetColorTemperature)
 			return true
 		}
 	}
 
 	if light.Dimmable && light.TargetBrightness != -1 && !equalsInt(light.TargetBrightness, light.CurrentBrightness, 2) {
-		log.Debugf("💡 HueLight %s - Brightness has changed! Current light state: %+v", light.Name, light)
+		log.Debugf("💡 HueLight %s - Brightness has changed! CurrentBrightness: %d, TargetBrightness: %d (%d%%)", light.Name, light.CurrentBrightness, light.TargetBrightness, light.SetBrightness)
 		return true
 	}
 
