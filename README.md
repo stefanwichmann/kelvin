@@ -181,25 +181,42 @@ There are a couple assumptions made:
 * Logged in as `pi` user, and have `sudo` user permissions
 
 ## Setup
-* Copy `etc/kelvin.service` to `/etc/systemd/system/kelvin.service`
-* Run `systemctl daemon-reload`
+```shell
+# Fetch release
+wget https://github.com/stefanwichmann/kelvin/releases/download/v1.1.9/kelvin-linux-arm-v1.1.9.tar.gz -O /tmp/kelvin-arm.tar.gz
 
-## Controlling Kelvin
-```
+# Create user to run as
+sudo adduser --system --group --shell /bin/nologin --no-create-home --home /opt/kelvin kelvin
+
+# Install
+sudo mkdir -p /opt/kelvin
+cd /opt/kelvin
+sudo tar -xvzf /tmp/kelvin-arm.tar.gz
+sudo mv kelvin-linux-arm*/* .
+sudo rmdir kelvin-linux-arm*
+sudo chown -R kelvin:kelvin /opt/kelvin
+
+# Create service file for systemd
+sudo cp etc/kelvin.service /etc/systemd/system/kelvin.service
+
+# Start, then press hue button. Restart if necessary
 sudo systemctl start kelvin
-sudo systemctl stop kelvin
-sudo systemctl restart kelvin
-```
 
-## Enable/Disable Kelvin at boot
-```
+# Start on boot
 sudo systemctl enable kelvin
-sudo systemctl disable kelvin
-```
 
-## View Kelvin logs
-```
-journalctl -fu kelvin
+# Confirm status
+sudo systemctl status kelvin
+
+# Clean up
+rm /tmp/kelvin-arm.tar.gz
+
+# Edit config to taste
+sudo -u kelvin -e /opt/kelvin/config.json
+sudo systemctl restart kelvin
+
+# Read Logs
+journalctl -fu kelvin.service
 ```
 
 If you are using Kelvin on a different system with Systemd you have to adjust the `kelvin.service` file according to your needs.

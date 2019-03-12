@@ -4,15 +4,18 @@
 
 [Unit]
 Description=Kelvin
+ConditionPathExists=/opt/kelvin/kelvin
 After=network.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/kelvin
-ExecStart=/home/pi/kelvin/kelvin
-Restart=on-failure
-RestartSec=5
+User=kelvin
+Group=kelvin
+WorkingDirectory=/opt/kelvin
+ExecStart=/opt/kelvin/kelvin
+Restart=always
+RestartSec=10
+StartLimitInterval=60s
 
 [Install]
 WantedBy=multi-user.target
