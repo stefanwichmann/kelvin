@@ -21,12 +21,18 @@
 // SOFTWARE.
 package main
 
-import "net/http"
-import "io/ioutil"
-import "encoding/json"
-import log "github.com/Sirupsen/logrus"
-import "github.com/btittelbach/astrotime"
-import "time"
+import (
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"strconv"
+	"strings"
+
+	"time"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/btittelbach/astrotime"
+)
 
 // Geolocation represents a position on earth for which we can
 // calculate sunrise and sunset times.
@@ -38,16 +44,11 @@ type Geolocation struct {
 
 // GeoAPIResponse respresents the result of a request to geolocationAPIURL.
 type GeoAPIResponse struct {
-	Location GeoAPILocationResponse `json:"location"`
+	Location string `json:"loc"`
+	City     string `json:"city"`
 }
 
-// GeoAPILocationResponse respresents the actual coordinates inside a GeoAPIResponse.
-type GeoAPILocationResponse struct {
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
-}
-
-const geolocationAPIURL = "https://geoip.cdnservice.eu/api"
+const geolocationAPIURL = "https://ipinfo.io/json"
 
 // InitializeLocation creates and return a geolocation for the current system.
 func InitializeLocation(configuration *Configuration) (Geolocation, error) {
@@ -88,14 +89,16 @@ func (location *Geolocation) updateByIP() error {
 		return err
 	}
 
-	if data.Location.Latitude == 0 || data.Location.Longitude == 0 {
+	tokens := strings.Split(data.Location, ",")
+	if len(data.Location) == 0 || len(tokens) != 2 {
 		log.Warningf("🌍 Detection of geolocation seems to have failed... Please configure manually")
 		return nil
 	}
 
-	log.Printf("🌍 Detected geolocation: %v, %v", data.Location.Latitude, data.Location.Longitude)
-	location.Latitude = data.Location.Latitude
-	location.Longitude = data.Location.Longitude
+	location.Latitude, _ = strconv.ParseFloat(tokens[0], 32)
+	location.Longitude, _ = strconv.ParseFloat(tokens[1], 32)
+	log.Printf("🌍 Detected geolocation: %s (%.4f, %.4f)", data.City, location.Latitude, location.Longitude)
+
 	return nil
 }
 
