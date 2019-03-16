@@ -105,7 +105,7 @@ func main() {
 
 	// Start cyclic update for all lights and scenes
 	log.Debugf("🤖 Starting cyclic update...")
-	lightUpdateTick := time.Tick(lightUpdateIntervalInSeconds * time.Second)
+	lightUpdateTimer := time.NewTimer(lightTransitionIntervalInSeconds * time.Second)
 	stateUpdateTick := time.Tick(stateUpdateIntervalInSeconds * time.Second)
 	newDayTimer := time.After(durationUntilNextDay())
 	for {
@@ -127,21 +127,35 @@ func main() {
 			}
 			// update scenes
 			updateScenes()
-		case <-lightUpdateTick:
+		case <-lightUpdateTimer.C:
 			states, err := bridge.LightStates()
 			if err != nil {
 				log.Warning(err)
 			}
+			atLeastOneLightUpdated := false
 			for _, light := range lights {
 				light := light
 				currentLightState, found := states[light.ID]
 				if found {
 					light.updateCurrentLightState(currentLightState)
-					light.update()
+					updated, err := light.update()
+					if err != nil {
+						log.Warning(err)
+					}
+					if updated {
+						atLeastOneLightUpdated = true
+					}
 				} else {
 					log.Warningf("💡 No current light state found for light %d", light.ID)
 				}
 			}
+			nextTimerInSeconds := lightUpdateIntervalInSeconds
+			if atLeastOneLightUpdated {
+				log.Warningf("🤖 Updated at least one light. Awaiting transition...")
+				nextTimerInSeconds += lightTransitionIntervalInSeconds
+				atLeastOneLightUpdated = false
+			}
+			lightUpdateTimer.Reset(time.Duration(nextTimerInSeconds) * time.Second)
 		}
 	}
 }
