@@ -122,7 +122,6 @@ func (light *HueLight) setLightState(colorTemperature int, brightness int) error
 		log.Debugf("💡 Light %s - Adjusted color temperature to light capability of %dK", light.Name, colorTemperature)
 	}
 
-	log.Debugf("💡 HueLight %s - Setting light state to %dK and %d%% brightness.", light.Name, colorTemperature, brightness)
 	light.SetColorTemperature = colorTemperature
 	light.SetBrightness = brightness
 
@@ -155,8 +154,10 @@ func (light *HueLight) setLightState(colorTemperature int, brightness int) error
 	hueLightState.TransitionTime = strconv.Itoa(lightTransitionIntervalInSeconds * 10) // Conversion to 100ms-value
 
 	// Send new state to the light
-	_, err := light.HueLight.SetState(hueLightState)
+	log.Debugf("💡 HueLight %s - Setting light state to %dK and %d%% brightness (TargetColorTemperature: %d, CurrentColorTemperature: %d, TargetColor: %v, CurrentColor: %v, TargetBrightness: %d, CurrentBrightness: %d)", light.Name, colorTemperature, brightness, light.TargetColorTemperature, light.CurrentColorTemperature, light.TargetColor, light.CurrentColor, light.TargetBrightness, light.CurrentBrightness)
+	result, err := light.HueLight.SetState(hueLightState)
 	if err != nil {
+		log.Warningf("💡 HueLight %s - Setting light state failed: %v (Result: %v)", light.Name, err, result)
 		return err
 	}
 
@@ -172,11 +173,11 @@ func (light *HueLight) setLightState(colorTemperature int, brightness int) error
 		light.updateCurrentLightState(*attr)
 		if light.hasChanged() {
 			log.Warningf("💡 HueLight %s - Failed to update light state: %+v", light.Name, light)
-		} else {
-			log.Debugf("💡 HueLight %s - Light was successfully updated (TargetColorTemperature: %d, CurrentColorTemperature: %d, TargetColor: %v, CurrentColor: %v, TargetBrightness: %d, CurrentBrightness: %d)", light.Name, light.TargetColorTemperature, light.CurrentColorTemperature, light.TargetColor, light.CurrentColor, light.TargetBrightness, light.CurrentBrightness)
+			return errors.New("Light state update double-check failed")
 		}
 	}
 
+	log.Debugf("💡 HueLight %s - Light was successfully updated (TargetColorTemperature: %d, CurrentColorTemperature: %d, TargetColor: %v, CurrentColor: %v, TargetBrightness: %d, CurrentBrightness: %d)", light.Name, light.TargetColorTemperature, light.CurrentColorTemperature, light.TargetColor, light.CurrentColor, light.TargetBrightness, light.CurrentBrightness)
 	return nil
 }
 
