@@ -41,6 +41,7 @@ type Light struct {
 	Automatic        bool       `json:"automatic"`
 	Schedule         Schedule   `json:"-"`
 	Interval         Interval   `json:"interval"`
+	Appearance       time.Time  `json:"-"`
 }
 
 func (light *Light) updateCurrentLightState(attr hue.LightAttributes) error {
@@ -50,10 +51,10 @@ func (light *Light) updateCurrentLightState(attr hue.LightAttributes) error {
 	return nil
 }
 
-func (light *Light) update() error {
+func (light *Light) update() (bool, error) {
 	// Is the light associated to any schedule?
 	if !light.Scheduled {
-		return nil
+		return false, nil
 	}
 
 	// If the light is not reachable anymore clean up
@@ -62,11 +63,11 @@ func (light *Light) update() error {
 			log.Printf("💡 Light %s - Light is no longer reachable. Clearing state...", light.Name)
 			light.Tracking = false
 			light.Automatic = false
-			return nil
+			return false, nil
 		}
 
 		// Ignore light because we are not tracking it.
-		return nil
+		return false, nil
 	}
 
 	// If the light was turned off clean up
@@ -75,17 +76,18 @@ func (light *Light) update() error {
 			log.Printf("💡 Light %s - Light was turned off. Clearing state...", light.Name)
 			light.Tracking = false
 			light.Automatic = false
-			return nil
+			return false, nil
 		}
 
 		// Ignore light because we are not tracking it.
-		return nil
+		return false, nil
 	}
 
 	// Did the light just appear?
 	if !light.Tracking {
 		log.Printf("💡 Light %s - Light just appeared.", light.Name)
 		light.Tracking = true
+		light.Appearance = time.Now()
 
 		// Should we auto-enable Kelvin?
 		if light.Schedule.enableWhenLightsAppear {
@@ -93,13 +95,13 @@ func (light *Light) update() error {
 
 			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 			if err != nil {
-				return err
+				return false, err
 			}
 
 			light.Automatic = true
-			log.Debugf("💡 Light %s - Light was updated to %vK at %v%% brightness", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+			log.Debugf("💡 Light %s - Light was initialized to %vK at %v%% brightness", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 
-			return nil
+			return true, nil
 		}
 	}
 
@@ -107,7 +109,7 @@ func (light *Light) update() error {
 	if !light.Automatic {
 		// return if we should ignore color temperature and brightness
 		if light.TargetLightState.ColorTemperature == -1 && light.TargetLightState.Brightness == -1 {
-			return nil
+			return false, nil
 		}
 
 		// if status == scene state --> Activate Kelvin
@@ -118,36 +120,36 @@ func (light *Light) update() error {
 			// set correct target lightstate on HueLight
 			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 			if err != nil {
-				return err
+				return false, err
 			}
 		}
-		return nil
+		return true, nil
 	}
 
 	// Did the user manually change the light state?
 	if light.HueLight.hasChanged() {
 		if log.GetLevel() == log.DebugLevel {
-			log.Debugf("💡 Light %s - Light state has been changed manually: %+v", light.Name, light.HueLight)
+			log.Debugf("💡 Light %s - Light state has been changed manually after %v: %+v", light.Name, time.Since(light.Appearance), light.HueLight)
 		} else {
 			log.Printf("💡 Light %s - Light state has been changed manually. Disabling Kelvin...", light.Name)
 		}
 		light.Automatic = false
-		return nil
+		return false, nil
 	}
 
 	// Update of lightstate needed?
 	if light.HueLight.hasState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness) {
-		return nil
+		return false, nil
 	}
 
 	// Light is turned on and in automatic state. Set target lightstate.
 	err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	log.Printf("💡 Light %s - Updated light state to %vK at %v%% brightness", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
-	return nil
+	return true, nil
 }
 
 func (light *Light) updateSchedule(schedule Schedule) {
