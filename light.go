@@ -185,15 +185,18 @@ func (light *Light) updateTargetLightState() {
 
 	// Calculate the target lightstate from the interval
 	newLightState := light.Interval.calculateLightStateInInterval(time.Now())
-	log.Debugf("💡 Light %s - The calculated lightstate for the interval %v - %v is %+v", light.Name, light.Interval.Start.Time.Format("15:04"), light.Interval.End.Time.Format("15:04"), newLightState)
 
-	// First initialization of the TargetLightState?
-	if light.TargetLightState.ColorTemperature == 0 && light.TargetLightState.Brightness == 0 {
-		light.TargetLightState = newLightState
-		log.Debugf("💡 Light %s - Initialized target light state to %+v", light.Name, light.TargetLightState)
+	// Did the target light state change?
+	if newLightState.equals(light.TargetLightState) {
 		return
 	}
 
+	// First initialization of the TargetLightState?
+	if light.TargetLightState.ColorTemperature == 0 && light.TargetLightState.Brightness == 0 {
+		log.Debugf("💡 Light %s - Initialized target light state for the interval %v - %v to %+v", light.Name, light.Interval.Start.Time.Format("15:04"), light.Interval.End.Time.Format("15:04"), newLightState)
+	} else {
+		log.Debugf("💡 Light %s - Updated target light state for the interval %v - %v to %+v", light.Name, light.Interval.Start.Time.Format("15:04"), light.Interval.End.Time.Format("15:04"), newLightState)
+	}
+
 	light.TargetLightState = newLightState
-	log.Debugf("💡 Light %s - Updated target state to %+v", light.Name, light.TargetLightState)
 }

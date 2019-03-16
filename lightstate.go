@@ -46,3 +46,13 @@ func (lightstate *LightState) isValid() bool {
 
 	return valid
 }
+
+func (lightstate *LightState) equals(l LightState) bool {
+	if lightstate.ColorTemperature != l.ColorTemperature {
+		return false
+	}
+	if lightstate.Brightness != l.Brightness {
+		return false
+	}
+	return false
+}
