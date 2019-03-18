@@ -95,12 +95,12 @@ func (light *Light) update() (bool, error) {
 
 			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 			if err != nil {
+				log.Debugf("💡 Light %s - Could not initialize light after %v", light.Name, time.Since(light.Appearance))
 				return false, err
 			}
 
 			light.Automatic = true
 			log.Debugf("💡 Light %s - Light was initialized to %vK at %v%% brightness", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
-
 			return true, nil
 		}
 	}
@@ -122,8 +122,9 @@ func (light *Light) update() (bool, error) {
 			if err != nil {
 				return false, err
 			}
+			log.Debugf("💡 Light %s - Updated light state to %vK at %v%% brightness (Scene detection)", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+			return true, nil
 		}
-		return true, nil
 	}
 
 	// Did the user manually change the light state?
@@ -195,7 +196,7 @@ func (light *Light) updateTargetLightState() {
 	if light.TargetLightState.ColorTemperature == 0 && light.TargetLightState.Brightness == 0 {
 		log.Debugf("💡 Light %s - Initialized target light state for the interval %v - %v to %+v", light.Name, light.Interval.Start.Time.Format("15:04"), light.Interval.End.Time.Format("15:04"), newLightState)
 	} else {
-		log.Debugf("💡 Light %s - Updated target light state for the interval %v - %v to %+v", light.Name, light.Interval.Start.Time.Format("15:04"), light.Interval.End.Time.Format("15:04"), newLightState)
+		log.Debugf("💡 Light %s - Updated target light state for the interval %v - %v from %+v to %+v", light.Name, light.Interval.Start.Time.Format("15:04"), light.Interval.End.Time.Format("15:04"), light.TargetLightState, newLightState)
 	}
 
 	light.TargetLightState = newLightState
