@@ -213,7 +213,7 @@ func validateSystemTime() {
 	// validate local clock as it forms the basis for all time calculations.
 	valid, err := IsLocalTimeValid()
 	if err != nil {
-		log.Fatal(err)
+		log.Errorf("🤖 ERROR: Could not validate system time: %v", err)
 	}
 	if !valid {
 		log.Warningf("🤖 WARNING: Your local system time seems to be more than one minute off. Timings may be inaccurate.")
