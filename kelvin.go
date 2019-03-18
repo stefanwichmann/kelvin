@@ -42,8 +42,9 @@ var configuration *Configuration
 var bridge = &HueBridge{}
 var lights []*Light
 
-const lightUpdateIntervalInSeconds = 1
-const stateUpdateIntervalInSeconds = 60
+const lightUpdateInterval = 1 * time.Second
+const stateUpdateInterval = 1 * time.Minute
+const timeBetweenCalls = 200 * time.Millisecond // see https://developers.meethue.com/develop/application-design-guidance/hue-system-performance/
 
 func main() {
 	flag.Parse()
@@ -87,13 +88,14 @@ func main() {
 	if err != nil {
 		log.Warning(err)
 	}
+	time.Sleep(timeBetweenCalls)
 	printDevices(l)
 	for _, light := range l {
 		light := light
 
 		// Filter devices we can't control
 		if !light.HueLight.supportsColorTemperature() && !light.HueLight.supportsBrightness() {
-			log.Printf("💡 Light %s - This device doesn't support any functionality Kelvin uses. Ignoring...", light.Name)
+			log.Printf("🤖 Light %s - This device doesn't support any functionality Kelvin uses. Ignoring...", light.Name)
 		} else {
 			lights = append(lights, light)
 			updateScheduleForLight(light)
@@ -102,11 +104,12 @@ func main() {
 
 	// Initialize scenes
 	updateScenes()
+	time.Sleep(timeBetweenCalls)
 
 	// Start cyclic update for all lights and scenes
 	log.Debugf("🤖 Starting cyclic update...")
-	lightUpdateTimer := time.NewTimer(lightTransitionIntervalInSeconds * time.Second)
-	stateUpdateTick := time.Tick(stateUpdateIntervalInSeconds * time.Second)
+	lightUpdateTimer := time.NewTimer(lightUpdateInterval)
+	stateUpdateTick := time.Tick(stateUpdateInterval)
 	newDayTimer := time.After(durationUntilNextDay())
 	for {
 		select {
@@ -127,12 +130,14 @@ func main() {
 			}
 			// update scenes
 			updateScenes()
+			time.Sleep(timeBetweenCalls)
 		case <-lightUpdateTimer.C:
 			states, err := bridge.LightStates()
 			if err != nil {
-				log.Warning(err)
+				log.Warningf("🤖 Failed to update light states: %v", err)
 			}
-			atLeastOneLightUpdated := false
+			time.Sleep(timeBetweenCalls)
+
 			for _, light := range lights {
 				light := light
 				currentLightState, found := states[light.ID]
@@ -140,22 +145,19 @@ func main() {
 					light.updateCurrentLightState(currentLightState)
 					updated, err := light.update()
 					if err != nil {
-						log.Warning(err)
+						log.Warningf("🤖 Light %s - Failed to update light: %v", light.Name, err)
 					}
 					if updated {
-						atLeastOneLightUpdated = true
+						log.Debugf("🤖 Light %s - Updated light state. Awaiting transition...", light.Name)
+						time.Sleep(timeBetweenCalls)
+						updated = false
 					}
 				} else {
-					log.Warningf("💡 No current light state found for light %d", light.ID)
+					log.Warningf("🤖 Light %s - No current light state found", light.Name)
 				}
 			}
-			nextTimerInSeconds := lightUpdateIntervalInSeconds
-			if atLeastOneLightUpdated {
-				log.Warningf("🤖 Updated at least one light. Awaiting transition...")
-				nextTimerInSeconds += lightTransitionIntervalInSeconds
-				atLeastOneLightUpdated = false
-			}
-			lightUpdateTimer.Reset(time.Duration(nextTimerInSeconds) * time.Second)
+
+			lightUpdateTimer.Reset(lightUpdateInterval)
 		}
 	}
 }
@@ -163,7 +165,7 @@ func main() {
 func updateScheduleForLight(light *Light) {
 	schedule, err := configuration.lightScheduleForDay(light.ID, time.Now())
 	if err != nil {
-		log.Printf("💡 Light %s - Light is not associated to any schedule. Ignoring...", light.Name)
+		log.Printf("🤖 Light %s - Light is not associated to any schedule. Ignoring...", light.Name)
 		light.Schedule = schedule // Assign empty schedule
 		light.Scheduled = false
 	} else {
