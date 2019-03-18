@@ -54,5 +54,5 @@ func (lightstate *LightState) equals(l LightState) bool {
 	if lightstate.Brightness != l.Brightness {
 		return false
 	}
-	return false
+	return true
 }
