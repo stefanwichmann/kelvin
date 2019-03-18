@@ -24,7 +24,7 @@ package main
 import log "github.com/Sirupsen/logrus"
 import hue "github.com/stefanwichmann/go.hue"
 import "strconv"
-import "time"
+
 import "errors"
 
 var lightsSupportingDimming = []string{"Dimmable Light", "Color Temperature Light", "Color Light", "Extended Color Light"}
@@ -51,8 +51,6 @@ type HueLight struct {
 	On                       bool
 	MinimumColorTemperature  int
 }
-
-const lightTransitionIntervalInSeconds = 1
 
 func (light *HueLight) initialize(attr hue.LightAttributes) {
 	// initialize non changing values
@@ -151,7 +149,6 @@ func (light *HueLight) setLightState(colorTemperature int, brightness int) error
 			hueLightState.Bri = strconv.Itoa(light.TargetBrightness)
 		}
 	}
-	hueLightState.TransitionTime = strconv.Itoa(lightTransitionIntervalInSeconds * 10) // Conversion to 100ms-value
 
 	// Send new state to the light
 	log.Debugf("💡 HueLight %s - Setting light state to %dK and %d%% brightness (TargetColorTemperature: %d, CurrentColorTemperature: %d, TargetColor: %v, CurrentColor: %v, TargetBrightness: %d, CurrentBrightness: %d)", light.Name, colorTemperature, brightness, light.TargetColorTemperature, light.CurrentColorTemperature, light.TargetColor, light.CurrentColor, light.TargetBrightness, light.CurrentBrightness)
@@ -159,22 +156,6 @@ func (light *HueLight) setLightState(colorTemperature int, brightness int) error
 	if err != nil {
 		log.Warningf("💡 HueLight %s - Setting light state failed: %v (Result: %v)", light.Name, err, result)
 		return err
-	}
-
-	// Debug: Update current state to double check
-	if log.GetLevel() == log.DebugLevel {
-		// Wait while the light is in transition before checking again
-		time.Sleep(lightTransitionIntervalInSeconds + 1*time.Second)
-
-		attr, err := light.HueLight.GetLightAttributes()
-		if err != nil {
-			return err
-		}
-		light.updateCurrentLightState(*attr)
-		if light.hasChanged() {
-			log.Warningf("💡 HueLight %s - Failed to update light state: %+v", light.Name, light)
-			return errors.New("Light state update double-check failed")
-		}
 	}
 
 	log.Debugf("💡 HueLight %s - Light was successfully updated (TargetColorTemperature: %d, CurrentColorTemperature: %d, TargetColor: %v, CurrentColor: %v, TargetBrightness: %d, CurrentBrightness: %d)", light.Name, light.TargetColorTemperature, light.CurrentColorTemperature, light.TargetColor, light.CurrentColor, light.TargetBrightness, light.CurrentBrightness)
