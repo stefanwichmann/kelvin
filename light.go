@@ -96,7 +96,7 @@ func (light *Light) update() (bool, error) {
 			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 			if err != nil {
 				log.Debugf("💡 Light %s - Could not initialize light after %v", light.Name, time.Since(light.Appearance))
-				return false, err
+				return true, err
 			}
 
 			light.Automatic = true
@@ -120,7 +120,7 @@ func (light *Light) update() (bool, error) {
 			// set correct target lightstate on HueLight
 			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 			if err != nil {
-				return false, err
+				return true, err
 			}
 			log.Debugf("💡 Light %s - Updated light state to %vK at %v%% brightness (Scene detection)", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 			return true, nil
@@ -149,7 +149,7 @@ func (light *Light) update() (bool, error) {
 	// Light is turned on and in automatic state. Set target lightstate.
 	err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 	if err != nil {
-		return false, err
+		return true, err
 	}
 
 	log.Printf("💡 Light %s - Updated light state to %vK at %v%% brightness", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
