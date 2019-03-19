@@ -125,12 +125,15 @@ func (light *Light) update() (bool, error) {
 			log.Debugf("💡 Light %s - Updated light state to %vK at %v%% brightness (Scene detection)", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 			return true, nil
 		}
+
+		// Light was changed manually and does not conform to scene detection
+		return false, nil
 	}
 
 	// Did the user manually change the light state?
 	if light.HueLight.hasChanged() {
 		if log.GetLevel() == log.DebugLevel {
-			log.Debugf("💡 Light %s - Light state has been changed manually after %v: %+v", light.Name, time.Since(light.Appearance), light.HueLight)
+			log.Debugf("💡 Light %s - Light state has been changed manually after %v (TargetColorTemperature: %d, CurrentColorTemperature: %d, TargetColor: %v, CurrentColor: %v, TargetBrightness: %d, CurrentBrightness: %d)", light.Name, time.Since(light.Appearance), light.HueLight.TargetColorTemperature, light.HueLight.CurrentColorTemperature, light.HueLight.TargetColor, light.HueLight.CurrentColor, light.HueLight.TargetBrightness, light.HueLight.CurrentBrightness)
 		} else {
 			log.Printf("💡 Light %s - Light state has been changed manually. Disabling Kelvin...", light.Name)
 		}
