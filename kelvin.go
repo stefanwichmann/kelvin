@@ -120,17 +120,24 @@ func main() {
 				light := light
 				updateScheduleForLight(light)
 			}
+			updateScenes()
+			time.Sleep(timeBetweenCalls)
 			newDayTimer = time.After(durationUntilNextDay())
 		case <-stateUpdateTick:
 			// update interval and color every minute
+			updated := false
 			for _, light := range lights {
 				light := light
 				light.updateInterval()
-				light.updateTargetLightState()
+				if light.updateTargetLightState() {
+					updated = true
+				}
 			}
 			// update scenes
-			updateScenes()
-			time.Sleep(timeBetweenCalls)
+			if updated {
+				updateScenes()
+				time.Sleep(timeBetweenCalls)
+			}
 		case <-lightUpdateTimer.C:
 			states, err := bridge.LightStates()
 			if err != nil {
@@ -170,7 +177,6 @@ func updateScheduleForLight(light *Light) {
 		light.Scheduled = false
 	} else {
 		light.updateSchedule(schedule)
-		light.updateInterval()
 		light.updateTargetLightState()
 	}
 }
