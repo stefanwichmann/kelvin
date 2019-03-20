@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Stefan Wichmann
+// Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,10 +40,11 @@ func colorTemperatureToXYColor(t int) []float32 {
 		y = l[1]
 	} else if t <= 7000 {
 		x = ((-4.6070 * math.Pow(10, 9)) / math.Pow(float64(t), 3)) + ((2.9678 * math.Pow(10, 6)) / math.Pow(float64(t), 2)) + ((0.09911 * math.Pow(10, 3)) / float64(t)) + 0.244063
+		y = -3.000*math.Pow(x, 2) + 2.870*x - 0.275
 	} else {
 		x = ((-2.0064 * math.Pow(10, 9)) / math.Pow(float64(t), 3)) + ((1.9018 * math.Pow(10, 6)) / math.Pow(float64(t), 2)) + ((0.24748 * math.Pow(10, 3)) / float64(t)) + 0.237040
+		y = -3.000*math.Pow(x, 2) + 2.870*x - 0.275
 	}
-	y = -3.000*math.Pow(x, 2) + 2.870*x - 0.275
 
 	// Round values to match hue precision
 	return []float32{roundFloat(float32(x), 3), roundFloat(float32(y), 3)}
