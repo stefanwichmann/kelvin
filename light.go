@@ -137,20 +137,24 @@ func (light *Light) update() (bool, error) {
 		return false, nil
 	}
 
-	// Are we in initialization phase of the light? Keep setting light state
+	// Keep adjusting the light state for 10 seconds after the light appeared
 	if light.Initializing {
-		err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
-		if err != nil {
-			return true, err
-		}
-		log.Debugf("💡 Light %s - Updated light state to %vK at %v%% brightness (Initialization)", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
-
-		// Disable initialization phase after certain time
+		// Disable initialization phase if 10 seconds have passed
 		if time.Now().After(light.Appearance.Add(initializationDuration)) {
-			log.Debugf("💡 Light %s - Ending initialization phase after appearance at %v", light.Name, light.Appearance)
+			log.Debugf("💡 Light %s - Ending initialization phase", light.Name)
 			light.Initializing = false
 		}
-		return true, nil
+
+		if light.HueLight.hasChanged() {
+			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+			if err != nil {
+				return true, err
+			}
+			log.Debugf("💡 Light %s - Adjusting light state to %vK at %v%% brightness (Initialization)", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+			return true, nil
+		}
+
+		return false, nil
 	}
 
 	// Did the user manually change the light state?
