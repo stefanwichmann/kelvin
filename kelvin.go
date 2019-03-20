@@ -157,7 +157,6 @@ func main() {
 					if updated {
 						log.Debugf("🤖 Light %s - Updated light state. Awaiting transition...", light.Name)
 						time.Sleep(timeBetweenCalls)
-						updated = false
 					}
 				} else {
 					log.Warningf("🤖 Light %s - No current light state found", light.Name)
