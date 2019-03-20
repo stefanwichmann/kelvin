@@ -28,6 +28,8 @@ import (
 	hue "github.com/stefanwichmann/go.hue"
 )
 
+const initializationDuration = 10 * time.Second
+
 // Light represents a light kelvin can automate in your system.
 type Light struct {
 	ID               int        `json:"id"`
@@ -39,6 +41,7 @@ type Light struct {
 	On               bool       `json:"on"`
 	Tracking         bool       `json:"-"`
 	Automatic        bool       `json:"automatic"`
+	Initializing     bool       `json:"-"`
 	Schedule         Schedule   `json:"-"`
 	Interval         Interval   `json:"interval"`
 	Appearance       time.Time  `json:"-"`
@@ -63,6 +66,7 @@ func (light *Light) update() (bool, error) {
 			log.Printf("💡 Light %s - Light is no longer reachable. Clearing state...", light.Name)
 			light.Tracking = false
 			light.Automatic = false
+			light.Initializing = false
 			return false, nil
 		}
 
@@ -76,6 +80,7 @@ func (light *Light) update() (bool, error) {
 			log.Printf("💡 Light %s - Light was turned off. Clearing state...", light.Name)
 			light.Tracking = false
 			light.Automatic = false
+			light.Initializing = false
 			return false, nil
 		}
 
@@ -100,6 +105,7 @@ func (light *Light) update() (bool, error) {
 			}
 
 			light.Automatic = true
+			light.Initializing = true
 			log.Debugf("💡 Light %s - Light was initialized to %vK at %v%% brightness", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 			return true, nil
 		}
@@ -116,6 +122,7 @@ func (light *Light) update() (bool, error) {
 		if light.HueLight.hasState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness) {
 			log.Printf("💡 Light %s - Detected matching target state. Activating Kelvin...", light.Name)
 			light.Automatic = true
+			light.Initializing = true
 
 			// set correct target lightstate on HueLight
 			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
@@ -128,6 +135,22 @@ func (light *Light) update() (bool, error) {
 
 		// Light was changed manually and does not conform to scene detection
 		return false, nil
+	}
+
+	// Are we in initialization phase of the light? Keep setting light state
+	if light.Initializing {
+		err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+		if err != nil {
+			return true, err
+		}
+		log.Debugf("💡 Light %s - Updated light state to %vK at %v%% brightness (Initialization)", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+
+		// Disable initialization phase after certain time
+		if time.Now().After(light.Appearance.Add(initializationDuration)) {
+			log.Debugf("💡 Light %s - Ending initialization phase after appearance at %v", light.Name, light.Appearance)
+			light.Initializing = false
+		}
+		return true, nil
 	}
 
 	// Did the user manually change the light state?
