@@ -139,13 +139,15 @@ func (light *Light) update() (bool, error) {
 
 	// Keep adjusting the light state for 10 seconds after the light appeared
 	if light.Initializing {
-		// Disable initialization phase if 10 seconds have passed
-		if time.Now().After(light.Appearance.Add(initializationDuration)) {
-			log.Debugf("💡 Light %s - Ending initialization phase", light.Name)
+		hasChanged := light.HueLight.hasChanged()
+
+		// Disable initialization phase if 10 seconds have passed and the light state has been adopted
+		if time.Now().After(light.Appearance.Add(initializationDuration)) && !hasChanged {
+			log.Debugf("💡 Light %s - Ending initialization phase after %v", light.Name, time.Since(light.Appearance))
 			light.Initializing = false
 		}
 
-		if light.HueLight.hasChanged() {
+		if hasChanged {
 			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 			if err != nil {
 				return true, err
