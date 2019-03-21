@@ -130,6 +130,7 @@ func (light *HueLight) setLightState(colorTemperature int, brightness int) error
 
 	// Send new state to light bulb
 	var hueLightState hue.SetLightState
+	hueLightState.TransitionTime = "0"
 
 	if colorTemperature != -1 {
 		// Set supported colormodes. If both are, the brigde will prefer xy colors
