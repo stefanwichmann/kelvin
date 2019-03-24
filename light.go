@@ -28,7 +28,7 @@ import (
 	hue "github.com/stefanwichmann/go.hue"
 )
 
-const initializationDuration = 10 * time.Second
+const initializationDuration = 5 * time.Second
 
 // Light represents a light kelvin can automate in your system.
 type Light struct {
@@ -54,7 +54,7 @@ func (light *Light) updateCurrentLightState(attr hue.LightAttributes) error {
 	return nil
 }
 
-func (light *Light) update() (bool, error) {
+func (light *Light) update(transistionTime time.Duration) (bool, error) {
 	// Is the light associated to any schedule?
 	if !light.Scheduled {
 		return false, nil
@@ -98,7 +98,7 @@ func (light *Light) update() (bool, error) {
 		if light.Schedule.enableWhenLightsAppear {
 			log.Printf("💡 Light %s - Initializing state to %vK at %v%% brightness.", light.Name, light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
 
-			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness, transistionTime)
 			if err != nil {
 				log.Debugf("💡 Light %s - Could not initialize light after %v", light.Name, time.Since(light.Appearance))
 				return true, err
@@ -125,7 +125,7 @@ func (light *Light) update() (bool, error) {
 			light.Initializing = true
 
 			// set correct target lightstate on HueLight
-			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness, transistionTime)
 			if err != nil {
 				return true, err
 			}
@@ -148,7 +148,7 @@ func (light *Light) update() (bool, error) {
 		}
 
 		if hasChanged {
-			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+			err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness, transistionTime)
 			if err != nil {
 				return true, err
 			}
@@ -176,7 +176,7 @@ func (light *Light) update() (bool, error) {
 	}
 
 	// Light is turned on and in automatic state. Set target lightstate.
-	err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness)
+	err := light.HueLight.setLightState(light.TargetLightState.ColorTemperature, light.TargetLightState.Brightness, transistionTime)
 	if err != nil {
 		return true, err
 	}

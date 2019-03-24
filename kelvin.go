@@ -45,6 +45,7 @@ var lights []*Light
 const lightUpdateInterval = 1 * time.Second
 const stateUpdateInterval = 1 * time.Minute
 const timeBetweenCalls = 200 * time.Millisecond // see https://developers.meethue.com/develop/application-design-guidance/hue-system-performance/
+const lightTransistionTime = 400 * time.Millisecond
 
 func main() {
 	flag.Parse()
@@ -150,7 +151,7 @@ func main() {
 				currentLightState, found := states[light.ID]
 				if found {
 					light.updateCurrentLightState(currentLightState)
-					updated, err := light.update()
+					updated, err := light.update(lightTransistionTime)
 					if err != nil {
 						log.Warningf("🤖 Light %s - Failed to update light: %v", light.Name, err)
 					}
