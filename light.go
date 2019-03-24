@@ -200,8 +200,7 @@ func (light *Light) updateInterval() {
 
 	newInterval, err := light.Schedule.currentInterval(time.Now())
 	if err != nil {
-		log.Printf("💡 Light %s - Light has no active interval. Ignoring...", light.Name)
-		light.Interval = newInterval // Assign empty interval
+		log.Warningf("💡 Light %s - Could not determine interval for current schedule: %v", light.Name, err)
 		return
 	}
 	if newInterval != light.Interval {

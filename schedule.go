@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Stefan Wichmann
+// Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,9 +21,12 @@
 // SOFTWARE.
 package main
 
-import "time"
-import log "github.com/Sirupsen/logrus"
-import "errors"
+import (
+	"fmt"
+	"time"
+
+	log "github.com/Sirupsen/logrus"
+)
 
 // Schedule represents all relevants timestamps of one day.
 // Kelvin will calculate all light states based on the intervals
@@ -40,7 +43,7 @@ type Schedule struct {
 func (schedule *Schedule) currentInterval(timestamp time.Time) (Interval, error) {
 	// check if timestamp respresents the current day
 	if timestamp.After(schedule.endOfDay) {
-		return Interval{TimeStamp{time.Now(), 0, 0}, TimeStamp{time.Now(), 0, 0}}, errors.New("No current interval as the requested timestamp respresents a different day")
+		return Interval{TimeStamp{time.Now(), 0, 0}, TimeStamp{time.Now(), 0, 0}}, fmt.Errorf("No current interval as the requested timestamp (%v) lays after the end of the current schedule (%v)", timestamp, schedule.endOfDay)
 	}
 
 	// if we are between todays sunrise and sunset, return daylight interval
