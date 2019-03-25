@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Stefan Wichmann
+// Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@ import "fmt"
 import "os"
 
 const upgradeURL = "https://api.github.com/repos/stefanwichmann/kelvin/releases/latest"
-const updateCheckIntervalInMinutes = 12 * 60
+const updateCheckInterval = 12 * time.Hour
 
 // CheckForUpdate will get the latest release information of Kelvin
 // from github and compare it to the given version. If a newer version
@@ -57,7 +57,7 @@ func CheckForUpdate(currentVersion string, forceUpdate bool) {
 			}
 		}
 		// try again in 12 hours...
-		time.Sleep(updateCheckIntervalInMinutes * time.Minute)
+		time.Sleep(updateCheckInterval)
 	}
 }
 
