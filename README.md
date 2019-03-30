@@ -86,49 +86,40 @@ As an alternative to manual installation you can also pull the official [docker 
 - If you want to keep your configuration over the lifetime of your container, you can map the folder ```/etc/opt/kelvin/``` to your host filesystem. If you alter the configuration you have to restart Kelvin through the web interface or by running ```docker restart {CONTAINER_ID}```.
 
 # Configuration
-Kelvin will create it's configuration file `config.json` in the current directory and store all necessary information to operate in it. By default it is fully usable and looks like this:
+Kelvin will create its configuration file `config.yaml` in the current directory and store all necessary information to operate in it. By default it is fully usable and looks like this:
 
 ```
-{
-  "bridge": {
-    "ip": "192.168.10.37",
-    "username": "lbCDGagZZ7JEYQX5iGxrjMIx2jIROgpXfsSjHmCv"
-  },
-  "location": {
-    "latitude": 53.5553,
-    "longitude": 9.995
-  },
-  "schedules": [
-    {
-      "name": "default",
-      "associatedDeviceIDs": [1,2,3,4,5,6],
-      "enableWhenLightsAppear": true,
-      "defaultColorTemperature": 2750,
-      "defaultBrightness": 100,
-      "beforeSunrise": [
-        {
-          "time": "4:00",
-          "colorTemperature": 2000,
-          "brightness": 60
-        }
-      ],
-      "afterSunset": [
-        {
-          "time": "20:00",
-          "colorTemperature": 2300,
-          "brightness": 80
-        },
-        {
-          "time": "22:00",
-          "colorTemperature": 2000,
-          "brightness": 60
-        }
-      ]
-    }
-  ]
-}
+bridge:
+  ip: 192.168.10.37
+  username: lbCDGagZZ7JEYQX5iGxrjMIx2jIROgpXfsSjHmCv
+location:
+  latitude: 53.5553
+  longitude: 9.995
+schedules:
+- name: default
+  associatedDeviceIDs:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  enableWhenLightsAppear: true
+  defaultColorTemperature: 2750
+  defaultBrightness: 100
+  beforeSunrise:
+  - time: '4:00'
+    colorTemperature: 2000
+    brightness: 60
+  afterSunset:
+  - time: '20:00'
+    colorTemperature: 2300
+    brightness: 80
+  - time: '22:00'
+    colorTemperature: 2000
+    brightness: 60
 ```
-As the configuration file is a simple text file in JSON format you can display and edit it with you favorite text editor. Just make sure you keep the JSON structure valid. If something goes wrong fix it using [JSONLint](http://jsonlint.com/) or just delete the `config.json` and let Kelvin generate a configuration from scratch.
+As the configuration file is a simple text file in YAML format you can display and edit it with you favorite text editor. Just make sure you keep the YAML structure valid. If something goes wrong fix it using [YAML Validator](https://codebeautify.org/yaml-validator) or just delete the `config.yaml` and let Kelvin generate a configuration from scratch.
 
 The configuration contains the following fields:
 
@@ -212,7 +203,7 @@ sudo systemctl status kelvin
 rm /tmp/kelvin-arm.tar.gz
 
 # Edit config to taste
-sudo -u kelvin -e /opt/kelvin/config.json
+sudo -u kelvin -e /opt/kelvin/config.yaml
 sudo systemctl restart kelvin
 
 # Read Logs

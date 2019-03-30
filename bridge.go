@@ -147,7 +147,7 @@ func (bridge *HueBridge) discover(ip string) error {
 	}
 	if len(bridges) == 0 {
 		bridge.BridgeIP = ""
-		return errors.New("Bridge discovery failed. Please configure manually in config.json")
+		return errors.New("Bridge discovery failed. Please configure manually in config.yaml")
 	}
 	for _, candidate := range bridges {
 		bridge.BridgeIP = candidate.IpAddr
@@ -158,7 +158,7 @@ func (bridge *HueBridge) discover(ip string) error {
 		}
 	}
 	bridge.BridgeIP = ""
-	return errors.New("Bridge discovery failed. Please configure manually in config.json")
+	return errors.New("Bridge discovery failed. Please configure manually in config.yaml")
 }
 
 func (bridge *HueBridge) register() error {

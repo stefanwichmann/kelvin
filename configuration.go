@@ -21,61 +21,64 @@
 // SOFTWARE.
 package main
 
-import "io/ioutil"
-import "encoding/json"
-import "os"
-import "errors"
-import "time"
-import "fmt"
-import "crypto/sha256"
-import log "github.com/Sirupsen/logrus"
+import (
+	"crypto/sha256"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"time"
+
+	log "github.com/Sirupsen/logrus"
+	"gopkg.in/yaml.v2"
+)
 
 // Bridge respresents the hue bridge in your system.
 type Bridge struct {
-	IP       string `json:"ip"`
-	Username string `json:"username"`
+	IP       string `yaml:"ip"`
+	Username string `yaml:"username"`
 }
 
 // Location represents the geolocation for which sunrise and sunset will be calculated.
 type Location struct {
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
+	Latitude  float64 `yaml:"latitude"`
+	Longitude float64 `yaml:"longitude"`
 }
 
 // WebInterface respresents the webinterface of Kelvin.
 type WebInterface struct {
-	Enabled bool `json:"enabled"`
-	Port    int  `json:"port"`
+	Enabled bool `yaml:"enabled"`
+	Port    int  `yaml:"port"`
 }
 
 // LightSchedule represents the schedule for any given day for the associated lights.
 type LightSchedule struct {
-	Name                    string                  `json:"name"`
-	AssociatedDeviceIDs     []int                   `json:"associatedDeviceIDs"`
-	EnableWhenLightsAppear  bool                    `json:"enableWhenLightsAppear"`
-	DefaultColorTemperature int                     `json:"defaultColorTemperature"`
-	DefaultBrightness       int                     `json:"defaultBrightness"`
-	BeforeSunrise           []TimedColorTemperature `json:"beforeSunrise"`
-	AfterSunset             []TimedColorTemperature `json:"afterSunset"`
+	Name                    string                  `yaml:"name"`
+	AssociatedDeviceIDs     []int                   `yaml:"associatedDeviceIDs"`
+	EnableWhenLightsAppear  bool                    `yaml:"enableWhenLightsAppear"`
+	DefaultColorTemperature int                     `yaml:"defaultColorTemperature"`
+	DefaultBrightness       int                     `yaml:"defaultBrightness"`
+	BeforeSunrise           []TimedColorTemperature `yaml:"beforeSunrise"`
+	AfterSunset             []TimedColorTemperature `yaml:"afterSunset"`
 }
 
 // TimedColorTemperature represents a light configuration which will be
 // reached at the given time.
 type TimedColorTemperature struct {
-	Time             string `json:"time"`
-	ColorTemperature int    `json:"colorTemperature"`
-	Brightness       int    `json:"brightness"`
+	Time             string `yaml:"time"`
+	ColorTemperature int    `yaml:"colorTemperature"`
+	Brightness       int    `yaml:"brightness"`
 }
 
 // Configuration encapsulates all relevant parameters for Kelvin to operate.
 type Configuration struct {
-	ConfigurationFile string          `json:"-"`
-	Hash              string          `json:"-"`
-	Version           int             `json:"version"`
-	Bridge            Bridge          `json:"bridge"`
-	Location          Location        `json:"location"`
-	WebInterface      WebInterface    `json:"webinterface"`
-	Schedules         []LightSchedule `json:"schedules"`
+	ConfigurationFile string          `yaml:"-"`
+	Hash              string          `yaml:"-"`
+	Version           int             `yaml:"version"`
+	Bridge            Bridge          `yaml:"bridge"`
+	Location          Location        `yaml:"location"`
+	WebInterface      WebInterface    `yaml:"webinterface"`
+	Schedules         []LightSchedule `yaml:"schedules"`
 }
 
 // TimeStamp represents a parsed and validated TimedColorTemperature.
@@ -166,12 +169,12 @@ func (configuration *Configuration) Write() error {
 		return nil
 	}
 	log.Debugf("⚙ Configuration changed. Saving to %v", configuration.ConfigurationFile)
-	json, err := json.MarshalIndent(configuration, "", "  ")
+	yaml, err := yaml.Marshal(configuration)
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(configuration.ConfigurationFile, json, 0644)
+	err = ioutil.WriteFile(configuration.ConfigurationFile, yaml, 0644)
 	if err != nil {
 		return err
 	}
@@ -192,7 +195,7 @@ func (configuration *Configuration) Read() error {
 		return err
 	}
 
-	err = json.Unmarshal(raw, configuration)
+	err = yaml.Unmarshal(raw, configuration)
 	if err != nil {
 		return err
 	}
@@ -289,8 +292,8 @@ func (configuration *Configuration) HasChanged() bool {
 
 // HashValue will calculate a SHA256 hash of the configuration struct.
 func (configuration *Configuration) HashValue() string {
-	json, _ := json.Marshal(configuration)
-	return fmt.Sprintf("%x", sha256.Sum256(json))
+	yaml, _ := yaml.Marshal(configuration)
+	return fmt.Sprintf("%x", sha256.Sum256(yaml))
 }
 
 // AsTimestamp parses and validates a TimedColorTemperature and returns

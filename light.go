@@ -32,19 +32,19 @@ const initializationDuration = 5 * time.Second
 
 // Light represents a light kelvin can automate in your system.
 type Light struct {
-	ID               int        `json:"id"`
-	Name             string     `json:"name"`
-	HueLight         HueLight   `json:"-"`
-	TargetLightState LightState `json:"targetLightState,omitempty"`
-	Scheduled        bool       `json:"scheduled"`
-	Reachable        bool       `json:"reachable"`
-	On               bool       `json:"on"`
-	Tracking         bool       `json:"-"`
-	Automatic        bool       `json:"automatic"`
-	Initializing     bool       `json:"-"`
-	Schedule         Schedule   `json:"-"`
-	Interval         Interval   `json:"interval"`
-	Appearance       time.Time  `json:"-"`
+	ID               int        `yaml:"id"`
+	Name             string     `yaml:"name"`
+	HueLight         HueLight   `yaml:"-"`
+	TargetLightState LightState `yaml:"targetLightState,omitempty"`
+	Scheduled        bool       `yaml:"scheduled"`
+	Reachable        bool       `yaml:"reachable"`
+	On               bool       `yaml:"on"`
+	Tracking         bool       `yaml:"-"`
+	Automatic        bool       `yaml:"automatic"`
+	Initializing     bool       `yaml:"-"`
+	Schedule         Schedule   `yaml:"-"`
+	Interval         Interval   `yaml:"interval"`
+	Appearance       time.Time  `yaml:"-"`
 }
 
 func (light *Light) updateCurrentLightState(attr hue.LightAttributes) error {

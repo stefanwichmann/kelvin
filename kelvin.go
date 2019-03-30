@@ -34,7 +34,7 @@ import (
 var applicationVersion = "development"
 var debug = flag.Bool("debug", false, "Enable debug logging")
 var logFile = flag.String("log", "", "Redirect log output to specified file")
-var configurationFile = flag.String("configuration", absolutePath("config.json"), "Specify the filename of the configuration to load")
+var configurationFile = flag.String("configuration", absolutePath("config.yaml"), "Specify the filename of the configuration to load")
 var forceUpdate = flag.Bool("forceUpdate", false, "Update to new major version")
 var enableWebInterface = flag.Bool("enableWebInterface", false, "Enable the web interface at startup")
 

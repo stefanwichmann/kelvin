@@ -26,8 +26,8 @@ import log "github.com/Sirupsen/logrus"
 // LightState represents a light configuration.
 // It can be read from or written to the physical lights.
 type LightState struct {
-	ColorTemperature int `json:"colorTemperature"`
-	Brightness       int `json:"brightness"`
+	ColorTemperature int `yaml:"colorTemperature"`
+	Brightness       int `yaml:"brightness"`
 }
 
 func (lightstate *LightState) isValid() bool {
