@@ -74,7 +74,7 @@ type Configuration struct {
 	Version           int             `json:"version"`
 	Bridge            Bridge          `json:"bridge"`
 	Location          Location        `json:"location"`
-	WebInterface      WebInterface    `json:"webinterface"`
+	WebInterface      WebInterface    `json:"webInterface"`
 	Schedules         []LightSchedule `json:"schedules"`
 }
 
