@@ -98,6 +98,10 @@ Kelvin will create it's configuration file `config.json` in the current director
     "latitude": 53.5553,
     "longitude": 9.995
   },
+  "webInterface": {
+    "enabled": false,
+    "port": 8080
+  },
   "schedules": [
     {
       "name": "default",
