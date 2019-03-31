@@ -22,6 +22,7 @@
 package main
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -31,7 +32,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/btittelbach/astrotime"
-	"gopkg.in/yaml.v2"
 )
 
 // Geolocation represents a position on earth for which we can
@@ -44,8 +44,8 @@ type Geolocation struct {
 
 // GeoAPIResponse respresents the result of a request to geolocationAPIURL.
 type GeoAPIResponse struct {
-	Location string `yaml:"loc"`
-	City     string `yaml:"city"`
+	Location string `json:"loc"`
+	City     string `json:"city"`
 }
 
 const geolocationAPIURL = "https://ipinfo.io/json"
@@ -84,7 +84,7 @@ func (location *Geolocation) updateByIP() error {
 	}
 
 	var data GeoAPIResponse
-	err = yaml.Unmarshal(body, &data)
+	err = json.Unmarshal(body, &data)
 	if err != nil {
 		return err
 	}
