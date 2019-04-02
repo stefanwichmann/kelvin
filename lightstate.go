@@ -39,7 +39,7 @@ func (lightstate *LightState) isValid() bool {
 	}
 
 	// Validate ColorTemperature
-	if lightstate.ColorTemperature != 0 && lightstate.ColorTemperature != -1 && (lightstate.ColorTemperature < 2000 || lightstate.ColorTemperature > 6500) {
+	if lightstate.ColorTemperature != 0 && lightstate.ColorTemperature != -1 && (lightstate.ColorTemperature < 1000 || lightstate.ColorTemperature > 6500) {
 		log.Warningf("Validation: Invalid ColorTemperature in %+v", lightstate)
 		valid = false
 	}
