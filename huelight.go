@@ -66,7 +66,7 @@ func (light *HueLight) initialize(attr hue.LightAttributes) {
 	if attr.Type == "Color Temperature Light" {
 		light.MinimumColorTemperature = 2200
 	} else if light.SupportsXYColor || light.SupportsColorTemperature {
-		light.MinimumColorTemperature = 2000
+		light.MinimumColorTemperature = 1000
 	} else {
 		light.MinimumColorTemperature = 0
 	}
@@ -111,7 +111,7 @@ func (light *HueLight) updateCurrentLightState(attr hue.LightAttributes) {
 }
 
 func (light *HueLight) setLightState(colorTemperature int, brightness int, transitionTime time.Duration) error {
-	if colorTemperature != -1 && (colorTemperature < 2000 || colorTemperature > 6500) {
+	if colorTemperature != -1 && (colorTemperature < 1000 || colorTemperature > 6500) {
 		log.Warningf("💡 Light %s - Invalid color temperature %d", light.Name, colorTemperature)
 	}
 	if brightness < -1 || brightness > 100 {
@@ -266,8 +266,8 @@ func mapColorTemperature(colorTemperature int) int {
 
 	if colorTemperature > 6500 {
 		colorTemperature = 6500
-	} else if colorTemperature < 2000 {
-		colorTemperature = 2000
+	} else if colorTemperature < 1000 {
+		colorTemperature = 1000
 	}
 	return int((float64(1) / float64(colorTemperature)) * float64(1000000))
 }
