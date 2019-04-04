@@ -25,6 +25,10 @@ _testmain.go
 
 # Kelvin files
 dist
+kelvin
+config.json
+config.yaml
 
 # macOS
 .DS_Store
+.vscode

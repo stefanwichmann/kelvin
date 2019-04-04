@@ -130,3 +130,11 @@ func durationUntilNextDay() time.Duration {
 	endOfDay = endOfDay.Add(1 * time.Second)
 	return time.Until(endOfDay)
 }
+
+func isYAMLFile(filename string) bool {
+	fileExt := filepath.Ext(filename)
+	if fileExt == ".yaml" || fileExt == ".yml" {
+		return true
+	}
+	return false
+}
