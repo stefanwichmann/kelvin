@@ -21,14 +21,18 @@
 // SOFTWARE.
 package main
 
-import "io/ioutil"
-import "encoding/json"
-import "os"
-import "errors"
-import "time"
-import "fmt"
-import "crypto/sha256"
-import log "github.com/Sirupsen/logrus"
+import (
+	"crypto/sha256"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"time"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/ghodss/yaml"
+)
 
 // Bridge respresents the hue bridge in your system.
 type Bridge struct {
@@ -166,12 +170,20 @@ func (configuration *Configuration) Write() error {
 		return nil
 	}
 	log.Debugf("⚙ Configuration changed. Saving to %v", configuration.ConfigurationFile)
-	json, err := json.MarshalIndent(configuration, "", "  ")
+	raw, err := json.MarshalIndent(configuration, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(configuration.ConfigurationFile, json, 0644)
+	// Convert JSON to YAML if needed
+	if isYAMLFile(configuration.ConfigurationFile) {
+		raw, err = yaml.JSONToYAML(raw)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = ioutil.WriteFile(configuration.ConfigurationFile, raw, 0644)
 	if err != nil {
 		return err
 	}
@@ -190,6 +202,14 @@ func (configuration *Configuration) Read() error {
 	raw, err := ioutil.ReadFile(configuration.ConfigurationFile)
 	if err != nil {
 		return err
+	}
+
+	// Convert YAML to JSON if needed
+	if isYAMLFile(configuration.ConfigurationFile) {
+		raw, err = yaml.YAMLToJSON(raw)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = json.Unmarshal(raw, configuration)
