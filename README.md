@@ -47,13 +47,13 @@ Got all these? Great, let's get started!
 4. Now you have to allow Kelvin to talk to your bridge by pushing the blue button on top of your physical Hue bridge. Kelvin will wait one minute for you to push the button. If you didn't make it in time just start it again with step 3.
 5. Once you pushed the button you should see something like:
    ```
-   2017/03/22 10:45:41 Kelvin v1.1.0 starting up... 🚀
-   2017/03/22 10:45:41 Looking for updates...
+   2017/03/22 10:45:41 🤖 Kelvin starting up... 🚀
+   2017/03/22 10:45:41 🤖 Looking for updates...
    2017/03/22 10:45:41 ⚙ Default configuration generated
    2017/03/22 10:45:41 ⌘ No bridge configuration found. Starting local discovery...
    2017/03/22 10:45:44 ⌘ Found bridge. Starting user registration.
    PLEASE PUSH THE BLUE BUTTON ON YOUR HUE BRIDGE... Success!
-   2017/03/22 10:45:59 💡 Devices found on current bridge:
+   2017/03/22 10:45:59 🤖 Devices found on current bridge:
    2017/03/22 10:45:59 | Name                 |  ID | On    | Dimmable | Temperature | Color |
    2017/03/22 10:45:59 | Dining table         |   5 | false | true     | true        | true  |
    2017/03/22 10:45:59 | Power outlet         |   6 | false | false    | false       | false |
@@ -64,13 +64,7 @@ Got all these? Great, let's get started!
    2017/03/22 10:45:59 Device Power outlet doesn't support any functionality we use. Exclude it from unnecessary polling.
    2017/03/22 10:45:59 🌍 Location not configured. Detecting by IP
    2017/03/22 10:45:59 🌍 Detected location: Hamburg, Germany (53.5553, 9.995).
-   2017/03/22 10:45:59 💡 Starting cyclic update for Desk
-   2017/03/22 10:45:59 💡 Starting cyclic update for Window
-   2017/03/22 10:45:59 💡 Starting cyclic update for Dining table
-   2017/03/22 10:45:59 💡 Starting cyclic update for Kitchen
-   2017/03/22 10:45:59 💡 Starting cyclic update for Couch
-   2017/03/22 10:45:59 Configuring intervals for Wednesday March 22 2017
-   2017/03/22 10:45:59 Managing lights for interval 06:21 to 18:40
+   2017/03/22 10:45:59 🤖 Starting cyclic update...
    ```
 6. Wohoo! Kelvin is up and running! Well done!
 7. Kelvin is now managing your lights and will gradually adjust the color temperature and brightness for you. Give it a try by switching lights on and off to see how Kelvin reacts. If you want to adjust the default schedule to your needs, just read on and edit the configuration.
@@ -145,7 +139,7 @@ Each schedule must be configured in the following format:
 | name | The name of this schedule. This is only used for better readability. |
 | associatedDeviceIDs | A list of all devices/lights that should be managed according to this schedule. Kelvin will print an overview of all your devices on startup. You should use this to associate your lights with the right schedule. *ATTENTION: Every light should be associated to only one schedule. If you skip an ID this device will be ignored.* |
 | enableWhenLightsAppear | If this element is set to `true` Kelvin will be activated automatically whenever you switch an associated light on. If set to `false` Kelvin won't take over until you enable a [Kelvin Scene](#kelvin-scenes) or activate it via web interface. |
-| defaultColorTemperature | This default color temperature will be used between sunrise and sunset. Valid values are between 2000K and 6500K. See [Wikipedia](https://en.wikipedia.org/wiki/Color_temperature) for reference values. If you set this value to -1 Kelvin will ignore the color temperature and you can change it manually.|
+| defaultColorTemperature | This default color temperature will be used between sunrise and sunset. Valid values are between 1000K and 6500K. See [Wikipedia](https://en.wikipedia.org/wiki/Color_temperature) for reference values. If you set this value to -1 Kelvin will ignore the color temperature and you can change it manually. ATTENTION: The supported color temperature minimum will vary between bulb models. Kelvin will respect these limits automatically.|
 | defaultBrightness | This default brightness value will be used between sunrise and sunset. Valid values are between 0% and 100%. If you set this value to -1 Kelvin will ignore the brightness and you can change it manually.|
 | beforeSunrise | This element contains a list of timestamps and their configuration you want to set between midnight and sunrise of any given day. The *time* value must follow the `hh:mm` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
 | afterSunset | This element contains a list of timestamps and their configuration you want to set between sunset and midnight of any given day. The *time* value must follow the `hh:mm` format. *colorTemperature* and *brightness* must follow the same rules as the default values. |
