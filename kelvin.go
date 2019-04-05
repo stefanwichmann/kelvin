@@ -23,6 +23,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -183,9 +184,13 @@ func updateScheduleForLight(light *Light) {
 
 func printDevices(l []*Light) {
 	log.Printf("🤖 Devices found on current bridge:")
-	log.Printf("| %-32s | %3v | %-5v | %-8v | %-11v | %-5v |", "Name", "ID", "On", "Dimmable", "Temperature", "Color")
+	log.Printf("| %-32s | %3v | %-5v | %-8v | %-11v | %-5v | %17v |", "Name", "ID", "On", "Dimmable", "Temperature", "Color", "Temperature range")
 	for _, light := range l {
-		log.Printf("| %-32s | %3v | %-5v | %-8v | %-11v | %-5v |", light.Name, light.ID, light.On, light.HueLight.Dimmable, light.HueLight.SupportsColorTemperature, light.HueLight.SupportsXYColor)
+		ctRange := ""
+		if light.HueLight.supportsColorTemperature() {
+			ctRange = fmt.Sprintf("%dK - %dK", light.HueLight.MinimumColorTemperature, 6500)
+		}
+		log.Printf("| %-32s | %3v | %-5v | %-8v | %-11v | %-5v | %17v |", light.Name, light.ID, light.On, light.HueLight.Dimmable, light.HueLight.SupportsColorTemperature, light.HueLight.SupportsXYColor, ctRange)
 	}
 }
 
