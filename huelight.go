@@ -30,9 +30,9 @@ import (
 	hue "github.com/stefanwichmann/go.hue"
 )
 
-var lightsSupportingDimming = []string{"Dimmable Light", "Color Temperature Light", "Color Light", "Extended Color Light"}
-var lightsSupportingColorTemperature = []string{"Color Temperature Light", "Extended Color Light"}
-var lightsSupportingXYColor = []string{"Color Light", "Extended Color Light"}
+var lightsSupportingDimming = []string{"Dimmable light", "Color temperature light", "Color light", "Extended color light"}
+var lightsSupportingColorTemperature = []string{"Color temperature light", "Extended color light"}
+var lightsSupportingXYColor = []string{"Color light", "Extended color light"}
 
 // HueLight represents a physical hue light.
 type HueLight struct {
@@ -63,10 +63,12 @@ func (light *HueLight) initialize(attr hue.LightAttributes) {
 	light.SupportsXYColor = containsString(lightsSupportingXYColor, attr.Type)
 
 	// set minimum color temperature depending on type
-	if attr.Type == "Color Temperature Light" {
+	if attr.Type == "Color temperature light" {
 		light.MinimumColorTemperature = 2200
-	} else if light.SupportsXYColor || light.SupportsColorTemperature {
+	} else if light.SupportsXYColor {
 		light.MinimumColorTemperature = 1000
+	} else if light.SupportsColorTemperature {
+		light.MinimumColorTemperature = 2000
 	} else {
 		light.MinimumColorTemperature = 0
 	}
