@@ -68,9 +68,15 @@ func main() {
 	go startInterface()
 
 	// Find Hue bridge
-	err = bridge.InitializeBridge(configuration)
-	if err != nil {
-		log.Warning(err)
+	log.Printf("🤖 Initializing bridge connection...")
+	for {
+		err = bridge.InitializeBridge(configuration)
+		if err != nil {
+			log.Errorf("Could not initialze bridge: %v - Retrying...", err)
+			time.Sleep(10 * time.Second)
+		} else {
+			break
+		}
 	}
 
 	// Find geo location

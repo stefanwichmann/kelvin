@@ -135,9 +135,10 @@ func (bridge *HueBridge) discover(ip string) error {
 		// we have a known IP address. Validate if it points to a reachable bridge
 		bridge.BridgeIP = ip
 		err := bridge.validateBridge()
-		if err == nil {
-			return nil
+		if err != nil {
+			return err
 		}
+		return nil
 	}
 	log.Debugf("⌘ Starting bridge discovery")
 	bridges, err := hue.DiscoverBridges(false)
