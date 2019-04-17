@@ -176,7 +176,8 @@ func (bridge *HueBridge) register() error {
 		// try user creation, will fail if the button wasn't pressed.
 		err := bridge.bridge.CreateUser(hueBridgeAppName)
 		if err != nil {
-			return err
+			log.Debugf("⌘ Button wasn't pressed yet. Waiting...")
+			continue
 		}
 
 		if bridge.bridge.Username != "" {
@@ -258,7 +259,7 @@ func (bridge *HueBridge) validateSofwareVersion() {
 	}
 	log.Debugf("⌘ Bridge is running software version %s", configuration.SoftwareVersion)
 
-	if (bridge.Version == 1 && swversion < 1041302) || (bridge.Version == 2 && swversion < 1901181309) {
+	if (bridge.Version == 1 && swversion < 1041302) || (bridge.Version == 2 && swversion < 1931069120) {
 		log.Warningf("⌘ Your hue bridge is running an old software version. Please update using the hue app to ensure Kelvin will run smoothly.")
 	} else {
 		log.Debugf("⌘ Bridge software is up to date")
