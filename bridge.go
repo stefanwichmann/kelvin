@@ -215,6 +215,7 @@ func (bridge *HueBridge) connect() error {
 		bridge.bridge.EnableHTTPS(true)
 	}
 
+	log.Debugf("⌘ Connected to bridge \"%s\" (Model: %s, API version: %s)", configuration.Name, configuration.ModelId, configuration.APIVersion)
 	return nil
 }
 
