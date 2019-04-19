@@ -265,7 +265,7 @@ func (configuration *Configuration) lightScheduleForDay(light int, date time.Tim
 	for _, candidate := range lightSchedule.BeforeSunrise {
 		timestamp, err := candidate.AsTimestamp(date)
 		if err != nil {
-			log.Printf(err.Error())
+			log.Warningf("⚙ Found invalid configuration entry: %+v (Error: %v)", candidate, err)
 			continue
 		}
 		schedule.beforeSunrise = append(schedule.beforeSunrise, timestamp)
@@ -276,7 +276,7 @@ func (configuration *Configuration) lightScheduleForDay(light int, date time.Tim
 	for _, candidate := range lightSchedule.AfterSunset {
 		timestamp, err := candidate.AsTimestamp(date)
 		if err != nil {
-			log.Printf(err.Error())
+			log.Warningf("⚙ Found invalid configuration entry: %+v (Error: %v)", candidate, err)
 			continue
 		}
 		schedule.afterSunset = append(schedule.afterSunset, timestamp)
