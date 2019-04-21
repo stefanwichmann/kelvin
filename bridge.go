@@ -102,6 +102,9 @@ func (bridge *HueBridge) Lights() ([]*Light, error) {
 		light.Name = light.HueLight.Name
 		light.Reachable = light.HueLight.Reachable
 		light.On = light.HueLight.On
+		light.setLightState = light.HueLight.setLightState
+		light.hasChanged = light.HueLight.hasChanged
+		light.hasState = light.HueLight.hasState
 
 		lights = append(lights, &light)
 	}
