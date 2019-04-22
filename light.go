@@ -28,7 +28,7 @@ import (
 	hue "github.com/stefanwichmann/go.hue"
 )
 
-const initializationDuration = 5 * time.Second
+const initializationDuration = 3 * time.Second
 
 // Light represents a light kelvin can automate in your system.
 type Light struct {
@@ -139,6 +139,7 @@ func (light *Light) update(transistionTime time.Duration) (bool, error) {
 
 	// Keep adjusting the light state for 10 seconds after the light appeared
 	if light.Initializing {
+		log.Debugf("💡 Light %s - Light in initialization for %v (TargetColorTemperature: %d, CurrentColorTemperature: %d, TargetColor: %v, CurrentColor: %v, TargetBrightness: %d, CurrentBrightness: %d)", light.Name, time.Since(light.Appearance), light.HueLight.TargetColorTemperature, light.HueLight.CurrentColorTemperature, light.HueLight.TargetColor, light.HueLight.CurrentColor, light.HueLight.TargetBrightness, light.HueLight.CurrentBrightness)
 		hasChanged := light.HueLight.hasChanged()
 
 		// Disable initialization phase if 10 seconds have passed and the light state has been adopted
