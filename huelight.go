@@ -170,7 +170,7 @@ func (light *HueLight) setLightState(colorTemperature int, brightness int, trans
 
 func (light *HueLight) hasChanged() bool {
 	if light.SupportsXYColor && light.CurrentColorMode == "xy" {
-		if !equalsFloat(light.TargetColor, []float32{-1, -1}, 0) && !equalsFloat(light.TargetColor, light.CurrentColor, 0.001) {
+		if !equalsFloat(light.TargetColor, []float32{-1, -1}, 0.0000000000000001) && !equalsFloat(light.TargetColor, light.CurrentColor, 0.001) {
 			log.Debugf("💡 HueLight %s - Color has changed! CurrentColor: %v, TargetColor: %v (%dK)", light.Name, light.CurrentColor, light.TargetColor, light.SetColorTemperature)
 			return true
 		}
