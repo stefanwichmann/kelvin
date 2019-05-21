@@ -1,6 +1,5 @@
 #!/bin/bash
 set -euo pipefail
-IFS=$"\\n\\t"
 
 # constants
 BINARY_NAME="kelvin"
@@ -76,6 +75,9 @@ buildTarget() {
 
 # MAIN
 echo Start
+if [ "$#" -eq 2 ]; then
+    buildTarget $1 $2
+else
 buildTarget linux amd64
 buildTarget linux 386
 buildTarget linux arm
@@ -83,4 +85,5 @@ buildTarget freebsd amd64
 buildTarget darwin amd64
 buildTarget windows amd64
 buildTarget windows 386
+fi
 echo Done
