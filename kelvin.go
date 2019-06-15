@@ -48,7 +48,7 @@ var lights []*Light
 const lightUpdateInterval = 1 * time.Second
 const stateUpdateInterval = 1 * time.Minute
 
-const timeBetweenHueApiCalls = 100 * time.Millisecond // see https://developers.meethue.com/develop/application-design-guidance/hue-system-performance/
+const timeBetweenHueAPICalls = 100 * time.Millisecond // see https://developers.meethue.com/develop/application-design-guidance/hue-system-performance/
 const lightTransistionTime = 400 * time.Millisecond
 
 func main() {

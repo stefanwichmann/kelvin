@@ -217,8 +217,8 @@ func (bridge *HueBridge) connect() error {
 	}
 
 	if !*flagDisableRateLimiting {
-		bridge.bridge.EnableRateLimiting(timeBetweenHueApiCalls)
-		log.Debugf("⌘ Enabled rate limiting with %s between API calls", timeBetweenHueApiCalls)
+		bridge.bridge.EnableRateLimiting(timeBetweenHueAPICalls)
+		log.Debugf("⌘ Enabled rate limiting with %s between API calls", timeBetweenHueAPICalls)
 	}
 
 	log.Debugf("⌘ Connected to bridge \"%s\" (Model: %s, API version: %s)", configuration.Name, configuration.ModelId, configuration.APIVersion)
