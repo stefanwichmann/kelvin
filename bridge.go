@@ -211,13 +211,14 @@ func (bridge *HueBridge) connect() error {
 	if err != nil {
 		return err
 	}
-	if configuration.ModelId == "BSB002" && swversion >= 1802201122 {
+	if configuration.ModelId == "BSB002" && swversion >= 1802201122 && !*flagDisableHTTPS {
 		bridge.bridge.EnableHTTPS(true)
+		log.Debugf("⌘ Enabled HTTPS for the bridge connection")
 	}
 
 	if !*flagDisableRateLimiting {
 		bridge.bridge.EnableRateLimiting(timeBetweenHueApiCalls)
-		log.Debugf("Enabled rate limiting with %s between API calls", timeBetweenHueApiCalls)
+		log.Debugf("⌘ Enabled rate limiting with %s between API calls", timeBetweenHueApiCalls)
 	}
 
 	log.Debugf("⌘ Connected to bridge \"%s\" (Model: %s, API version: %s)", configuration.Name, configuration.ModelId, configuration.APIVersion)

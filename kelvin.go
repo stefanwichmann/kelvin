@@ -39,6 +39,7 @@ var flagConfigurationFile = flag.String("configuration", absolutePath("config.js
 var flagForceUpdate = flag.Bool("forceUpdate", false, "Update to new major version")
 var flagEnableWebInterface = flag.Bool("enableWebInterface", false, "Enable the web interface at startup")
 var flagDisableRateLimiting = flag.Bool("disableRateLimiting", false, "Disable the limiting of requests to the hue bridge")
+var flagDisableHTTPS = flag.Bool("disableHTTPS", false, "Disable HTTPS for the connection to the hue bridge")
 
 var configuration *Configuration
 var bridge = &HueBridge{}
