@@ -33,12 +33,12 @@ import (
 )
 
 var applicationVersion = "development"
-var debug = flag.Bool("debug", false, "Enable debug logging")
-var logFile = flag.String("log", "", "Redirect log output to specified file")
-var configurationFile = flag.String("configuration", absolutePath("config.json"), "Specify the filename of the configuration to load")
-var forceUpdate = flag.Bool("forceUpdate", false, "Update to new major version")
-var enableWebInterface = flag.Bool("enableWebInterface", false, "Enable the web interface at startup")
-var disableRateLimiting = flag.Bool("disableRateLimiting", false, "Disable the limiting of requests to the hue bridge")
+var flagDebug = flag.Bool("debug", false, "Enable debug logging")
+var flagLogfile = flag.String("log", "", "Redirect log output to specified file")
+var flagConfigurationFile = flag.String("configuration", absolutePath("config.json"), "Specify the filename of the configuration to load")
+var flagForceUpdate = flag.Bool("forceUpdate", false, "Update to new major version")
+var flagEnableWebInterface = flag.Bool("enableWebInterface", false, "Enable the web interface at startup")
+var flagDisableRateLimiting = flag.Bool("disableRateLimiting", false, "Disable the limiting of requests to the hue bridge")
 
 var configuration *Configuration
 var bridge = &HueBridge{}
@@ -55,12 +55,12 @@ func main() {
 	configureLogging()
 	log.Printf("🤖 Kelvin %v starting up... 🚀", applicationVersion)
 	log.Debugf("🤖 Current working directory: %v", workingDirectory())
-	go CheckForUpdate(applicationVersion, *forceUpdate)
+	go CheckForUpdate(applicationVersion, *flagForceUpdate)
 	go validateSystemTime()
 	go handleSIGHUP()
 
 	// Load configuration or create a new one
-	conf, err := InitializeConfiguration(*configurationFile, *enableWebInterface)
+	conf, err := InitializeConfiguration(*flagConfigurationFile, *flagEnableWebInterface)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -209,11 +209,11 @@ func configureLogging() {
 	formatter.FullTimestamp = true
 	formatter.TimestampFormat = "2006/02/01 15:04:05"
 	log.SetFormatter(formatter)
-	if *debug {
+	if *flagDebug {
 		log.SetLevel(log.DebugLevel)
 	}
-	if logFile != nil && *logFile != "" {
-		file, err := os.OpenFile(*logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if flagLogfile != nil && *flagLogfile != "" {
+		file, err := os.OpenFile(*flagLogfile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err == nil {
 			log.SetOutput(file)
 		} else {
