@@ -38,6 +38,7 @@ var logFile = flag.String("log", "", "Redirect log output to specified file")
 var configurationFile = flag.String("configuration", absolutePath("config.json"), "Specify the filename of the configuration to load")
 var forceUpdate = flag.Bool("forceUpdate", false, "Update to new major version")
 var enableWebInterface = flag.Bool("enableWebInterface", false, "Enable the web interface at startup")
+var disableRateLimiting = flag.Bool("disableRateLimiting", false, "Disable the limiting of requests to the hue bridge")
 
 var configuration *Configuration
 var bridge = &HueBridge{}
@@ -45,7 +46,8 @@ var lights []*Light
 
 const lightUpdateInterval = 1 * time.Second
 const stateUpdateInterval = 1 * time.Minute
-const timeBetweenCalls = 200 * time.Millisecond // see https://developers.meethue.com/develop/application-design-guidance/hue-system-performance/
+
+const timeBetweenHueApiCalls = 100 * time.Millisecond // see https://developers.meethue.com/develop/application-design-guidance/hue-system-performance/
 const lightTransistionTime = 400 * time.Millisecond
 
 func main() {
@@ -96,7 +98,6 @@ func main() {
 	if err != nil {
 		log.Warning(err)
 	}
-	time.Sleep(timeBetweenCalls)
 	printDevices(l)
 	for _, light := range l {
 		light := light
@@ -112,7 +113,6 @@ func main() {
 
 	// Initialize scenes
 	updateScenes()
-	time.Sleep(timeBetweenCalls)
 
 	// Start cyclic update for all lights and scenes
 	log.Debugf("🤖 Starting cyclic update...")
@@ -129,7 +129,6 @@ func main() {
 				updateScheduleForLight(light)
 			}
 			updateScenes()
-			time.Sleep(timeBetweenCalls)
 			newDayTimer = time.After(durationUntilNextDay())
 		case <-stateUpdateTick:
 			// update interval and color every minute
@@ -144,14 +143,12 @@ func main() {
 			// update scenes
 			if updated {
 				updateScenes()
-				time.Sleep(timeBetweenCalls)
 			}
 		case <-lightUpdateTimer.C:
 			states, err := bridge.LightStates()
 			if err != nil {
 				log.Warningf("🤖 Failed to update light states: %v", err)
 			}
-			time.Sleep(timeBetweenCalls)
 
 			for _, light := range lights {
 				light := light
@@ -164,7 +161,6 @@ func main() {
 					}
 					if updated {
 						log.Debugf("🤖 Light %s - Updated light state. Awaiting transition...", light.Name)
-						time.Sleep(timeBetweenCalls)
 					}
 				} else {
 					log.Warningf("🤖 Light %s - No current light state found", light.Name)

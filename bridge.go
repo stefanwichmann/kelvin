@@ -215,6 +215,11 @@ func (bridge *HueBridge) connect() error {
 		bridge.bridge.EnableHTTPS(true)
 	}
 
+	if !*disableRateLimiting {
+		bridge.bridge.EnableRateLimiting(timeBetweenHueApiCalls)
+		log.Debugf("Enabled rate limiting with %s between API calls", timeBetweenHueApiCalls)
+	}
+
 	log.Debugf("⌘ Connected to bridge \"%s\" (Model: %s, API version: %s)", configuration.Name, configuration.ModelId, configuration.APIVersion)
 	return nil
 }
