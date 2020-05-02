@@ -22,7 +22,7 @@
 package main
 
 import "time"
-import log "github.com/Sirupsen/logrus"
+import log "github.com/sirupsen/logrus"
 
 // Interval represents a time range of one day with
 // the given start and end configurations.

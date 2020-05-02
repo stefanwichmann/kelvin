@@ -21,7 +21,7 @@
 // SOFTWARE.
 package main
 
-import log "github.com/Sirupsen/logrus"
+import log "github.com/sirupsen/logrus"
 import "runtime"
 import "path/filepath"
 import "github.com/Masterminds/semver"

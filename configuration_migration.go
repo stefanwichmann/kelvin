@@ -23,7 +23,7 @@ package main
 
 import "time"
 import "fmt"
-import log "github.com/Sirupsen/logrus"
+import log "github.com/sirupsen/logrus"
 
 func (configuration *Configuration) migrateToLatestVersion() {
 	log.Debugf("⚙ Migrating configuration to latest version...")

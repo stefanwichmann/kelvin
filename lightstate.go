@@ -21,7 +21,7 @@
 // SOFTWARE.
 package main
 
-import log "github.com/Sirupsen/logrus"
+import log "github.com/sirupsen/logrus"
 
 // LightState represents a light configuration.
 // It can be read from or written to the physical lights.
