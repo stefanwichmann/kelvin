@@ -21,7 +21,7 @@
 // SOFTWARE.
 package main
 
-import log "github.com/Sirupsen/logrus"
+import log "github.com/sirupsen/logrus"
 import hue "github.com/stefanwichmann/go.hue"
 import "time"
 import "strings"

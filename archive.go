@@ -26,7 +26,7 @@ import (
 	"archive/zip"
 	"compress/gzip"
 	"errors"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"os"

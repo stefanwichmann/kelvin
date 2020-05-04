@@ -236,10 +236,13 @@ In order to decide if Kelvin suits your needs and works in your setup, it helps 
 3. ***The light is turned off:*** Kelvin will clear the last known state and do nothing.
 
 # Development & Participation
-If you want to tinker with Kelvin and it's inner workings, feel free to do so. To get started you can simple clone the main repository into your `GOPATH` by executing the following commands:
+If you want to tinker with Kelvin and it's inner workings, feel free to do so. Kelvin uses the Go Modules support built into Go 1.11. To get started you can simply clone the main repository outside of `GOPATH` by executing the following commands (feel free to change `src` to the directory of your choice):
 ```
-cd $GOPATH
-go get -v github.com/stefanwichmann/kelvin
+mkdir $HOME/src
+cd $HOME/src
+git clone https://github.com/stefanwichmann/kelvin.git
+cd kelvin
+go build
 ```
 Make sure you have set up your [go](https://www.golang.org) development environment by following the steps in the official [documentation](https://golang.org/doc/).
 
