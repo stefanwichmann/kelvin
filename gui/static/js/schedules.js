@@ -53,6 +53,7 @@ function readSchedule(target){
   schedule.name = $(target).find(".name").val().trim();
   console.log($(target).find(".lights").val())
   schedule.associatedDeviceIDs = parseIDs($(target).find(".lights").val().trim());
+  schedule.enableWhenLightsAppear = $(target).find(".appearBehavior").is(":checked");
   console.log(schedule);
   return schedule;
 }
@@ -85,6 +86,7 @@ function addSchedule(target) {
   var basic = $('<form class="form-horizontal">');
   basic.append('<div class="form-group"><label>Name:</label><input type="text" class="name form-control" placeholder="Livingroom" autocomplete="off"></div>');
   basic.append('<div class="form-group"><label>Lights:</label><input type="text" class="lights form-control" placeholder="1,2,3" autocomplete="off"></div>');
+  basic.append('<div class="form-group"><label class="form-check-label">Enable when lights appear?</label><input type="checkbox" class="appearBehavior form-check-input" autocomplete="off"></div>');
   collumn.append(basic)
 
   <!-- Schedule before sunrise -->
