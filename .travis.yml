@@ -7,6 +7,11 @@ go:
 services:
   - docker
 
+  env:
+    global:
+      - DOCKER_CLI_EXPERIMENTAL=enabled
+      - PLATFORMS=linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
+
 before_script:
   - go get
   - go vet ./...
@@ -33,6 +38,7 @@ deploy:
     tags: true
 
 after_deploy:
-  - docker build -t stefanwichmann/kelvin .
+  - docker buildx create --use
+  - docker buildx build --platform $PLATFORMS -t stefanwichmann/kelvin .
   - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
   - docker push stefanwichmann/kelvin
