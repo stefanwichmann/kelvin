@@ -34,6 +34,9 @@ var lightsSupportingDimming = []string{"Dimmable light", "Color temperature ligh
 var lightsSupportingColorTemperature = []string{"Color temperature light", "Extended color light"}
 var lightsSupportingXYColor = []string{"Color light", "Extended color light"}
 
+// These models say they support XY color, but it doesn't work correctly
+var modelsNotSupportingXYColor = []string{"GL-B-008Z"}
+
 // HueLight represents a physical hue light.
 type HueLight struct {
 	Name                     string
@@ -60,7 +63,7 @@ func (light *HueLight) initialize(attr hue.LightAttributes) {
 	light.Name = attr.Name
 	light.Dimmable = containsString(lightsSupportingDimming, attr.Type)
 	light.SupportsColorTemperature = containsString(lightsSupportingColorTemperature, attr.Type)
-	light.SupportsXYColor = containsString(lightsSupportingXYColor, attr.Type)
+	light.SupportsXYColor = containsString(lightsSupportingXYColor, attr.Type) && !containsString(modelsNotSupportingXYColor, attr.ModelId)
 
 	// set minimum color temperature depending on type
 	if attr.Type == "Color temperature light" {
