@@ -75,7 +75,7 @@ func main() {
 	for {
 		err = bridge.InitializeBridge(configuration)
 		if err != nil {
-			log.Errorf("Could not initialze bridge: %v - Retrying...", err)
+			log.Errorf("Could not initialize bridge: %v - Retrying...", err)
 			time.Sleep(10 * time.Second)
 		} else {
 			break
