@@ -30,8 +30,8 @@ import (
 	"os"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/ghodss/yaml"
+	log "github.com/sirupsen/logrus"
 )
 
 // Bridge respresents the hue bridge in your system.

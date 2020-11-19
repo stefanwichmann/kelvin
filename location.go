@@ -30,8 +30,8 @@ import (
 
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/btittelbach/astrotime"
+	log "github.com/sirupsen/logrus"
 )
 
 // Geolocation represents a position on earth for which we can
