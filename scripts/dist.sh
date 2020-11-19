@@ -45,6 +45,7 @@ buildTarget() {
   export GOARCH="$ARCH"
   export GOARM=5
   export CGO_ENABLED=0
+  export GOMIPS=softfloat
   go get
   go build -ldflags "-X main.applicationVersion=${GIT_TAG}" -v -o "$OUTPUT_BINARY"
 
@@ -81,6 +82,8 @@ else
 buildTarget linux amd64
 buildTarget linux 386
 buildTarget linux arm
+buildTarget linux arm64
+buildTarget linux mips
 buildTarget freebsd amd64
 buildTarget darwin amd64
 buildTarget windows amd64
