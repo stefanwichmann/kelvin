@@ -74,6 +74,15 @@ func equalsFloat(a []float32, b []float32, maxDiff float32) bool {
 		return false
 	}
 	for index := 0; index < len(a); index++ {
+	        if maxDiff == 0 {
+		        // Special case to prevent 'rounded' from becoming NaN
+			// below and therefore 'rounded > maxDiff' always being
+			// false.
+		        if a[index] != b[index] {
+			        return false
+			}
+			continue
+		}
 		rounded := float32(math.Round(math.Abs(float64(a[index]-b[index]))/float64(maxDiff))) * maxDiff
 		if rounded > maxDiff {
 			return false
