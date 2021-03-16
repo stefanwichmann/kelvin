@@ -48,6 +48,11 @@ func TestEqualsFloat(t *testing.T) {
 	}
 
 	// Should not be equal
+	equal = equalsFloat([]float32{0.5, 0.5}, []float32{-1, -1}, 0)
+	if equal {
+		t.Errorf("equalsFloat([]float32{0.5, 0.5}, []float32{-1, -1}, 0) = %t; want false", equal)
+	}
+
 	equal = equalsFloat([]float32{-1}, []float32{-1, -1}, 0)
 	if equal {
 		t.Errorf("equalsFloat([]float32{-1}, []float32{-1, -1}, 0) = %t; want false", equal)
