@@ -1,0 +1,53 @@
+# Kelvin release configuration
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - 
+    env:
+      - CGO_ENABLED=0
+
+    goos:
+      - linux
+      - windows
+      - darwin
+      - freebsd
+    
+    goarch:
+      - 386
+      - amd64
+      - arm
+      - arm64
+
+    goarm:
+      - 5
+
+    gomips:
+      - hardfloat
+      - softfloat
+
+archives:
+  - 
+    format_overrides:
+      - goos: windows
+        format: zip
+    
+    files:
+      - LICENSE
+      - README.md
+      - gui/*
+      - etc/*
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'

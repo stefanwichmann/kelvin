@@ -32,7 +32,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var applicationVersion = "development"
+var version = "development"
+var commit = "none"
+var date = "unknown"
+
 var flagDebug = flag.Bool("debug", false, "Enable debug logging")
 var flagLogfile = flag.String("log", "", "Redirect log output to specified file")
 var flagConfigurationFile = flag.String("configuration", absolutePath("config.json"), "Specify the filename of the configuration to load")
@@ -54,9 +57,12 @@ const lightTransistionTime = 400 * time.Millisecond
 func main() {
 	flag.Parse()
 	configureLogging()
-	log.Printf("🤖 Kelvin %v starting up... 🚀", applicationVersion)
+
+	log.Printf("🤖 Kelvin %s starting up... 🚀", version)
+	log.Debugf("🤖 Built at %s based on commit %s", date, commit)
 	log.Debugf("🤖 Current working directory: %v", workingDirectory())
-	go CheckForUpdate(applicationVersion, *flagForceUpdate)
+
+	go CheckForUpdate(version, *flagForceUpdate)
 	go validateSystemTime()
 	go handleSIGHUP()
 
