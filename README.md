@@ -177,7 +177,8 @@ There are a couple assumptions made:
 ## Setup
 ```shell
 # Fetch release
-wget https://github.com/stefanwichmann/kelvin/releases/download/v1.1.9/kelvin-linux-arm-v1.1.9.tar.gz -O /tmp/kelvin-arm.tar.gz
+KELVIN_VERSION=$(curl --silent  https://github.com/stefanwichmann/kelvin/releases/latest | grep -oP "v\d+\.\d+\.\d+")
+wget https://github.com/stefanwichmann/kelvin/releases/download/$KELVIN_VERSION/kelvin-linux-arm-$KELVIN_VERSION.tar.gz -O /tmp/kelvin-arm.tar.gz
 
 # Create user to run as
 sudo adduser --system --group --shell /bin/nologin --no-create-home --home /opt/kelvin kelvin
