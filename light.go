@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019 Stefan Wichmann
+// # Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -190,16 +190,16 @@ func (light *Light) updateSchedule(schedule Schedule) {
 	light.Schedule = schedule
 	light.Scheduled = true
 	log.Printf("💡 Light %s - Activating schedule for %v (Sunrise: %v, Sunset: %v)", light.Name, light.Schedule.endOfDay.Format("Jan 2 2006"), light.Schedule.sunrise.Time.Format("15:04"), light.Schedule.sunset.Time.Format("15:04"))
-	light.updateInterval()
+	light.updateInterval(time.Now())
 }
 
-func (light *Light) updateInterval() {
+func (light *Light) updateInterval(time time.Time) {
 	if !light.Scheduled {
 		log.Debugf("💡 Light %s - Light is not associated to any schedule. No interval to update...", light.Name)
 		return
 	}
 
-	newInterval, err := light.Schedule.currentInterval(time.Now())
+	newInterval, err := light.Schedule.currentInterval(time)
 	if err != nil {
 		log.Warningf("💡 Light %s - Could not determine interval for current schedule: %v", light.Name, err)
 		return

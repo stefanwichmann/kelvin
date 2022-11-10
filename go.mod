@@ -15,10 +15,13 @@ require (
 
 require (
 	github.com/felixge/httpsnoop v1.0.2 // indirect
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.18.1 // indirect
 	github.com/stefanwichmann/lanscan v0.0.0-20190324154315-2a77f896f93a // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
-	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
+	github.com/wcharczuk/go-chart/v2 v2.1.0 // indirect
+	golang.org/x/image v0.1.0 // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

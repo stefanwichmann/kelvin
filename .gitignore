@@ -28,9 +28,11 @@ dist
 kelvin
 config.json
 config.yaml
+schedule_*.png
 
 # macOS
 .DS_Store
 .vscode
 
 dist/
+

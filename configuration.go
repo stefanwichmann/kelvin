@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Stefan Wichmann
+// # Copyright (c) 2018 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -80,6 +80,7 @@ type Configuration struct {
 	Location          Location        `json:"location"`
 	WebInterface      WebInterface    `json:"webinterface"`
 	Schedules         []LightSchedule `json:"schedules"`
+	ScheduleCharts    ScheduleCharts  `json:"scheduleCharts"`
 }
 
 // TimeStamp represents a parsed and validated TimedColorTemperature.
@@ -87,6 +88,11 @@ type TimeStamp struct {
 	Time             time.Time
 	ColorTemperature int
 	Brightness       int
+}
+
+// ScheduleCharts represents the schedule charts generated on startup
+type ScheduleCharts struct {
+	Enabled bool `json:"enabled"`
 }
 
 var latestConfigurationVersion = 0
@@ -123,6 +129,9 @@ func (configuration *Configuration) initializeDefaults() {
 	webinterface.Enabled = false
 	webinterface.Port = 8080
 	configuration.WebInterface = webinterface
+
+	var scheduleCharts ScheduleCharts
+	scheduleCharts.Enabled = false
 }
 
 // InitializeConfiguration creates and returns an initialized
@@ -283,6 +292,7 @@ func (configuration *Configuration) lightScheduleForDay(light int, date time.Tim
 	}
 
 	schedule.enableWhenLightsAppear = lightSchedule.EnableWhenLightsAppear
+	schedule.name = lightSchedule.Name
 	return schedule, nil
 }
 

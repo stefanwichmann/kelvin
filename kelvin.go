@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019 Stefan Wichmann
+// # Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -121,6 +121,11 @@ func main() {
 	// Initialize scenes
 	updateScenes()
 
+	// Generate a chart for each configured schedule
+	if configuration.ScheduleCharts.Enabled {
+		createScheduleChart(lights)
+	}
+
 	// Start cyclic update for all lights and scenes
 	log.Debugf("🤖 Starting cyclic update...")
 	lightUpdateTimer := time.NewTimer(lightUpdateInterval)
@@ -142,7 +147,7 @@ func main() {
 			updated := false
 			for _, light := range lights {
 				light := light
-				light.updateInterval()
+				light.updateInterval(time.Now())
 				if light.updateTargetLightState() {
 					updated = true
 				}

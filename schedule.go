@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019 Stefan Wichmann
+// # Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@ import (
 // Kelvin will calculate all light states based on the intervals
 // between this timestamps.
 type Schedule struct {
+	name                   string
 	endOfDay               time.Time
 	beforeSunrise          []TimeStamp
 	sunrise                TimeStamp
