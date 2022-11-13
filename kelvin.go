@@ -43,6 +43,7 @@ var flagForceUpdate = flag.Bool("forceUpdate", false, "Update to new major versi
 var flagEnableWebInterface = flag.Bool("enableWebInterface", false, "Enable the web interface at startup")
 var flagDisableRateLimiting = flag.Bool("disableRateLimiting", false, "Disable the limiting of requests to the hue bridge")
 var flagDisableHTTPS = flag.Bool("disableHTTPS", false, "Disable HTTPS for the connection to the hue bridge")
+var flagListDevices = flag.Bool("list", false, "List all devices and exit")
 
 var configuration *Configuration
 var bridge = &HueBridge{}
@@ -106,6 +107,12 @@ func main() {
 		log.Warning(err)
 	}
 	printDevices(l)
+
+	// if list devices flag is set then simply exit after listing them
+	if *flagListDevices {
+		os.Exit(0)
+	}
+
 	for _, light := range l {
 		light := light
 
