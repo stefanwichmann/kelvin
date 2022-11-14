@@ -210,14 +210,14 @@ func (light *Light) updateInterval(time time.Time) {
 	}
 }
 
-func (light *Light) updateTargetLightState() bool {
+func (light *Light) updateTargetLightState(time time.Time) bool {
 	if !light.Scheduled {
 		log.Debugf("💡 Light %s - Light is not associated to any schedule. No target light state to update...", light.Name)
 		return false
 	}
 
 	// Calculate the target lightstate from the interval
-	newLightState := light.Interval.calculateLightStateInInterval(time.Now())
+	newLightState := light.Interval.calculateLightStateInInterval(time)
 
 	// Did the target light state change?
 	if newLightState.equals(light.TargetLightState) {
@@ -233,4 +233,29 @@ func (light *Light) updateTargetLightState() bool {
 
 	light.TargetLightState = newLightState
 	return true
+}
+
+func (light *Light) previewSchedule() {
+	yr, mth, dy := time.Now().Date()
+	var previewLightDate = time.Date(yr, mth, dy, 0, 0, 1, 1, time.Local)
+
+	for _, light := range lights {
+		if light.ID == *flagPreviewLight {
+			log.Printf("Previewing light %s...", light.Name)
+			previewLight := light
+			var origTemperature = previewLight.TargetLightState.ColorTemperature
+			var origBrightness = previewLight.TargetLightState.Brightness
+
+			for i := 0; i < 1440; i += 10 {
+				previewLight.updateInterval(previewLightDate)
+				previewLight.updateTargetLightState(previewLightDate)
+				previewLight.HueLight.setLightState(previewLight.TargetLightState.ColorTemperature, light.TargetLightState.Brightness, 100*time.Millisecond)
+				log.Printf(previewLightDate.Format(time.Kitchen))
+				previewLightDate = previewLightDate.Add(10 * time.Minute)
+			}
+			time.Sleep(5 * time.Second)
+			previewLight.HueLight.setLightState(origTemperature, origBrightness, 100*time.Millisecond)
+
+		}
+	}
 }

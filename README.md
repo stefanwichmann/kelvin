@@ -77,9 +77,10 @@ Got all these? Great, let's get started!
 
 # Command line options
 
-| Option  | Description                                                           |
-| ------- | --------------------------------------------------------------------- |
-| `-list` | Discover and list all devices and exit without controlling any lights |
+| Option                            | Description                                                                                                        |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `-list`                           | Discover and list all devices and exit without controlling any lights                                              |
+| `-preview={ID}` e.g. `-preview=3` | Preview a sped-up 24 hour schedule on the specified light (find the light ID using the table generated on startup) |
 
 # Docker
 

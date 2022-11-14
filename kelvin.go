@@ -44,6 +44,7 @@ var flagEnableWebInterface = flag.Bool("enableWebInterface", false, "Enable the 
 var flagDisableRateLimiting = flag.Bool("disableRateLimiting", false, "Disable the limiting of requests to the hue bridge")
 var flagDisableHTTPS = flag.Bool("disableHTTPS", false, "Disable HTTPS for the connection to the hue bridge")
 var flagListDevices = flag.Bool("list", false, "List all devices and exit")
+var flagPreviewLight = flag.Int("preview", 0, "Run a 10s preview of a full 24 hour schedule for the specified light")
 
 var configuration *Configuration
 var bridge = &HueBridge{}
@@ -133,6 +134,17 @@ func main() {
 		createScheduleChart(lights)
 	}
 
+	if *flagPreviewLight > 0 {
+		// preview a sped-up 24 hour schedule on the specified light
+		for _, light := range lights {
+			if light.ID == *flagPreviewLight {
+				light.previewSchedule()
+				break
+			}
+		}
+		os.Exit(0)
+	}
+
 	// Start cyclic update for all lights and scenes
 	log.Debugf("🤖 Starting cyclic update...")
 	lightUpdateTimer := time.NewTimer(lightUpdateInterval)
@@ -155,7 +167,7 @@ func main() {
 			for _, light := range lights {
 				light := light
 				light.updateInterval(time.Now())
-				if light.updateTargetLightState() {
+				if light.updateTargetLightState(time.Now()) {
 					updated = true
 				}
 			}
@@ -199,7 +211,7 @@ func updateScheduleForLight(light *Light) {
 		light.Scheduled = false
 	} else {
 		light.updateSchedule(schedule)
-		light.updateTargetLightState()
+		light.updateTargetLightState(time.Now())
 	}
 }
 
