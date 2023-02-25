@@ -19,6 +19,6 @@ require (
 	github.com/onsi/gomega v1.18.1 // indirect
 	github.com/stefanwichmann/lanscan v0.0.0-20190324154315-2a77f896f93a // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
-	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
