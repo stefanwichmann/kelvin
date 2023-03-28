@@ -4,32 +4,20 @@ before:
     - go mod tidy
 
 builds:
-  - 
-    env:
+  - env:
       - CGO_ENABLED=0
 
-    goos:
-      - linux
-      - windows
-      - darwin
-      - freebsd
-    
-    goarch:
-      - 386
-      - amd64
-      - arm
-      - arm64
-
-    goarm:
-      - 5
-
-    gomips:
-      - hardfloat
-      - softfloat
+    targets:
+      - linux_amd64
+      - linux_arm_5
+      - linux_arm_7
+      - linux_arm64
+      - windows_amd64
+      - darwin_amd64
+      - darwin_arm64
 
 archives:
-  - 
-    format_overrides:
+  - format_overrides:
       - goos: windows
         format: zip
     
@@ -38,6 +26,8 @@ archives:
       - README.md
       - gui/*
       - etc/*
+
+    rlcp: true
 
 checksum:
   name_template: 'checksums.txt'
@@ -51,3 +41,66 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+
+dockers:
+- image_templates: ["stefanwichmann/{{ .ProjectName }}:{{ .Version }}-amd64"]
+  goos: linux
+  goarch: amd64
+  dockerfile: Dockerfile
+  use: buildx
+  build_flag_templates:
+  - --platform=linux/amd64
+  - --label=org.opencontainers.image.title={{ .ProjectName }}
+  - --label=org.opencontainers.image.description={{ .ProjectName }}
+  - --label=org.opencontainers.image.url=https://github.com/stefanwichmann/{{ .ProjectName }}
+  - --label=org.opencontainers.image.source=https://github.com/stefanwichmann/{{ .ProjectName }}
+  - --label=org.opencontainers.image.version={{ .Version }}
+  - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+  - --label=org.opencontainers.image.revision={{ .FullCommit }}
+  - --label=org.opencontainers.image.licenses=MIT
+
+- image_templates: ["stefanwichmann/{{ .ProjectName }}:{{ .Version }}-armv7"]
+  goos: linux
+  goarch: arm
+  goarm: 7
+  dockerfile: Dockerfile
+  use: buildx
+  build_flag_templates:
+  - --platform=linux/arm/v7
+  - --label=org.opencontainers.image.title={{ .ProjectName }}
+  - --label=org.opencontainers.image.description={{ .ProjectName }}
+  - --label=org.opencontainers.image.url=https://github.com/stefanwichmann/{{ .ProjectName }}
+  - --label=org.opencontainers.image.source=https://github.com/stefanwichmann/{{ .ProjectName }}
+  - --label=org.opencontainers.image.version={{ .Version }}
+  - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+  - --label=org.opencontainers.image.revision={{ .FullCommit }}
+  - --label=org.opencontainers.image.licenses=MIT
+
+- image_templates: ["stefanwichmann/{{ .ProjectName }}:{{ .Version }}-arm64"]
+  goos: linux
+  goarch: arm64
+  dockerfile: Dockerfile
+  use: buildx
+  build_flag_templates:
+  - --platform=linux/arm64/v8
+  - --label=org.opencontainers.image.title={{ .ProjectName }}
+  - --label=org.opencontainers.image.description={{ .ProjectName }}
+  - --label=org.opencontainers.image.url=https://github.com/stefanwichmann/{{ .ProjectName }}
+  - --label=org.opencontainers.image.source=https://github.com/stefanwichmann/{{ .ProjectName }}
+  - --label=org.opencontainers.image.version={{ .Version }}
+  - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+  - --label=org.opencontainers.image.revision={{ .FullCommit }}
+  - --label=org.opencontainers.image.licenses=MIT
+
+docker_manifests:
+- name_template: stefanwichmann/{{ .ProjectName }}:{{ .Version }}
+  image_templates:
+  - stefanwichmann/{{ .ProjectName }}:{{ .Version }}-amd64
+  - stefanwichmann/{{ .ProjectName }}:{{ .Version }}-armv7
+  - stefanwichmann/{{ .ProjectName }}:{{ .Version }}-arm64
+
+- name_template: stefanwichmann/{{ .ProjectName }}:latest
+  image_templates:
+  - stefanwichmann/{{ .ProjectName }}:{{ .Version }}-amd64
+  - stefanwichmann/{{ .ProjectName }}:{{ .Version }}-armv7
+  - stefanwichmann/{{ .ProjectName }}:{{ .Version }}-arm64
