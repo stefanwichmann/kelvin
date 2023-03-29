@@ -9,7 +9,6 @@ builds:
 
     targets:
       - linux_amd64
-      - linux_arm_5
       - linux_arm_7
       - linux_arm64
       - windows_amd64
