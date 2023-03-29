@@ -1,7 +1,7 @@
 # ![Kelvin](https://user-images.githubusercontent.com/512174/37403613-b56e883a-278f-11e8-848c-5366515e920d.png)
 [![GitHub release](https://img.shields.io/github/release/stefanwichmann/kelvin.svg)](https://github.com/stefanwichmann/kelvin/releases)
 [![Github All Releases](https://img.shields.io/github/downloads/stefanwichmann/kelvin/total.svg)](https://github.com/stefanwichmann/kelvin/releases)
-[![Build Status](https://img.shields.io/github/workflow/status/stefanwichmann/kelvin/build)](https://github.com/stefanwichmann/kelvin/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/stefanwichmann/kelvin/build.yml?branch=master)](https://github.com/stefanwichmann/kelvin/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/stefanwichmann/kelvin)](https://goreportcard.com/report/github.com/stefanwichmann/kelvin)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/stefanwichmann/kelvin/blob/master/LICENSE)
 [![donate](https://img.shields.io/badge/donate-PayPal-yellow.svg)](https://paypal.me/stefanwichmann)
