@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Stefan Wichmann
+// # Copyright (c) 2018 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,9 +21,12 @@
 // SOFTWARE.
 package main
 
-import "time"
-import "fmt"
-import log "github.com/sirupsen/logrus"
+import (
+	"fmt"
+	"time"
+
+	log "github.com/sirupsen/logrus"
+)
 
 func (configuration *Configuration) migrateToLatestVersion() {
 	log.Debugf("⚙ Migrating configuration to latest version...")
@@ -83,10 +86,10 @@ func migrateTimestampFormat(timestamp string) (string, error) {
 
 	// Already new format? Return unchanged
 	layout = "15:04"
-	t, err = time.Parse(layout, timestamp)
+	_, err = time.Parse(layout, timestamp)
 	if err == nil {
 		return timestamp, nil
 	}
 
-	return "", fmt.Errorf("Invalid timestamp format: %s", timestamp)
+	return "", fmt.Errorf("invalid timestamp format: %s", timestamp)
 }

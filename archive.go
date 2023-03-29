@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Stefan Wichmann
+// # Copyright (c) 2018 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,13 @@ import (
 	"archive/zip"
 	"compress/gzip"
 	"errors"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func extractBinaryFromZipArchive(archiveFile string, binaryName string, destinationFolder string) (binaryFile string, err error) {
@@ -82,7 +83,7 @@ func extractBinaryFromZipArchive(archiveFile string, binaryName string, destinat
 		}
 	}
 
-	return "", errors.New("Binary not found in archive")
+	return "", errors.New("binary not found in archive")
 }
 
 func extractBinaryFromTarArchive(archiveFile string, binaryName string, destinationFolder string) (binaryFile string, err error) {
@@ -136,5 +137,5 @@ func extractBinaryFromTarArchive(archiveFile string, binaryName string, destinat
 		}
 	}
 
-	return "", errors.New("Binary not found in archive")
+	return "", errors.New("binary not found in archive")
 }

@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Stefan Wichmann
+// # Copyright (c) 2018 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -57,7 +57,7 @@ func downloadLatestReleaseInfo(url string) (releaseName string, assetURL string,
 	} else if releaseInfo["name"] != nil {
 		name = releaseInfo["name"].(string)
 	} else {
-		return "", "", errors.New("No releases available")
+		return "", "", errors.New("no releases available")
 	}
 
 	releaseAssets := releaseInfo["assets"].([]interface{})
@@ -70,7 +70,7 @@ func downloadLatestReleaseInfo(url string) (releaseName string, assetURL string,
 		}
 	}
 
-	return "", "", errors.New("No matching release found")
+	return "", "", errors.New("no matching release found")
 }
 
 func assetMatchesPlattform(asset map[string]interface{}) (bool, string) {
@@ -92,8 +92,8 @@ func assetMatchesPlattform(asset map[string]interface{}) (bool, string) {
 	// special case for arm64 vs arm, skip arm64 builds
 	if plattform == "arm" && strings.Contains(assetName, "arm64") {
 		return false, ""
-	} 
-	
+	}
+
 	// match file extension
 	if !(strings.Contains(assetName, "zip") || strings.Contains(assetName, "tar.gz")) {
 		return false, ""

@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019 Stefan Wichmann
+// # Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,15 +21,18 @@
 // SOFTWARE.
 package main
 
-import log "github.com/sirupsen/logrus"
-import "net/http"
-import "html/template"
-import "github.com/gorilla/mux"
-import "github.com/gorilla/handlers"
-import "encoding/json"
-import "fmt"
-import "strings"
-import "strconv"
+import (
+	"encoding/json"
+	"fmt"
+	"html/template"
+	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
+)
 
 func startInterface() {
 	if !configuration.WebInterface.Enabled {
@@ -104,10 +107,10 @@ func lightsToString(args ...interface{}) (string, error) {
 	if len(args) == 1 {
 		s, ok = args[0].([]int)
 	} else {
-		return "", fmt.Errorf("Input length != 1: %v", args)
+		return "", fmt.Errorf("input length != 1: %v", args)
 	}
 	if !ok {
-		return "", fmt.Errorf("Not a []int: %v", args)
+		return "", fmt.Errorf("not a []int: %v", args)
 	}
 	return strings.Trim(strings.Join(strings.Fields(fmt.Sprint(s)), ","), "[]"), nil
 }

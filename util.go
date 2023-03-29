@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019 Stefan Wichmann
+// # Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@ import (
 
 func containsString(slice []string, element string) bool {
 	for _, current := range slice {
-		if strings.ToLower(current) == strings.ToLower(element) {
+		if strings.EqualFold(current, element) {
 			return true
 		}
 	}
@@ -92,10 +92,7 @@ func equalsFloat(a []float32, b []float32, maxDiff float32) bool {
 }
 
 func equalsInt(a int, b int, maxDiff int) bool {
-	if abs(a-b) > maxDiff {
-		return false
-	}
-	return true
+	return abs(a-b) <= maxDiff
 }
 
 // Restart the running binary.

@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Stefan Wichmann
+// # Copyright (c) 2018 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -162,7 +162,7 @@ func InitializeConfiguration(configurationFile string, enableWebInterface bool) 
 // Write saves a configuration to disk.
 func (configuration *Configuration) Write() error {
 	if configuration.ConfigurationFile == "" {
-		return errors.New("No configuration filename configured")
+		return errors.New("no configuration filename configured")
 	}
 
 	if !configuration.HasChanged() {
@@ -196,7 +196,7 @@ func (configuration *Configuration) Write() error {
 // Read loads a configuration from disk.
 func (configuration *Configuration) Read() error {
 	if configuration.ConfigurationFile == "" {
-		return errors.New("No configuration filename configured")
+		return errors.New("no configuration filename configured")
 	}
 
 	raw, err := ioutil.ReadFile(configuration.ConfigurationFile)

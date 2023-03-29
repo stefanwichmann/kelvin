@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019 Stefan Wichmann
+// # Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -86,10 +86,7 @@ func (light *HueLight) supportsColorTemperature() bool {
 }
 
 func (light *HueLight) supportsBrightness() bool {
-	if light.Dimmable {
-		return true
-	}
-	return false
+	return light.Dimmable
 }
 
 func (light *HueLight) updateCurrentLightState(attr hue.LightAttributes) {
@@ -207,15 +204,9 @@ func (light *HueLight) hasColorTemperature(colorTemperature int) bool {
 	}
 
 	if light.SupportsXYColor && light.CurrentColorMode == "xy" {
-		if equalsFloat(colorTemperatureToXYColor(colorTemperature), light.CurrentColor, 0.001) {
-			return true
-		}
-		return false
+		return equalsFloat(colorTemperatureToXYColor(colorTemperature), light.CurrentColor, 0.001)
 	} else if light.SupportsColorTemperature && light.CurrentColorMode == "ct" {
-		if equalsInt(light.CurrentColorTemperature, mapColorTemperature(colorTemperature), 2) {
-			return true
-		}
-		return false
+		return equalsInt(light.CurrentColorTemperature, mapColorTemperature(colorTemperature), 2)
 	}
 
 	// Missmatch in color modes? Log warning for debug purposes and assume unchanged
@@ -246,7 +237,7 @@ func (light *HueLight) getCurrentColorTemperature() (int, error) {
 		return int(float64(1000000) / float64(light.CurrentColorTemperature)), nil
 	}
 
-	return 0, errors.New("Could not determine current color temperature")
+	return 0, errors.New("could not determine current color temperature")
 }
 
 func (light *HueLight) getCurrentBrightness() (int, error) {
@@ -258,7 +249,7 @@ func (light *HueLight) getCurrentBrightness() (int, error) {
 		return int((float64(light.CurrentBrightness) / float64(254)) * float64(100)), nil
 	}
 
-	return 0, errors.New("Could not determine current brightness")
+	return 0, errors.New("could not determine current brightness")
 }
 
 func mapColorTemperature(colorTemperature int) int {

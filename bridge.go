@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019 Stefan Wichmann
+// # Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -164,7 +164,7 @@ func (bridge *HueBridge) discover(ip string) error {
 
 func (bridge *HueBridge) register() error {
 	if bridge.BridgeIP == "" {
-		return errors.New("Registration at bridge not possible because no IP is configured. Start discovery first or enter manually")
+		return errors.New("registration at bridge not possible because no IP is configured. Start discovery first or enter manually")
 	}
 
 	bridge.bridge = *hue.NewBridge(bridge.BridgeIP, "")
@@ -191,11 +191,11 @@ func (bridge *HueBridge) register() error {
 
 func (bridge *HueBridge) connect() error {
 	if bridge.BridgeIP == "" {
-		return errors.New("No bridge IP configured")
+		return errors.New("no bridge IP configured")
 	}
 
 	if bridge.Username == "" {
-		return errors.New("No username on bridge configured")
+		return errors.New("no username on bridge configured")
 	}
 	bridge.bridge = *hue.NewBridge(bridge.BridgeIP, bridge.Username)
 
@@ -275,19 +275,19 @@ func (bridge *HueBridge) validateSofwareVersion() {
 
 func (bridge *HueBridge) validateBridge() error {
 	if bridge.BridgeIP == "" {
-		return errors.New("No bridge configured. Could not validate")
+		return errors.New("no bridge configured. Could not validate")
 	}
 	resp, err := http.Get("http://" + bridge.BridgeIP + "/description.xml")
 	if resp != nil {
 		defer resp.Body.Close()
 	}
 	if err != nil {
-		return fmt.Errorf("Could not read bridge description: %v", err)
+		return fmt.Errorf("could not read bridge description: %v", err)
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("Could not read bridge description: %v", err)
+		return fmt.Errorf("could not read bridge description: %v", err)
 	}
 	if strings.Contains(string(data), "<modelNumber>929000226503</modelNumber>") {
 		bridge.Version = 1
