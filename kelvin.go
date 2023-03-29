@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019 Stefan Wichmann
+// # Copyright (c) 2019 Stefan Wichmann
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -60,6 +61,7 @@ func main() {
 
 	log.Printf("🤖 Kelvin %s starting up... 🚀", version)
 	log.Debugf("🤖 Built at %s based on commit %s", date, commit)
+	log.Debugf("🤖 GOOS=%s, GOARCH=%s", runtime.GOOS, runtime.GOARCH)
 	log.Debugf("🤖 Current working directory: %v", workingDirectory())
 
 	go CheckForUpdate(version, *flagForceUpdate)
