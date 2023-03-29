@@ -14,6 +14,7 @@ builds:
       - windows_amd64
       - darwin_amd64
       - darwin_arm64
+      - freebsd_amd64
 
 archives:
   - format_overrides:
