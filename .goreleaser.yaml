@@ -58,6 +58,8 @@ dockers:
   - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
   - --label=org.opencontainers.image.revision={{ .FullCommit }}
   - --label=org.opencontainers.image.licenses=MIT
+  extra_files:
+    - gui
 
 - image_templates: ["stefanwichmann/{{ .ProjectName }}:{{ .Version }}-armv7"]
   goos: linux
@@ -75,6 +77,8 @@ dockers:
   - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
   - --label=org.opencontainers.image.revision={{ .FullCommit }}
   - --label=org.opencontainers.image.licenses=MIT
+  extra_files:
+    - gui
 
 - image_templates: ["stefanwichmann/{{ .ProjectName }}:{{ .Version }}-arm64"]
   goos: linux
@@ -91,6 +95,8 @@ dockers:
   - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
   - --label=org.opencontainers.image.revision={{ .FullCommit }}
   - --label=org.opencontainers.image.licenses=MIT
+  extra_files:
+    - gui
 
 docker_manifests:
 - name_template: stefanwichmann/{{ .ProjectName }}:{{ .Version }}
