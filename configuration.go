@@ -26,7 +26,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -183,7 +182,7 @@ func (configuration *Configuration) Write() error {
 		}
 	}
 
-	err = ioutil.WriteFile(configuration.ConfigurationFile, raw, 0644)
+	err = os.WriteFile(configuration.ConfigurationFile, raw, 0644)
 	if err != nil {
 		return err
 	}
@@ -199,7 +198,7 @@ func (configuration *Configuration) Read() error {
 		return errors.New("no configuration filename configured")
 	}
 
-	raw, err := ioutil.ReadFile(configuration.ConfigurationFile)
+	raw, err := os.ReadFile(configuration.ConfigurationFile)
 	if err != nil {
 		return err
 	}

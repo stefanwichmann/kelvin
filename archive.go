@@ -27,7 +27,6 @@ import (
 	"compress/gzip"
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -58,7 +57,7 @@ func extractBinaryFromZipArchive(archiveFile string, binaryName string, destinat
 				}
 
 				log.Debugf("Found candidate %s in directory %s\n", filename, dir)
-				out, err := ioutil.TempFile(destinationFolder, filepath.Base(binaryName))
+				out, err := os.CreateTemp(destinationFolder, filepath.Base(binaryName))
 				if err != nil {
 					return "", err
 				}
@@ -120,7 +119,7 @@ func extractBinaryFromTarArchive(archiveFile string, binaryName string, destinat
 			}
 
 			log.Debugf("Found candidate %s in directory %s\n", filename, dir)
-			out, err := ioutil.TempFile(destinationFolder, filepath.Base(binaryName))
+			out, err := os.CreateTemp(destinationFolder, filepath.Base(binaryName))
 			if err != nil {
 				return "", err
 			}

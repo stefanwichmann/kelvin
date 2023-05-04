@@ -25,7 +25,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"runtime"
@@ -39,7 +38,7 @@ func downloadLatestReleaseInfo(url string) (releaseName string, assetURL string,
 	}
 	defer resp.Body.Close()
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", "", err
 	}
@@ -104,7 +103,7 @@ func assetMatchesPlattform(asset map[string]interface{}) (bool, string) {
 
 func downloadReleaseArchive(url string) (archive string, err error) {
 	// Create the tempfile in default location
-	out, err := ioutil.TempFile("", "update")
+	out, err := os.CreateTemp("", "update")
 	if err != nil {
 		return "", err
 	}

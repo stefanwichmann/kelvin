@@ -24,7 +24,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sort"
 	"strconv"
@@ -285,7 +285,7 @@ func (bridge *HueBridge) validateBridge() error {
 		return fmt.Errorf("could not read bridge description: %v", err)
 	}
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("could not read bridge description: %v", err)
 	}
