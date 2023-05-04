@@ -1,6 +1,6 @@
 module github.com/stefanwichmann/kelvin
 
-go 1.17
+go 1.20
 
 require (
 	github.com/Masterminds/semver v1.5.0
@@ -18,6 +18,6 @@ require (
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.18.1 // indirect
 	github.com/stefanwichmann/lanscan v0.0.0-20190324154315-2a77f896f93a // indirect
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
