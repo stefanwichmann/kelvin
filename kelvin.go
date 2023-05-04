@@ -41,6 +41,7 @@ var flagDebug = flag.Bool("debug", false, "Enable debug logging")
 var flagLogfile = flag.String("log", "", "Redirect log output to specified file")
 var flagConfigurationFile = flag.String("configuration", absolutePath("config.json"), "Specify the filename of the configuration to load")
 var flagForceUpdate = flag.Bool("forceUpdate", false, "Update to new major version")
+var flagEnableUpdates = flag.Bool("enableUpdates", true, "Enable automatic updates")
 var flagEnableWebInterface = flag.Bool("enableWebInterface", false, "Enable the web interface at startup")
 var flagDisableRateLimiting = flag.Bool("disableRateLimiting", false, "Disable the limiting of requests to the hue bridge")
 var flagDisableHTTPS = flag.Bool("disableHTTPS", false, "Disable HTTPS for the connection to the hue bridge")
@@ -64,7 +65,10 @@ func main() {
 	log.Debugf("🤖 GOOS=%s, GOARCH=%s", runtime.GOOS, runtime.GOARCH)
 	log.Debugf("🤖 Current working directory: %v", workingDirectory())
 
-	go CheckForUpdate(version, *flagForceUpdate)
+	if *flagEnableUpdates {
+		go CheckForUpdate(version, *flagForceUpdate)
+	}
+
 	go validateSystemTime()
 	go handleSIGHUP()
 
