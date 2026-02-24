@@ -29,8 +29,6 @@ archives:
       - gui/*
       - etc/*
 
-    rlcp: true
-
 checksum:
   name_template: 'checksums.txt'
 
