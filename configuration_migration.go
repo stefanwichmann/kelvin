@@ -44,7 +44,7 @@ func (configuration *Configuration) migrateVersion0() {
 		for beforeTimestampIndex := range configuration.Schedules[scheduleIndex].BeforeSunrise {
 			t, err := migrateTimestampFormat(configuration.Schedules[scheduleIndex].BeforeSunrise[beforeTimestampIndex].Time)
 			if err != nil {
-				log.Warningf(err.Error())
+				log.Error(err)
 			} else {
 				configuration.Schedules[scheduleIndex].BeforeSunrise[beforeTimestampIndex].Time = t
 			}
@@ -52,7 +52,7 @@ func (configuration *Configuration) migrateVersion0() {
 		for afterTimestampIndex := range configuration.Schedules[scheduleIndex].AfterSunset {
 			t, err := migrateTimestampFormat(configuration.Schedules[scheduleIndex].AfterSunset[afterTimestampIndex].Time)
 			if err != nil {
-				log.Warningf(err.Error())
+				log.Error(err)
 			} else {
 				configuration.Schedules[scheduleIndex].AfterSunset[afterTimestampIndex].Time = t
 			}
