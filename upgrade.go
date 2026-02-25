@@ -21,13 +21,16 @@
 // SOFTWARE.
 package main
 
-import log "github.com/sirupsen/logrus"
-import "runtime"
-import "path/filepath"
-import "github.com/Masterminds/semver"
-import "time"
-import "fmt"
-import "os"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"time"
+
+	"github.com/Masterminds/semver"
+	log "github.com/sirupsen/logrus"
+)
 
 const upgradeURL = "https://api.github.com/repos/stefanwichmann/kelvin/releases/latest"
 const updateCheckInterval = 12 * time.Hour
@@ -144,7 +147,7 @@ func replaceBinary(binaryFile, tempFile string) error {
 	if err != nil {
 		return err
 	}
-	if os.Rename(tempFile, binaryFile); err != nil {
+	if err = os.Rename(tempFile, binaryFile); err != nil {
 		os.Rename(old, binaryFile)
 		return err
 	}
