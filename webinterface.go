@@ -200,7 +200,7 @@ func activateLightHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if !t.isValid() {
 		log.Warningf("Received invalid light state from %s: %+v", r.RemoteAddr, t)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Received invalid light state", http.StatusBadRequest)
 		return
 	}
 
