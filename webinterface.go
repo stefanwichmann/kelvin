@@ -41,7 +41,7 @@ func startInterface() {
 
 	r := mux.NewRouter()
 	// html endpoints
-	r.HandleFunc("/", dashboardHandler).Methods("GET")
+	r.HandleFunc("/", dashboardHandler).Methods("HEAD", "GET")
 	r.HandleFunc("/schedules.html", schedulesHandler).Methods("GET")
 	r.HandleFunc("/configuration.html", configurationHandler).Methods("GET")
 
@@ -52,6 +52,7 @@ func startInterface() {
 	r.HandleFunc("/lights", lightsHandler).Methods("GET")
 	r.HandleFunc("/lights/{id}/automatic", automateLightHandler).Methods("PUT", "POST")
 	r.HandleFunc("/lights/{id}/activate", activateLightHandler).Methods("PUT", "POST")
+	r.HandleFunc("/health", healthHandler).Methods("HEAD", "GET")
 
 	// static files
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("gui/static"))))
@@ -99,6 +100,12 @@ func schedulesHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	log.Debugf("Health request with method %s from %s", r.Method, r.RemoteAddr)
+	// Assume Kelvin is healthy when is is running for now
+	w.WriteHeader(200)
 }
 
 func lightsToString(args ...interface{}) (string, error) {
