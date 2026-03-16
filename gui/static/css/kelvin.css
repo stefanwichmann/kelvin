@@ -1,3 +1,9 @@
 body {
   padding-top: 50px;
 }
+
+@media (max-width: 767px) {
+  .deleteschedule {
+    padding-top: 20px;
+  }
+}
