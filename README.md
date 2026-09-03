@@ -76,7 +76,7 @@ As an alternative to manual installation you can also pull the official [docker 
 - Start a container via ```docker run -d -e TZ=Europe/Berlin -p 8080:8080 stefanwichmann/kelvin``` (replace Europe/Berlin with your local [timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones))
 - ```docker ps``` should now report your running container
 - Run ```docker logs {CONTAINER_ID}``` to see the kelvin output (You can get the valid ID from ```docker ps```)
-- To adjust the configuration you should use the web interface running at ```http://{DOCKER_HOST_IP}:8080/```.
+- To adjust the configuration you should use the web interface running at ```http://{DOCKER_HOST_IP}:8080/```. The interface asks for a password (any username). Kelvin generates it on first start; find it in the startup log (```docker logs {CONTAINER_ID}```) or in the ```password``` field of ```config.json```.
 - If you want to keep your configuration over the lifetime of your container, you can map the folder ```/etc/opt/kelvin/``` to your host filesystem. If you alter the configuration you have to restart Kelvin through the web interface or by running ```docker restart {CONTAINER_ID}```.
 
 # Configuration

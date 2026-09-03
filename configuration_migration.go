@@ -33,7 +33,28 @@ func (configuration *Configuration) migrateToLatestVersion() {
 	if configuration.Version == 0 {
 		configuration.migrateVersion0()
 	}
+	if configuration.Version == 1 {
+		configuration.migrateVersion1()
+	}
 	log.Debugf("⚙ Migration of configuration complete")
+}
+
+// migrateVersion1 introduces the web interface listen address. A
+// configuration with the interface enabled keeps listening on all
+// interfaces, so an unattended fleet update never locks users out; a
+// configuration that never enabled it gets the loopback default like a
+// fresh install (issue #128).
+func (configuration *Configuration) migrateVersion1() {
+	log.Debugf("⚙ Migrating configuration version 1 to version 2...")
+	if configuration.WebInterface.ListenAddress == "" {
+		if configuration.WebInterface.Enabled {
+			configuration.WebInterface.ListenAddress = "0.0.0.0"
+		} else {
+			configuration.WebInterface.ListenAddress = "127.0.0.1"
+		}
+	}
+	configuration.Version = 2
+	log.Debugf("⚙ Migration to version 2 complete")
 }
 
 func (configuration *Configuration) migrateVersion0() {

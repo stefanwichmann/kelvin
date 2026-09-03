@@ -43,6 +43,7 @@ var flagConfigurationFile = flag.String("configuration", absolutePath("config.js
 var flagForceUpdate = flag.Bool("forceUpdate", false, "Update to new major version")
 var flagEnableUpdates = flag.Bool("enableUpdates", true, "Enable automatic updates")
 var flagEnableWebInterface = flag.Bool("enableWebInterface", false, "Enable the web interface at startup")
+var flagListenAddress = flag.String("listenAddress", "", "Address the web interface binds to for this run (overrides the configuration)")
 var flagDisableRateLimiting = flag.Bool("disableRateLimiting", false, "Disable the limiting of requests to the hue bridge")
 var flagDisableHTTPS = flag.Bool("disableHTTPS", false, "Disable HTTPS for the connection to the hue bridge")
 
@@ -78,8 +79,10 @@ func main() {
 		log.Fatal(err)
 	}
 	configuration = &conf
+	listenAddressOverride = *flagListenAddress
 
 	// Start web interface
+	ensureWebInterfacePassword()
 	go startInterface()
 
 	// Find Hue bridge

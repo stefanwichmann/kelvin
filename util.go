@@ -22,6 +22,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"math"
 	"os"
@@ -30,6 +32,15 @@ import (
 	"strings"
 	"time"
 )
+
+// generatePassword returns a random secret for web interface authentication.
+func generatePassword() (string, error) {
+	raw := make([]byte, 18)
+	if _, err := rand.Read(raw); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(raw), nil
+}
 
 func containsString(slice []string, element string) bool {
 	for _, current := range slice {

@@ -22,10 +22,13 @@
 package main
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -33,6 +36,111 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
+
+// maskedValue replaces secrets in rendered pages. The update handler
+// treats a submitted masked value as "unchanged".
+const maskedValue = "********"
+
+// listenAddressOverride rebinds the interface for this run only. It is a
+// separate variable, never written into the configuration, so the flag
+// stays ephemeral (issue #128 review).
+var listenAddressOverride string
+
+// effectiveListenAddress resolves the address the interface binds to and
+// accepts as a host name: the run-time override, the configured address,
+// or loopback.
+func effectiveListenAddress() string {
+	if listenAddressOverride != "" {
+		return listenAddressOverride
+	}
+	if configuration.WebInterface.ListenAddress != "" {
+		return configuration.WebInterface.ListenAddress
+	}
+	return "127.0.0.1"
+}
+
+// ensureWebInterfacePassword generates and stores the password before the
+// interface starts. It runs synchronously in main so its configuration
+// write never races the update loop's writes (issue #128 review). On any
+// failure the password stays empty and the interface denies all requests.
+func ensureWebInterfacePassword() {
+	if !configuration.WebInterface.Enabled || configuration.WebInterface.Password != "" {
+		return
+	}
+	password, err := generatePassword()
+	if err != nil {
+		log.Warningf("Could not generate web interface password: %v. The interface will deny all requests.", err)
+		return
+	}
+	configuration.WebInterface.Password = password
+	if err := configuration.Write(); err != nil {
+		log.Warningf("Could not store web interface password: %v. The interface will deny all requests.", err)
+		configuration.WebInterface.Password = ""
+		return
+	}
+	log.Printf("Web interface password generated: %s (any username; stored in %s)", password, configuration.ConfigurationFile)
+}
+
+// protect wraps every route in HTTP basic auth plus a Host and Origin
+// check. The Host check rejects DNS names (except localhost and the
+// configured listen address), which defeats DNS rebinding; the Origin
+// check rejects cross-site browser requests, which defeats CSRF — the
+// browser attaches cached basic auth credentials on its own, so auth
+// alone does not stop either attack. The health endpoint stays open for
+// container probes.
+func protect(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/health" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if !hostAllowed(r.Host) {
+			log.Warningf("Rejected request with host header %q from %s. Access the interface by IP address or a .local name.", r.Host, r.RemoteAddr)
+			http.Error(w, "unknown host", http.StatusForbidden)
+			return
+		}
+		if origin := r.Header.Get("Origin"); origin != "" && !originAllowed(origin, r.Host) {
+			log.Warningf("Rejected cross-origin request from %s (origin %q)", r.RemoteAddr, origin)
+			http.Error(w, "cross-origin request rejected", http.StatusForbidden)
+			return
+		}
+		// An empty configured password denies everything: the interface
+		// must never fall open because a config edit removed the secret.
+		_, password, ok := r.BasicAuth()
+		if configuration.WebInterface.Password == "" || !ok ||
+			subtle.ConstantTimeCompare([]byte(password), []byte(configuration.WebInterface.Password)) != 1 {
+			w.Header().Set("WWW-Authenticate", `Basic realm="kelvin"`)
+			http.Error(w, "authentication required", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func hostAllowed(hostport string) bool {
+	host := hostport
+	if h, _, err := net.SplitHostPort(hostport); err == nil {
+		host = h
+	}
+	host = strings.TrimSuffix(host, ".")
+	if strings.EqualFold(host, "localhost") || net.ParseIP(strings.Trim(host, "[]")) != nil {
+		return true
+	}
+	// mDNS names resolve only on the local network; public DNS cannot
+	// rebind them, so they are safe to serve.
+	if strings.HasSuffix(strings.ToLower(host), ".local") {
+		return true
+	}
+	return strings.EqualFold(host, effectiveListenAddress())
+}
+
+func originAllowed(origin, requestHost string) bool {
+	parsed, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	return strings.EqualFold(parsed.Host, requestHost)
+}
 
 func startInterface() {
 	if !configuration.WebInterface.Enabled {
@@ -57,10 +165,9 @@ func startInterface() {
 	// static files
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("gui/static"))))
 
-	http.Handle("/", handlers.CompressHandler(r))
-	port := configuration.WebInterface.Port
-	log.Printf("Webinterface started on port %d", port)
-	log.Warning(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+	addr := net.JoinHostPort(effectiveListenAddress(), strconv.Itoa(configuration.WebInterface.Port))
+	log.Printf("Webinterface started on %s", addr)
+	log.Warning(http.ListenAndServe(addr, protect(handlers.CompressHandler(r))))
 }
 
 func dashboardHandler(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +192,14 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request) {
 func configurationHandler(w http.ResponseWriter, r *http.Request) {
 	log.Debugf("Serving configuration page to %s", r.RemoteAddr)
 	configurationTemplate := template.Must(template.New("configuration.html").ParseGlob("gui/template/configuration.html"))
-	err := configurationTemplate.Execute(w, configuration)
+	// Render a copy with masked secrets: the bridge username is a bearer
+	// credential for the whole Hue system (issue #128).
+	view := *configuration
+	if view.Bridge.Username != "" {
+		view.Bridge.Username = maskedValue
+	}
+	view.WebInterface.Password = maskedValue
+	err := configurationTemplate.Execute(w, view)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -159,12 +273,24 @@ func updateConfigurationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	log.Debugf("Received configuration update from %s: %+v", r.RemoteAddr, t)
+	log.Debugf("Received configuration update from %s", r.RemoteAddr)
+	// The form posts secrets masked or omitted; keep the stored values then.
+	if t.Bridge.Username == "" || t.Bridge.Username == maskedValue {
+		t.Bridge.Username = configuration.Bridge.Username
+	}
+	if t.WebInterface.ListenAddress == "" {
+		t.WebInterface.ListenAddress = configuration.WebInterface.ListenAddress
+	}
+	if t.WebInterface.Password == "" || t.WebInterface.Password == maskedValue {
+		t.WebInterface.Password = configuration.WebInterface.Password
+	}
 	configuration.Bridge = t.Bridge
 	configuration.Location = t.Location
 	configuration.WebInterface = t.WebInterface
-	configuration.Write()
-	log.Debugf("Updated configuration to: %+v", configuration)
+	if err := configuration.Write(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.Write([]byte("success"))
 }
 
@@ -178,9 +304,11 @@ func automateLightHandler(w http.ResponseWriter, r *http.Request) {
 		if l.ID == lightID {
 			log.Printf("💡 Light %s - Enabling automatic mode as requested by %s", l.Name, r.RemoteAddr)
 			l.Tracking = false
+			w.Write([]byte("success"))
+			return
 		}
 	}
-	w.Write([]byte("success"))
+	http.Error(w, "unknown light", http.StatusNotFound)
 }
 
 func activateLightHandler(w http.ResponseWriter, r *http.Request) {
@@ -208,10 +336,15 @@ func activateLightHandler(w http.ResponseWriter, r *http.Request) {
 		if l.ID == lightID {
 			log.Printf("💡 Light %s - Activating light state %+v as requested by %s", l.Name, t, r.RemoteAddr)
 			l.Automatic = false
-			l.HueLight.setLightState(t.ColorTemperature, t.Brightness, 0)
+			if err := l.HueLight.setLightState(t.ColorTemperature, t.Brightness, 0); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Write([]byte("success"))
+			return
 		}
 	}
-	w.Write([]byte("success"))
+	http.Error(w, "unknown light", http.StatusNotFound)
 }
 
 func lightsHandler(w http.ResponseWriter, r *http.Request) {

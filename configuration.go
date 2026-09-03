@@ -45,10 +45,15 @@ type Location struct {
 	Longitude float64 `json:"longitude"`
 }
 
-// WebInterface respresents the webinterface of Kelvin.
+// WebInterface represents the webinterface of Kelvin.
+// ListenAddress is the address the interface binds to; an empty value
+// binds to loopback only. Password protects every route via HTTP basic
+// auth; it is generated on first start when empty.
 type WebInterface struct {
-	Enabled bool `json:"enabled"`
-	Port    int  `json:"port"`
+	Enabled       bool   `json:"enabled"`
+	Port          int    `json:"port"`
+	ListenAddress string `json:"listenAddress"`
+	Password      string `json:"password"`
 }
 
 // LightSchedule represents the schedule for any given day for the associated lights.
@@ -92,7 +97,7 @@ type TimeStamp struct {
 // migration in configuration_migration.go. A fresh configuration is stamped
 // with this version, so no migration ever runs on it; a lower value makes
 // migrations override user edits on first read (issue #130).
-var latestConfigurationVersion = 1
+var latestConfigurationVersion = 2
 
 func (configuration *Configuration) initializeDefaults() {
 	configuration.Version = latestConfigurationVersion
@@ -126,6 +131,9 @@ func (configuration *Configuration) initializeDefaults() {
 	var webinterface WebInterface
 	webinterface.Enabled = false
 	webinterface.Port = 8080
+	// Fresh installs expose the interface on loopback only; users opt
+	// into other interfaces explicitly (issue #128).
+	webinterface.ListenAddress = "127.0.0.1"
 	configuration.WebInterface = webinterface
 }
 
@@ -187,8 +195,18 @@ func (configuration *Configuration) Write() error {
 		}
 	}
 
-	err = os.WriteFile(configuration.ConfigurationFile, raw, 0644)
-	if err != nil {
+	// Write via temp file and rename: the file holds credentials (0600,
+	// enforced on pre-existing files too), and a torn write would brick
+	// the next startup on unparsable JSON (issue #128 review).
+	temp := configuration.ConfigurationFile + ".tmp"
+	if err := os.WriteFile(temp, raw, 0600); err != nil {
+		return err
+	}
+	if err := os.Rename(temp, configuration.ConfigurationFile); err != nil {
+		os.Remove(temp)
+		return err
+	}
+	if err := os.Chmod(configuration.ConfigurationFile, 0600); err != nil {
 		return err
 	}
 
@@ -228,7 +246,14 @@ func (configuration *Configuration) Read() error {
 			log.Warningf("⚙ Could not create backup: %v", err)
 		} else {
 			log.Printf("⚙ Configuration backup created.")
+			// Keep the web interface settings: resetting them here would
+			// wipe the password and rebind a remote user to loopback
+			// (issue #128 review).
+			webinterface := configuration.WebInterface
 			configuration.initializeDefaults()
+			if webinterface.Port != 0 {
+				configuration.WebInterface = webinterface
+			}
 			log.Printf("⚙ Default schedule created.")
 			configuration.Write()
 		}
