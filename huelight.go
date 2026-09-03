@@ -53,6 +53,9 @@ type HueLight struct {
 	Reachable                bool
 	On                       bool
 	MinimumColorTemperature  int
+	Gamut                    [][]float32
+	MinimumMirek             int
+	MaximumMirek             int
 }
 
 func (light *HueLight) initialize(attr hue.LightAttributes) {
@@ -71,6 +74,26 @@ func (light *HueLight) initialize(attr hue.LightAttributes) {
 		light.MinimumColorTemperature = 2000
 	} else {
 		light.MinimumColorTemperature = 0
+	}
+
+	// A light's reported capabilities pin the exact values the bridge
+	// clamps to, so targets can be computed as the bridge will report
+	// them back (issue #129).
+	control := attr.Capabilities.Control
+	if len(control.ColorGamut) == 3 {
+		light.Gamut = control.ColorGamut
+	}
+	if control.ColorTemperature.Min > 0 {
+		light.MinimumMirek = control.ColorTemperature.Min
+	}
+	if control.ColorTemperature.Max > 0 {
+		light.MaximumMirek = control.ColorTemperature.Max
+		if !light.SupportsXYColor {
+			// The warmest kelvin value this light reaches; xy-capable
+			// lights keep the lower bound because warmer targets are
+			// reachable through the gamut-clamped xy path.
+			light.MinimumColorTemperature = (1000000 + control.ColorTemperature.Max - 1) / control.ColorTemperature.Max
+		}
 	}
 
 	log.Debugf("💡 Light %s - Initialization complete. Identified as %s (ModelID: %s, Version: %s)", light.Name, attr.Type, attr.ModelId, attr.SoftwareVersion)
@@ -125,9 +148,9 @@ func (light *HueLight) setLightState(colorTemperature int, brightness int, trans
 	light.SetColorTemperature = colorTemperature
 	light.SetBrightness = brightness
 
-	// map parameters to target values
-	light.TargetColorTemperature = mapColorTemperature(colorTemperature)
-	light.TargetColor = colorTemperatureToXYColor(colorTemperature)
+	// Map parameters to the values the bridge will apply and report back.
+	light.TargetColorTemperature = light.targetMirek(colorTemperature)
+	light.TargetColor = light.targetColor(colorTemperature)
 	light.TargetBrightness = mapBrightness(brightness)
 
 	// Send new state to light bulb
@@ -204,9 +227,9 @@ func (light *HueLight) hasColorTemperature(colorTemperature int) bool {
 	}
 
 	if light.SupportsXYColor && light.CurrentColorMode == "xy" {
-		return equalsFloat(colorTemperatureToXYColor(colorTemperature), light.CurrentColor, 0.001)
+		return equalsFloat(light.targetColor(colorTemperature), light.CurrentColor, 0.001)
 	} else if light.SupportsColorTemperature && light.CurrentColorMode == "ct" {
-		return equalsInt(light.CurrentColorTemperature, mapColorTemperature(colorTemperature), 2)
+		return equalsInt(light.CurrentColorTemperature, light.targetMirek(colorTemperature), 2)
 	}
 
 	// Missmatch in color modes? Log warning for debug purposes and assume unchanged
@@ -250,6 +273,36 @@ func (light *HueLight) getCurrentBrightness() (int, error) {
 	}
 
 	return 0, errors.New("could not determine current brightness")
+}
+
+// targetColor maps a kelvin value to the xy color the bridge will apply:
+// converted, then clamped into the light's reported gamut.
+func (light *HueLight) targetColor(colorTemperature int) []float32 {
+	return clampToGamut(colorTemperatureToXYColor(colorTemperature), light.Gamut)
+}
+
+// targetMirek maps a kelvin value to the mirek value the bridge will
+// apply: bounded by the Hue-wide range of 153 to 500 and tightened by the
+// light's reported capability range.
+func (light *HueLight) targetMirek(colorTemperature int) int {
+	mirek := mapColorTemperature(colorTemperature)
+	if mirek == -1 {
+		return -1
+	}
+	minimum, maximum := 153, 500
+	if light.MinimumMirek > 0 {
+		minimum = light.MinimumMirek
+	}
+	if light.MaximumMirek > 0 {
+		maximum = light.MaximumMirek
+	}
+	if mirek < minimum {
+		return minimum
+	}
+	if mirek > maximum {
+		return maximum
+	}
+	return mirek
 }
 
 func mapColorTemperature(colorTemperature int) int {

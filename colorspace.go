@@ -50,6 +50,64 @@ func colorTemperatureToXYColor(t int) []float32 {
 	return []float32{roundFloat(float32(x), 3), roundFloat(float32(y), 3)}
 }
 
+// clampToGamut projects an xy color into a light's color gamut: a point
+// outside the gamut triangle moves to the closest point on its edge, which
+// is what the Hue bridge does to out-of-gamut values before reporting the
+// light state back. Comparing state against unclamped targets misreads the
+// bridge's clamping as a manual user change (issue #129). The -1 sentinel
+// and an unknown gamut pass through unchanged.
+func clampToGamut(xy []float32, gamut [][]float32) []float32 {
+	if len(xy) != 2 || xy[0] < 0 || len(gamut) != 3 {
+		return xy
+	}
+	px, py := float64(xy[0]), float64(xy[1])
+	ax, ay := float64(gamut[0][0]), float64(gamut[0][1])
+	bx, by := float64(gamut[1][0]), float64(gamut[1][1])
+	cx, cy := float64(gamut[2][0]), float64(gamut[2][1])
+	if pointInTriangle(px, py, ax, ay, bx, by, cx, cy) {
+		return xy
+	}
+
+	x, y := closestPointOnSegment(px, py, ax, ay, bx, by)
+	best := squaredDistance(px, py, x, y)
+	if ex, ey := closestPointOnSegment(px, py, bx, by, cx, cy); squaredDistance(px, py, ex, ey) < best {
+		x, y, best = ex, ey, squaredDistance(px, py, ex, ey)
+	}
+	if ex, ey := closestPointOnSegment(px, py, cx, cy, ax, ay); squaredDistance(px, py, ex, ey) < best {
+		x, y = ex, ey
+	}
+	return []float32{roundFloat(float32(x), 3), roundFloat(float32(y), 3)}
+}
+
+func pointInTriangle(px, py, ax, ay, bx, by, cx, cy float64) bool {
+	d1 := crossSign(px, py, ax, ay, bx, by)
+	d2 := crossSign(px, py, bx, by, cx, cy)
+	d3 := crossSign(px, py, cx, cy, ax, ay)
+	hasNegative := d1 < 0 || d2 < 0 || d3 < 0
+	hasPositive := d1 > 0 || d2 > 0 || d3 > 0
+	return !(hasNegative && hasPositive)
+}
+
+func crossSign(px, py, ax, ay, bx, by float64) float64 {
+	return (px-bx)*(ay-by) - (ax-bx)*(py-by)
+}
+
+func closestPointOnSegment(px, py, ax, ay, bx, by float64) (float64, float64) {
+	dx, dy := bx-ax, by-ay
+	lengthSquared := dx*dx + dy*dy
+	if lengthSquared == 0 {
+		return ax, ay
+	}
+	t := ((px-ax)*dx + (py-ay)*dy) / lengthSquared
+	t = math.Max(0, math.Min(1, t))
+	return ax + t*dx, ay + t*dy
+}
+
+func squaredDistance(ax, ay, bx, by float64) float64 {
+	dx, dy := bx-ax, by-ay
+	return dx*dx + dy*dy
+}
+
 var lookupTable = map[int][]float64{
 	1000: {0.652756059, 0.344456906},
 	1001: {0.652614831, 0.344582115},
