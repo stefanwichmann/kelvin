@@ -31,6 +31,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // generatePassword returns a random secret for web interface authentication.
@@ -121,7 +123,12 @@ func Restart() {
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
 
-	cmd.Start()
+	// Exit only after the successor started: exiting on a failed start
+	// would silently end the daemon (issue #131).
+	if err := cmd.Start(); err != nil {
+		log.Warningf("Restart failed, keeping the current process running: %v", err)
+		return
+	}
 	os.Exit(0)
 }
 

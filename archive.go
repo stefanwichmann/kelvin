@@ -106,7 +106,9 @@ func extractBinaryFromTarArchive(archiveFile string, binaryName string, destinat
 			break
 		}
 		if err != nil {
-			log.Fatalln(err)
+			// A corrupt archive must fail the update attempt, never
+			// terminate the running daemon (issue #131).
+			return "", err
 		}
 
 		filename := filepath.Base(f.Name)

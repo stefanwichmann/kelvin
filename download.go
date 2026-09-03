@@ -24,6 +24,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -31,74 +32,72 @@ import (
 	"strings"
 )
 
+// releaseInfo mirrors the fields kelvin reads from the GitHub release API.
+// Typed decoding turns unexpected response shapes into errors instead of
+// panics (issue #131).
+type releaseInfo struct {
+	TagName string         `json:"tag_name"`
+	Name    string         `json:"name"`
+	Assets  []releaseAsset `json:"assets"`
+}
+
+// releaseAsset represents one downloadable file of a GitHub release.
+type releaseAsset struct {
+	Name               string `json:"name"`
+	ContentType        string `json:"content_type"`
+	BrowserDownloadURL string `json:"browser_download_url"`
+}
+
 func downloadLatestReleaseInfo(url string) (releaseName string, assetURL string, err error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", "", err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", "", fmt.Errorf("release info request failed: %s", resp.Status)
+	}
 
-	b, err := io.ReadAll(resp.Body)
-	if err != nil {
+	var release releaseInfo
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
 		return "", "", err
 	}
 
-	var data interface{}
-	err = json.Unmarshal(b, &data)
-	if err != nil {
-		return "", "", err
+	name := release.TagName
+	if name == "" {
+		name = release.Name
 	}
-
-	releaseInfo := data.(map[string]interface{})
-	var name string
-	if releaseInfo["tag_name"] != nil {
-		name = releaseInfo["tag_name"].(string)
-	} else if releaseInfo["name"] != nil {
-		name = releaseInfo["name"].(string)
-	} else {
+	if name == "" {
 		return "", "", errors.New("no releases available")
 	}
 
-	releaseAssets := releaseInfo["assets"].([]interface{})
-	for _, asset := range releaseAssets {
-		jsonAsset := asset.(map[string]interface{})
-
-		match, url := assetMatchesPlattform(jsonAsset)
-		if match {
-			return name, url, nil
+	for _, asset := range release.Assets {
+		if assetMatchesPlattform(asset) {
+			return name, asset.BrowserDownloadURL, nil
 		}
 	}
 
 	return "", "", errors.New("no matching release found")
 }
 
-func assetMatchesPlattform(asset map[string]interface{}) (bool, string) {
+func assetMatchesPlattform(asset releaseAsset) bool {
 	// match content type
-	contentType := asset["content_type"].(string)
-	if !(strings.Contains(contentType, "application/gzip") || strings.Contains(contentType, "application/zip")) {
-		return false, ""
+	if !(strings.Contains(asset.ContentType, "application/gzip") || strings.Contains(asset.ContentType, "application/zip")) {
+		return false
 	}
 
 	// match os and arch
-	os := runtime.GOOS
-	plattform := runtime.GOARCH
-	assetName := asset["name"].(string)
-
-	if !strings.Contains(assetName, os) || !strings.Contains(assetName, plattform) {
-		return false, ""
+	if !strings.Contains(asset.Name, runtime.GOOS) || !strings.Contains(asset.Name, runtime.GOARCH) {
+		return false
 	}
 
 	// special case for arm64 vs arm, skip arm64 builds
-	if plattform == "arm" && strings.Contains(assetName, "arm64") {
-		return false, ""
+	if runtime.GOARCH == "arm" && strings.Contains(asset.Name, "arm64") {
+		return false
 	}
 
 	// match file extension
-	if !(strings.Contains(assetName, "zip") || strings.Contains(assetName, "tar.gz")) {
-		return false, ""
-	}
-
-	return true, asset["browser_download_url"].(string)
+	return strings.Contains(asset.Name, "zip") || strings.Contains(asset.Name, "tar.gz")
 }
 
 func downloadReleaseArchive(url string) (archive string, err error) {
@@ -116,6 +115,10 @@ func downloadReleaseArchive(url string) (archive string, err error) {
 		return "", err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		os.Remove(out.Name())
+		return "", fmt.Errorf("archive download failed: %s", resp.Status)
+	}
 
 	// Writer the body to file
 	_, err = io.Copy(out, resp.Body)
