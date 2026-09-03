@@ -88,7 +88,11 @@ type TimeStamp struct {
 	Brightness       int
 }
 
-var latestConfigurationVersion = 0
+// latestConfigurationVersion must equal the output version of the newest
+// migration in configuration_migration.go. A fresh configuration is stamped
+// with this version, so no migration ever runs on it; a lower value makes
+// migrations override user edits on first read (issue #130).
+var latestConfigurationVersion = 1
 
 func (configuration *Configuration) initializeDefaults() {
 	configuration.Version = latestConfigurationVersion
@@ -111,6 +115,7 @@ func (configuration *Configuration) initializeDefaults() {
 	var defaultSchedule LightSchedule
 	defaultSchedule.Name = "default"
 	defaultSchedule.AssociatedDeviceIDs = []int{}
+	defaultSchedule.EnableWhenLightsAppear = true
 	defaultSchedule.DefaultColorTemperature = 2750
 	defaultSchedule.DefaultBrightness = 100
 	defaultSchedule.AfterSunset = []TimedColorTemperature{tvTime, bedTime}

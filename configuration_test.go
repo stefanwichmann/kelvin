@@ -1,8 +1,34 @@
 package main
 
 import (
+	"path/filepath"
 	"testing"
 )
+
+// TestFreshConfigurationKeepsUserEdits pins the migration invariant: a
+// freshly generated configuration carries the latest version, so reading
+// it back never runs a migration that overrides user edits (issue #130).
+func TestFreshConfigurationKeepsUserEdits(t *testing.T) {
+	var c Configuration
+	c.ConfigurationFile = filepath.Join(t.TempDir(), "config.json")
+	c.initializeDefaults()
+	c.Schedules[0].EnableWhenLightsAppear = false
+	if err := c.Write(); err != nil {
+		t.Fatalf("could not write configuration: %v", err)
+	}
+
+	var read Configuration
+	read.ConfigurationFile = c.ConfigurationFile
+	if err := read.Read(); err != nil {
+		t.Fatalf("could not read configuration: %v", err)
+	}
+	if read.Schedules[0].EnableWhenLightsAppear {
+		t.Fatalf("migration overrode enableWhenLightsAppear from false to true")
+	}
+	if read.Version != latestConfigurationVersion {
+		t.Fatalf("fresh configuration has version %d, want %d", read.Version, latestConfigurationVersion)
+	}
+}
 
 func TestReadOK(t *testing.T) {
 	correctfiles := []string{
