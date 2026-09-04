@@ -91,9 +91,10 @@ func TestProtectRejectsDNSHostNames(t *testing.T) {
 }
 
 // TestProtectAllowsSingleLabelHostNames pins the carve-out of issue #137:
-// a dotless hostname can only come from local resolution (router DNS,
-// hosts file, LLMNR) — public DNS cannot serve it, so rebinding cannot
-// reach it. Multi-label names stay rejected.
+// no dotless public name is attacker-registrable (TLD apexes belong to
+// registries), so rebinding cannot be driven onto a single-label host,
+// and basic auth backstops the residual hostile-search-domain case.
+// Multi-label names stay rejected.
 func TestProtectAllowsSingleLabelHostNames(t *testing.T) {
 	withTestConfiguration(t, Configuration{WebInterface: WebInterface{Password: "secret"}})
 	auth := func(r *http.Request) { r.SetBasicAuth("", "secret") }

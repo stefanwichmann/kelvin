@@ -131,9 +131,11 @@ func hostAllowed(hostport string) bool {
 	if strings.HasSuffix(strings.ToLower(host), ".local") {
 		return true
 	}
-	// A single-label name resolves only locally (router DNS, hosts
-	// file, LLMNR); rebinding needs an attacker-controlled public
-	// domain, which is always multi-label (issue #137).
+	// Dotless names can reach public DNS (bare TLD apexes, resolver
+	// search-domain expansion), but rebinding needs a name the attacker
+	// controls authoritatively and no dotless public name is registrable,
+	// so rebinding cannot be driven onto this branch. Basic auth
+	// backstops the residual hostile-search-domain case (issue #137).
 	if host != "" && !strings.Contains(host, ".") {
 		return true
 	}
