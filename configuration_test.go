@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -122,6 +124,80 @@ func TestReadError(t *testing.T) {
 		if err == nil {
 			t.Errorf("reading [%v] file should return an error", c.ConfigurationFile)
 		}
+	}
+}
+
+// TestWriteFallsBackToInPlaceWhenRenameFails pins the single-file bind
+// mount case: rename onto a file that is itself a mount point fails with
+// EBUSY, and Write must land the content in place instead of failing
+// (issue #135).
+func TestWriteFallsBackToInPlaceWhenRenameFails(t *testing.T) {
+	renameFile = func(oldpath, newpath string) error {
+		return errors.New("device or resource busy")
+	}
+	defer func() { renameFile = os.Rename }()
+
+	file := filepath.Join(t.TempDir(), "config.json")
+	if err := os.WriteFile(file, []byte(`{"version":1}`), 0600); err != nil {
+		t.Fatalf("could not write configuration: %v", err)
+	}
+
+	var c Configuration
+	c.ConfigurationFile = file
+	c.initializeDefaults()
+	if err := c.Write(); err != nil {
+		t.Fatalf("write must fall back to an in-place write, got: %v", err)
+	}
+
+	raw, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatalf("could not read configuration back: %v", err)
+	}
+	if !strings.Contains(string(raw), "\"schedules\"") {
+		t.Errorf("in-place fallback did not land the new content: %s", raw)
+	}
+	if _, err := os.Stat(file + ".tmp"); !os.IsNotExist(err) {
+		t.Errorf("temp file left behind after fallback")
+	}
+	info, err := os.Stat(file)
+	if err != nil {
+		t.Fatalf("could not stat configuration: %v", err)
+	}
+	if info.Mode().Perm() != 0600 {
+		t.Errorf("configuration mode after fallback is %v, want 0600", info.Mode().Perm())
+	}
+}
+
+// TestStartupToleratesUnpersistableConfiguration pins the fatal policy of
+// issue #135: when the migration write-back cannot land at all, startup
+// proceeds with the migrated configuration in memory. Only read failures
+// abort startup.
+func TestStartupToleratesUnpersistableConfiguration(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("file permissions do not bind root")
+	}
+	renameFile = func(oldpath, newpath string) error {
+		return errors.New("device or resource busy")
+	}
+	defer func() { renameFile = os.Rename }()
+
+	dir := t.TempDir()
+	file := filepath.Join(dir, "config.json")
+	v1 := `{"version":1,"webinterface":{"enabled":true,"port":8080},"schedules":[{"name":"default","associatedDeviceIDs":[1]}]}`
+	if err := os.WriteFile(file, []byte(v1), 0400); err != nil {
+		t.Fatalf("could not write configuration: %v", err)
+	}
+	if err := os.Chmod(dir, 0500); err != nil {
+		t.Fatalf("could not make directory read-only: %v", err)
+	}
+	t.Cleanup(func() { os.Chmod(dir, 0700) })
+
+	c, err := InitializeConfiguration(file, true)
+	if err != nil {
+		t.Fatalf("startup must tolerate a failed write-back, got: %v", err)
+	}
+	if c.Version != latestConfigurationVersion {
+		t.Errorf("configuration not migrated in memory: version %d, want %d", c.Version, latestConfigurationVersion)
 	}
 }
 

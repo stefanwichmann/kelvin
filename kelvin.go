@@ -106,7 +106,7 @@ func main() {
 	// Save configuration
 	err = configuration.Write()
 	if err != nil {
-		log.Fatal(err)
+		log.Warningf("⚙ Could not persist configuration: %v. Settings will not survive a restart.", err)
 	}
 
 	// Initialize lights

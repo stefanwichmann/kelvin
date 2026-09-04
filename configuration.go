@@ -153,23 +153,26 @@ func InitializeConfiguration(configurationFile string, enableWebInterface bool) 
 	} else {
 		// write default config to disk
 		configuration.initializeDefaults()
-		err := configuration.Write()
-		if err != nil {
-			return configuration, err
+		if err := configuration.Write(); err != nil {
+			log.Warningf("⚙ Could not persist configuration: %v. Settings will not survive a restart.", err)
+		} else {
+			log.Println("⚙ Default configuration generated")
 		}
-		log.Println("⚙ Default configuration generated")
 	}
 
 	// Overwrite interface configuration with startup parameter
 	if enableWebInterface {
 		configuration.WebInterface.Enabled = true
-		err := configuration.Write()
-		if err != nil {
-			return configuration, err
+		if err := configuration.Write(); err != nil {
+			log.Warningf("⚙ Could not persist configuration: %v. Settings will not survive a restart.", err)
 		}
 	}
 	return configuration, nil
 }
+
+// renameFile is swapped in tests to simulate filesystems where rename
+// cannot land, such as a single-file Docker bind mount (issue #135).
+var renameFile = os.Rename
 
 // Write saves a configuration to disk.
 func (configuration *Configuration) Write() error {
@@ -202,9 +205,15 @@ func (configuration *Configuration) Write() error {
 	if err := os.WriteFile(temp, raw, 0600); err != nil {
 		return err
 	}
-	if err := os.Rename(temp, configuration.ConfigurationFile); err != nil {
+	if err := renameFile(temp, configuration.ConfigurationFile); err != nil {
 		os.Remove(temp)
-		return err
+		// A configuration file that is itself a mount point — the
+		// single-file Docker bind mount — rejects rename with EBUSY.
+		// Fall back to the in-place write those deployments ran on
+		// before v1.3.10 (issue #135).
+		if err := os.WriteFile(configuration.ConfigurationFile, raw, 0600); err != nil {
+			return err
+		}
 	}
 	if err := os.Chmod(configuration.ConfigurationFile, 0600); err != nil {
 		return err
@@ -255,14 +264,18 @@ func (configuration *Configuration) Read() error {
 				configuration.WebInterface = webinterface
 			}
 			log.Printf("⚙ Default schedule created.")
-			configuration.Write()
+			if err := configuration.Write(); err != nil {
+				log.Warningf("⚙ Could not persist configuration: %v. Settings will not survive a restart.", err)
+			}
 		}
 	}
 	configuration.Hash = configuration.HashValue()
 	log.Debugf("⚙ Updated configuration hash.")
 
 	configuration.migrateToLatestVersion()
-	configuration.Write()
+	if err := configuration.Write(); err != nil {
+		log.Warningf("⚙ Could not persist configuration: %v. Settings will not survive a restart.", err)
+	}
 	return nil
 }
 
