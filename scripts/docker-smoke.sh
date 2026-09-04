@@ -54,6 +54,7 @@ EOF
 docker run -d --name "$CONTAINER" -p 127.0.0.1:0:8080 \
 	-v "$WORK/config.json":/etc/opt/kelvin/config.json "$IMAGE" >/dev/null
 PORT=$(docker port "$CONTAINER" 8080/tcp | head -1 | sed 's/.*://')
+[ -n "$PORT" ] || fail "no port mapping — container exited early?"
 
 echo "==> waiting for /health"
 up=""
@@ -64,13 +65,15 @@ for _ in $(seq 1 40); do
 	fi
 	sleep 0.5
 done
-[ -n "$up" ] || fail "/health did not answer within 20s"
+[ -n "$up" ] || fail "/health did not answer within the wait budget"
 
 echo "==> asserting startup and readback"
-if docker logs "$CONTAINER" 2>&1 | grep -qi "level=fatal"; then
-	fail "fatal during startup (#135)"
-fi
-grep -q '"version": 2' "$WORK/config.json" ||
+# grep in a substitution with || true: a -q match mid-stream would take
+# the pipeline down via SIGPIPE under pipefail exactly when a fatal
+# flood exists.
+fatals=$(docker logs "$CONTAINER" 2>&1 | grep -ci "level=fatal" || true)
+[ "$fatals" -eq 0 ] || fail "fatal during startup (#135)"
+grep -Eq '"version": 2(,|$)' "$WORK/config.json" ||
 	fail "config not migrated through the file bind mount (#135)"
 
 echo "==> asserting host check and authentication"
@@ -80,11 +83,18 @@ code=$(curl -s -o /dev/null -w '%{http_code}' -m 5 -u ":smoke" "http://127.0.0.1
 [ "$code" = "200" ] || fail "authenticated GUI request: got $code, want 200 (gui templates)"
 
 echo "==> asserting graceful shutdown"
+# The container must still be alive here, or docker stop is a no-op and
+# a crashed daemon would pass as a graceful shutdown.
+[ "$(docker inspect "$CONTAINER" --format '{{.State.Running}}')" = "true" ] ||
+	fail "container exited before the shutdown test"
 start=$(date +%s)
 docker stop -t 10 "$CONTAINER" >/dev/null
 duration=$(($(date +%s) - start))
 exitcode=$(docker inspect "$CONTAINER" --format '{{.State.ExitCode}}')
 [ "$duration" -le 5 ] || fail "docker stop took ${duration}s — SIGTERM not reaching kelvin (#138)"
-[ "$exitcode" != "137" ] || fail "exit code 137 — container was SIGKILLed (#138)"
+case "$exitcode" in
+0 | 143) ;;
+*) fail "exit code $exitcode — not a clean SIGTERM shutdown (#138)" ;;
+esac
 
 echo "SMOKE OK (port $PORT, stop ${duration}s, exit $exitcode)"
