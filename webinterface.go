@@ -131,6 +131,12 @@ func hostAllowed(hostport string) bool {
 	if strings.HasSuffix(strings.ToLower(host), ".local") {
 		return true
 	}
+	// A single-label name resolves only locally (router DNS, hosts
+	// file, LLMNR); rebinding needs an attacker-controlled public
+	// domain, which is always multi-label (issue #137).
+	if host != "" && !strings.Contains(host, ".") {
+		return true
+	}
 	return strings.EqualFold(host, effectiveListenAddress())
 }
 

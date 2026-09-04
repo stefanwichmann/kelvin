@@ -90,6 +90,24 @@ func TestProtectRejectsDNSHostNames(t *testing.T) {
 	}
 }
 
+// TestProtectAllowsSingleLabelHostNames pins the carve-out of issue #137:
+// a dotless hostname can only come from local resolution (router DNS,
+// hosts file, LLMNR) — public DNS cannot serve it, so rebinding cannot
+// reach it. Multi-label names stay rejected.
+func TestProtectAllowsSingleLabelHostNames(t *testing.T) {
+	withTestConfiguration(t, Configuration{WebInterface: WebInterface{Password: "secret"}})
+	auth := func(r *http.Request) { r.SetBasicAuth("", "secret") }
+
+	for _, host := range []string{"http://homeserver:8080/", "http://homeserver.:8080/", "http://nas/"} {
+		if code := protectedRequest(host, auth).Code; code != http.StatusOK {
+			t.Errorf("single-label host %s: got %d, want 200", host, code)
+		}
+	}
+	if code := protectedRequest("http://attacker.example:8080/", auth).Code; code != http.StatusForbidden {
+		t.Errorf("multi-label host must stay rejected: got %d, want 403", code)
+	}
+}
+
 // TestEnsureWebInterfacePassword pins the synchronous password setup: the
 // secret is generated, persisted with owner-only permissions, and never
 // regenerated once present (issue #128 review).
