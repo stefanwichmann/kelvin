@@ -13,6 +13,11 @@ Run all five before every commit; all must pass clean:
 - `go test ./...` — the suite runs offline; no test may need the bridge or the network
 - `go mod tidy` — must leave no diff
 
+Additionally, `scripts/docker-smoke.sh` (needs Docker) must pass for commits
+touching the Dockerfile, `.goreleaser.yaml`, the web interface, or
+configuration I/O — and always before tagging a release. CI runs it on every
+push.
+
 ## Conventions
 
 - Commit subjects follow conventional commits: `type(scope): imperative description`,

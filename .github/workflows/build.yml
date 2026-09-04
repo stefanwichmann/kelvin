@@ -24,3 +24,16 @@ jobs:
 
     - name: Test
       run: go test -v ./...
+
+  docker-smoke:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: 'stable' # Latest stable version
+
+    - name: Docker distribution smoke test
+      run: ./scripts/docker-smoke.sh
