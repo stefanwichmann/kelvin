@@ -27,6 +27,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/ghodss/yaml"
@@ -174,17 +175,30 @@ func InitializeConfiguration(configurationFile string, enableWebInterface bool) 
 // cannot land, such as a single-file Docker bind mount (issue #135).
 var renameFile = os.Rename
 
+// writeMutex serializes configuration writes: the web handlers and the
+// main loop call Write concurrently and share the temp path, so
+// unserialized writes can rename a truncated temp file over the
+// configuration (issue #140).
+var writeMutex sync.Mutex
+
 // Write saves a configuration to disk.
 func (configuration *Configuration) Write() error {
 	if configuration.ConfigurationFile == "" {
 		return errors.New("no configuration filename configured")
 	}
 
+	writeMutex.Lock()
+	defer writeMutex.Unlock()
+
 	if !configuration.HasChanged() {
 		log.Debugf("⚙ Configuration hasn't changed. Omitting write.")
 		return nil
 	}
 	log.Debugf("⚙ Configuration changed. Saving to %v", configuration.ConfigurationFile)
+	// The stored hash must describe the state being written: computed any
+	// later, a concurrent mutation would be credited as persisted and the
+	// next Write would silently skip it (issue #140).
+	hash := configuration.HashValue()
 	raw, err := json.MarshalIndent(configuration, "", "  ")
 	if err != nil {
 		return err
@@ -203,6 +217,7 @@ func (configuration *Configuration) Write() error {
 	// the next startup on unparsable JSON (issue #128 review).
 	temp := configuration.ConfigurationFile + ".tmp"
 	if err := os.WriteFile(temp, raw, 0600); err != nil {
+		os.Remove(temp)
 		return err
 	}
 	if err := renameFile(temp, configuration.ConfigurationFile); err != nil {
@@ -219,7 +234,7 @@ func (configuration *Configuration) Write() error {
 		return err
 	}
 
-	configuration.Hash = configuration.HashValue()
+	configuration.Hash = hash
 	log.Debugf("⚙ Updated configuration hash")
 	return nil
 }

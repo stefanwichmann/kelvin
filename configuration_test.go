@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -198,6 +199,59 @@ func TestStartupToleratesUnpersistableConfiguration(t *testing.T) {
 	}
 	if c.Version != latestConfigurationVersion {
 		t.Errorf("configuration not migrated in memory: version %d, want %d", c.Version, latestConfigurationVersion)
+	}
+}
+
+// TestWriteStoresHashOfWrittenState pins the lost-update fix of issue
+// #140: a mutation landing while Write persists an older state must
+// leave HasChanged() true, or the next Write silently skips it and the
+// change is lost on restart.
+func TestWriteStoresHashOfWrittenState(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "config.json")
+	var c Configuration
+	c.ConfigurationFile = file
+	c.initializeDefaults()
+
+	renameFile = func(oldpath, newpath string) error {
+		c.Schedules[0].DefaultBrightness = 42 // concurrent mutation mid-write
+		return os.Rename(oldpath, newpath)
+	}
+	defer func() { renameFile = os.Rename }()
+
+	if err := c.Write(); err != nil {
+		t.Fatalf("could not write configuration: %v", err)
+	}
+	if !c.HasChanged() {
+		t.Fatalf("mutation during write credited as persisted; the next write would skip it")
+	}
+}
+
+// TestConcurrentWritesKeepFileParsable pins the torn-write fix (#140):
+// writers share the temp path, so unserialized writes can rename a
+// truncated temp file over config.json. The file must parse after every
+// round of concurrent writes.
+func TestConcurrentWritesKeepFileParsable(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "config.json")
+	var a, b Configuration
+	a.ConfigurationFile = file
+	b.ConfigurationFile = file
+	a.initializeDefaults()
+	b.initializeDefaults()
+	// Size skew between the two writers widens the tear window.
+	b.Schedules[0].Name = strings.Repeat("b", 8192)
+
+	for i := 0; i < 50; i++ {
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go func() { defer wg.Done(); a.Hash = ""; _ = a.Write() }()
+		go func() { defer wg.Done(); b.Hash = ""; _ = b.Write() }()
+		wg.Wait()
+
+		var read Configuration
+		read.ConfigurationFile = file
+		if err := read.Read(); err != nil {
+			t.Fatalf("configuration torn by concurrent writes on round %d: %v", i, err)
+		}
 	}
 }
 
