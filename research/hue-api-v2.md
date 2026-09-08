@@ -232,6 +232,62 @@ Realistic options: openhue-go for typed REST plus a hand-rolled SSE reader
 fully hand-rolled v2 client. The wire format is small: kelvin uses only
 light, grouped_light, and scene-adjacent state.
 
+## Empirical: spike findings (issue #132)
+
+Measured 2026-09-08 against the maintainer's BSB002 with the spike client
+(branch `spike/clip-v2`, standard library plus hand-rolled SSE reader);
+kelvin's daemon was stopped during all writes. Everything in this section
+is empirical.
+
+**TLS.** Chain validation against the published Hue root CAs
+(`hue_bridge_cacert.pem`: the 2017 `root-bridge` CA plus `Hue Root CA 01`,
+2025) combined with a CN==bridge-id check connects successfully; a wrong
+expected CN is rejected at the handshake. The CN-check-only fallback
+(skip chain verification) also works. Both paths validated live.
+
+**Readback after out-of-range writes** — the gap below is resolved, and
+the answer is split by property:
+
+- `color.xy` is **echoed, not clamped**: PUT x=0.75/y=0.25 (far outside
+  gamut C) reads back as exactly 0.75/0.25, in both the event and a
+  subsequent GET, with `mirek_valid: false`. v1's documented
+  closest-color readback does NOT carry over to v2 xy. In-gamut values
+  are rounded to 4 decimals (0.31271 → 0.3127).
+- `color_temperature.mirek` is **clamped to the light's `mirek_schema`**,
+  exactly: 100→153 and 600→500 on a 153–500 light; 100→153 and 500→454
+  on a 153–454 light.
+- `dimming.brightness` above 100 is **rejected** with HTTP 400
+  (json-schema validation), not clamped. Brightness 0 is accepted and
+  reads back as 0.0, despite the schema's documented minimum. In-range
+  values are device-quantized (57.37→57.31, 10→9.88, 90→90.12 — 1/254
+  steps), so comparisons need ~±0.5 tolerance, not merely 2-decimal
+  rounding.
+
+**grouped_light writes.** A group PUT returns a bare 200 with no
+per-member errors. Members lacking the written capability are silently
+skipped (a CT-only light was untouched by a group `color.xy` write).
+Members that have the capability behave exactly as under per-light
+writes: xy echoed raw, mirek clamped per each member's own schema.
+
+**Coalescing.** The 1-second window is real: 5 brightness PUTs inside
+440 ms delivered only the first and last states as events; even 500 ms
+spacing collapses adjacent sends to the newer value. One 1-second event
+container groups every affected resource — the light plus each
+`grouped_light` containing it (room, zone, `bridge_home`) — under one
+monotonically increasing event id (`<seq>:0`).
+
+**Implications for manual-change detection** (campaign decision 6): for
+xy, compare against the *requested* value — the echo semantics make
+clamp prediction unnecessary; for mirek, clamp client-side to
+`mirek_schema` before comparing (exact); for brightness, clamp
+send-values into range client-side (the bridge rejects instead of
+clamping) and compare with tolerance for device quantization.
+
+Still pending from the spike: gamut-A xy echo confirmation, the
+200-mirek-floor clamp, a dimming-only member in a group write (those
+lamps were unpowered on measurement day), and the liveness/keepalive
+drills, reconnect + `Last-Event-ID` replay, and the hour-plus soak.
+
 ## Gaps and absences
 
 - The entire CLIP v2 reference, core concepts, migration guide, HTTPS
@@ -239,12 +295,12 @@ light, grouped_light, and scene-adjacent state.
   developers.meethue.com are login-gated. All claims sourced from them above
   rest on consistent secondary mirrors. The Wayback Machine is unreachable
   from this environment, so archived copies could not be checked.
-- No primary or secondary source states whether a v2 light resource reports
+- ~~No primary or secondary source states whether a v2 light resource reports
   the achievable (clamped) value or echoes the requested value after an
-  out-of-gamut `color.xy` or out-of-schema `mirek` write. This must be
-  verified empirically on the maintainer's bridge before porting kelvin's
-  manual-change detection (a one-off test: PUT an out-of-gamut xy, read back,
-  compare). Absence of documentation is the finding.
+  out-of-gamut `color.xy` or out-of-schema `mirek` write.~~ **Answered
+  empirically 2026-09-08** — see "Empirical: spike findings (issue #132)":
+  xy is echoed unclamped, mirek is clamped to the schema, out-of-range
+  brightness is rejected with 400.
 - No announced sunset date exists for local CLIP v1 — only "will eventually
   be removed" (primary). Empirically v1 still works, even over HTTP, on
   BSB002 firmware from July 2026.
