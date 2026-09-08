@@ -283,10 +283,36 @@ clamp prediction unnecessary; for mirek, clamp client-side to
 send-values into range client-side (the bridge rejects instead of
 clamping) and compare with tolerance for device quantization.
 
+**Liveness and reconnect drills** (measured 2026-09-08, pf-induced
+outages on the client host, two runs):
+
+- **TCP keepalive detects a silent connection death in ~55 s** (Go
+  `net.KeepAliveConfig`: idle 30 s, probe 10 s, count 3) — in both
+  drills the read failed with `operation timed out` before the spike's
+  90 s application watchdog ever fired. Keepalive is sufficient as the
+  primary liveness mechanism on the LAN; the aiohue-style
+  geofence_client-rename heartbeat worked (event provoked every 60 s)
+  but proved unnecessary and is dropped from the production design.
+- Reconnect attempts during the outage fail with dial timeouts and
+  linear backoff; the first attempt after connectivity returns
+  succeeds.
+- **`Last-Event-ID` replay works**: on reconnect the bridge delivered
+  the full event backlog of a ~4-minute gap — monotonic sequence ids
+  with creationtimes from inside the outage, including light changes
+  written by another client mid-gap. Confirmed in both drills. aiohue's
+  refetch-after-every-gap rule is over-cautious for short gaps;
+  production still needs the full-state GET as a fallback since the
+  replay buffer depth beyond a few minutes is unmeasured.
+- Client-side caveat: a `block return` (RST) rule produced the same
+  timeout signature as a silent drop — macOS pf does not inject RSTs
+  into the local stack — so a genuine bridge-side RST (bridge reboot)
+  was not separately measured; it can only be detected faster than the
+  ~55 s worst case.
+
 Still pending from the spike: gamut-A xy echo confirmation, the
 200-mirek-floor clamp, a dimming-only member in a group write (those
-lamps were unpowered on measurement day), and the liveness/keepalive
-drills, reconnect + `Last-Event-ID` replay, and the hour-plus soak.
+lamps were unpowered on measurement day), the replay-buffer depth for
+gaps beyond ~4 minutes, and the multi-hour soak result.
 
 ## Gaps and absences
 
