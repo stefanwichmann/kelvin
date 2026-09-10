@@ -309,10 +309,17 @@ outages on the client host, two runs):
   was not separately measured; it can only be detected faster than the
   ~55 s worst case.
 
-Still pending from the spike: gamut-A xy echo confirmation, the
-200-mirek-floor clamp, a dimming-only member in a group write (those
-lamps were unpowered on measurement day), the replay-buffer depth for
-gaps beyond ~4 minutes, and the multi-hour soak result.
+**Soak** (2026-09-10): the spike client held the event stream for **75
+minutes unbroken** — zero spontaneous disconnects, zero heartbeat
+failures (74/74 provoked events delivered), watchdog never fired, 152
+events received — with full CA-chain TLS validation, running on a Linux
+host. The issue #132 endurance criterion (one hour without losing the
+stream) is met with margin.
+
+Still open beyond the spike's acceptance criteria: gamut-A xy echo
+confirmation, the 200-mirek-floor clamp, a dimming-only member in a
+group write (those lamps were unpowered on measurement days), and the
+replay-buffer depth for gaps beyond ~4 minutes.
 
 ## Gaps and absences
 
