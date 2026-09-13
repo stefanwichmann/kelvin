@@ -70,68 +70,74 @@
               <input type="checkbox" class="appearBehavior form-check-input" {{if .EnableWhenLightsAppear}}checked{{end}} autocomplete="off">
             </div>
           </form>
-          <div class="subschedule">
+          <div class="subschedule row">
             <h1>Morning <small>(00:00 - sunrise)</small></h1>
-            <table class="beforeSunrise table">
-              <tr><th class="col-md-2">Time</th><th class="col-md-4">Color Temperature</th><th class="col-md-4">Brightness</th><th class="col-md-2">Control</th></tr>
-              {{range .BeforeSunrise}}
-              <tr class="entry">
-                <td><input type="time" name="time" class="time form-control" value="{{.Time}}" autocomplete="off"></td>
-                <td><input type="number" name="colorTemperature" class="colorTemperature form-control" value="{{.ColorTemperature}}" min="0" max="6500" autocomplete="off"></td>
-                <td><input type="range" name="brightness" class="brightness form-control" value="{{.Brightness}}" min="0" max="100" autocomplete="off"></td>
-                <td>
-                  <div class="btn-group">
-                    <button type="button" class="deleteEntryButton btn btn-primary">Delete</button>
-                    <button type="button" class="testEntryButton btn btn-primary">Test</button>
-                  </div>
-                </td>
-              </tr>
-              {{end}}
-            </table>
-            <div class="text-center">
+            <div class="table-responsive">
+              <table class="beforeSunrise table">
+                <tr><th class="col-md-2">Time</th><th class="col-md-4">Color Temperature</th><th class="col-md-4">Brightness</th><th class="col-md-2">Control</th></tr>
+                {{range .BeforeSunrise}}
+                <tr class="entry">
+                  <td><input type="time" name="time" class="time form-control" value="{{.Time}}" autocomplete="off"></td>
+                  <td><input type="number" name="colorTemperature" class="colorTemperature form-control" value="{{.ColorTemperature}}" min="0" max="6500" autocomplete="off"></td>
+                  <td><input type="range" name="brightness" class="brightness form-control" value="{{.Brightness}}" min="0" max="100" autocomplete="off"></td>
+                  <td>
+                    <div class="btn-group">
+                      <button type="button" class="deleteEntryButton btn btn-primary">Delete</button>
+                      <button type="button" class="testEntryButton btn btn-primary">Test</button>
+                    </div>
+                  </td>
+                </tr>
+                {{end}}
+              </table>
+            </div>
+            <div class="row text-center">
               <button type="button" class="addEntryButton btn btn-primary">Add entry</button>
             </div>
           </div>
-          <div class="subschedule">
+          <div class="subschedule row">
             <h1>Daylight <small>(sunrise - sunset)</small></h1>
-            <table class="default table">
-              <tr><th class="col-md-2">Time</th><th class="col-md-4">Color Temperature</th><th class="col-md-4">Brightness</th><th class="col-md-2">Control</th></tr>
-              <tr class="entry">
-                <td><input type="text" name="time" class="text form-control" value="sunrise - sunset" disabled></td>
-                <td><input type="number" name="colorTemperature" class="colorTemperature form-control" value="{{.DefaultColorTemperature}}" min="0" max="6500" autocomplete="off"></td>
-                <td><input type="range" name="brightness" class="brightness form-control" value="{{.DefaultBrightness}}" min="0" max="100" autocomplete="off"></td>
-                <td>
-                  <div class="btn-group">
-                    <button type="button" class="deleteEntryButton btn btn-primary" disabled>Delete</button>
-                    <button type="button" class="testEntryButton btn btn-primary">Test</button>
-                  </div>
-                </td>
-              </tr>
-            </table>
+            <div class="table-responsive">
+              <table class="default table">
+                <tr><th class="col-md-2">Time</th><th class="col-md-4">Color Temperature</th><th class="col-md-4">Brightness</th><th class="col-md-2">Control</th></tr>
+                <tr class="entry">
+                  <td><input type="text" name="time" class="text form-control" value="sunrise - sunset" disabled></td>
+                  <td><input type="number" name="colorTemperature" class="colorTemperature form-control" value="{{.DefaultColorTemperature}}" min="0" max="6500" autocomplete="off"></td>
+                  <td><input type="range" name="brightness" class="brightness form-control" value="{{.DefaultBrightness}}" min="0" max="100" autocomplete="off"></td>
+                  <td>
+                    <div class="btn-group">
+                      <button type="button" class="deleteEntryButton btn btn-primary" disabled>Delete</button>
+                      <button type="button" class="testEntryButton btn btn-primary">Test</button>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </div>
           </div>
-          <div class="subschedule">
+          <div class="subschedule row">
             <h1>Evening <small>(sunset - 23:59)</small></h1>
-            <table class="afterSunset table">
-              <tr><th class="col-md-2">Time</th><th class="col-md-4">Color Temperature</th><th class="col-md-4">Brightness</th><th class="col-md-2">Control</th></tr>
-              {{range .AfterSunset}}
-              <tr class="entry">
-                <td><input type="time" name="time" class="time form-control" value="{{.Time}}" autocomplete="off"></td>
-                <td><input type="number" name="colorTemperature" class="colorTemperature form-control" value="{{.ColorTemperature}}" min="0" max="6500" autocomplete="off"></td>
-                <td><input type="range" name="brightness" class="brightness form-control" value="{{.Brightness}}" min="0" max="100" autocomplete="off"></td>
-                <td>
-                  <div class="btn-group">
-                    <button type="button" class="deleteEntryButton btn btn-primary">Delete</button>
-                    <button type="button" class="testEntryButton btn btn-primary">Test</button>
-                  </div>
-                </td>
-              </tr>
-              {{end}}
-            </table>
-            <div class="text-center">
+            <div class="table-responsive">
+              <table class="afterSunset table">
+                <tr><th class="col-md-2">Time</th><th class="col-md-4">Color Temperature</th><th class="col-md-4">Brightness</th><th class="col-md-2">Control</th></tr>
+                {{range .AfterSunset}}
+                <tr class="entry">
+                  <td><input type="time" name="time" class="time form-control" value="{{.Time}}" autocomplete="off"></td>
+                  <td><input type="number" name="colorTemperature" class="colorTemperature form-control" value="{{.ColorTemperature}}" min="0" max="6500" autocomplete="off"></td>
+                  <td><input type="range" name="brightness" class="brightness form-control" value="{{.Brightness}}" min="0" max="100" autocomplete="off"></td>
+                  <td>
+                    <div class="btn-group">
+                      <button type="button" class="deleteEntryButton btn btn-primary">Delete</button>
+                      <button type="button" class="testEntryButton btn btn-primary">Test</button>
+                    </div>
+                  </td>
+                </tr>
+                {{end}}
+              </table>
+            </div>
+            <div class="row text-center">
               <button type="button" class="addEntryButton btn btn-primary">Add entry</button>
             </div>
           </div>
-          <div class="text-right">
+          <div class="deleteschedule row text-right">
             <button type="button" class="deleteScheduleButton btn btn-danger">Delete schedule</button>
           </div>
         </div>
