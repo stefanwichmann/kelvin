@@ -42,11 +42,18 @@ func updateScenes() {
 }
 
 func updateSceneForSchedule(scene *hue.Scene, lightSchedule LightSchedule) {
+	// Scene returned by AllScenes() doesn't have LightStates populated
+	scene, err := bridge.bridge.SceneByID(scene.Id)
+	if err != nil {
+		log.Warningf("🎨 %v", err)
+		return
+	}
+
 	// Updating lights
 	var modifyScene hue.ModifyScene
 	modifyScene.Lights = toStringArray(lightSchedule.AssociatedDeviceIDs)
 
-	_, err := scene.Modify(modifyScene)
+	_, err = scene.Modify(modifyScene)
 	if err != nil {
 		log.Warningf("🎨 %v", err)
 		return
@@ -68,20 +75,26 @@ func updateSceneForSchedule(scene *hue.Scene, lightSchedule LightSchedule) {
 
 	state := interval.calculateLightStateInInterval(time.Now())
 
-	var modifyState hue.ModifyLightState
-	modifyState.On = true // turn lights on when the scene is activated
+	for i, oldstate := range scene.LightStates {
+		if !oldstate.On {
+			continue
+		}
 
-	if state.ColorTemperature != -1 {
-		modifyState.ColorTemperature = uint16(mapColorTemperature(state.ColorTemperature))
-		modifyState.Xy = colorTemperatureToXYColor(state.ColorTemperature)
-	}
-	if state.Brightness != -1 {
-		modifyState.Brightness = uint8(mapBrightness(state.Brightness))
-	}
+		var modifyState hue.ModifyLightState
+		modifyState.On = true // turn lights on when the scene is activated
 
-	_, err = scene.ModifyLightStates(modifyState)
-	if err != nil {
-		log.Warningf("🎨 %v", err)
+		if state.ColorTemperature != -1 {
+			modifyState.ColorTemperature = uint16(mapColorTemperature(state.ColorTemperature))
+			modifyState.Xy = colorTemperatureToXYColor(state.ColorTemperature)
+		}
+		if state.Brightness != -1 {
+			modifyState.Brightness = uint8(mapBrightness(state.Brightness))
+		}
+
+		_, err = scene.ModifyLightState(i, modifyState)
+		if err != nil {
+			log.Warningf("🎨 %v", err)
+		}
 	}
 
 	log.Debugf("🎨 Successfully updated scene \"%s\"", scene.Name)
